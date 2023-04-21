@@ -4,9 +4,9 @@ function timepoint = send_trigger(cfgEyelink, eyelinkMsg)
 % trigger
 
 if cfgEyelink == 1
-      Eyelink('Message', eyelinkMsg)
+    Eyelink('Message', eyelinkMsg)
 end
 
 timepoint = GetSecs;  % get the time point of interest
 
-end 
+end
