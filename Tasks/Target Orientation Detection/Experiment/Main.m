@@ -1,5 +1,3 @@
-% add ISI between cue and stim
-
 % Clear the workspace and the screen
 sca;
 close all;
@@ -9,7 +7,7 @@ SFs = 5:0.25:11;
 Attention_Directions = {'Right', 'Left'};
 Target_Orientions = {-45, 45};
 Distractor_Orientions = {-45, 45};
-Repetitions = 1:1:50;
+Repetitions = 1:25;
 
 SF_Num = size(SFs,2);
 Attention_Direction_Num = size(Attention_Directions,2);
@@ -25,7 +23,8 @@ Big_Break_Interval = Run_Num + 1; % 10 Min (Inactive)
 
 % Screen properties
 PsychDefaultSetup(2);
-cfgScreen.scrNum = max(Screen('Screens'));  % get screen number - draw to the external screen if avaliable
+cfgScreen.scrNum = max(Screen('Screens'));
+% get screen number - draw to the external screen if avaliable
 
 [cfgScreen.dispSize.width, cfgScreen.dispSize.height]...
     = Screen('DisplaySize', cfgScreen.scrNum);  % get the physical size of the screen in millimeters
@@ -42,9 +41,9 @@ Periphery_Pix = angle2pix(cfgScreen,7.5);
 Gabor_Size = angle2pix(cfgScreen,5.6);
 Cue_Hight = angle2pix(cfgScreen,1.4);
 
-Cue_Time = 0.3;
+Cue_Time = 0.6;
 Stim_Time = 0.05;
-Response_Timeout = 1.2;
+Response_Timeout = 1;
 
 KbName('UnifyKeyNames');
 Keyboard.quitKey = KbName('ESCAPE');
@@ -56,21 +55,19 @@ Keyboard.CWkey = KbName('9('); % CW +45
 % ------------------------------------------------------------------------
 % settings
 
-prompt = {'Subject ID:', 'session', 'task', 'run', 'eyetracker? y/n', 'skip sync test? y/n'}; % description of fields
+prompt = {'Subject ID:', 'Session', 'Task', 'Run', 'Eyetracker? y/n', 'Skip sync test? y/n'};
 dlgtitle = 'Details';
-defaults = {'','01','gabor','01','y','n'}; % you can put in default responses
+defaults = {'','01','Gabor','01','y','n'}; % you can put in default responses
 opts.Interpreter = 'tex';
 dims = [1, 40; 1, 40; 1, 40; 1, 40; 1, 40; 1, 40];
 ansr = inputdlg(prompt, 'Info',dims,defaults,opts); % opens dialog
 cfgExp.answer = cell2struct(ansr, {'sub','ses','task','run','eyetracker','skipSync'}, 1);
 
-
 if strcmp(cfgExp.answer.eyetracker,'y'); cfgEyelink = 1; else, cfgEyelink = 0; end
 if strcmp(cfgExp.answer.skipSync,'y'); skipSync = 1; else, skipSync = 0; end
 
 cfgFile = create_file_directory(cfgExp);  % create file directories
-cfgEyelink = initialise_eyelink(cfgFile, cfgEyelink, cfgScreen); 
-
+cfgEyelink = initialise_eyelink(cfgFile, cfgEyelink, cfgScreen);
 
 SFs = num2cell(SFs);
 Repetitions = num2cell(Repetitions);
@@ -88,28 +85,38 @@ ITIs = zeros(Run_Num,1);
 
 for i = 1:Run_Num
 
-    ITIs(i,1) = (rand/5) + 0.6; % Jitters ITI between 0.6 and 0.8 seconds
+    ITIs(i,1) = (rand/5) + 0.4; % Jitters ITI between 0.4 and 0.6 seconds
 
 end
 
 ITIs = num2cell(ITIs);
 
+ISIs = zeros(Run_Num,1);
+
+for i = 1:Run_Num
+
+    ISIs(i,1) = (rand/5) + 0.5; % Jitters ISI between 0.5 and 0.7 seconds
+
+end
+
+ISIs = num2cell(ISIs);
+
 IDs = zeros(Run_Num,1);
 
-for j = 1:Run_Num
+for i = 1:Run_Num
 
-    IDs(j,1) = j;
+    IDs(i,1) = i;
 
 end
 
 IDs = num2cell(IDs);
 
-Run_Seq = {IDs, States, Run_Factors, ITIs, num2cell(zeros(Run_Num,5))};
+Run_Seq = {IDs, States, Run_Factors, ITIs, ISIs, num2cell(zeros(Run_Num,5)), cellstr(strings(Run_Num,1))};
 Run_Seq = horzcat(Run_Seq{:});
 
 % Run_Seq : ID, State, SF, Attention Direction, Target Oriention,
-% Distractor Oriention, Repetition, ITI, Trial_Onset, Cue_Onset,
-% Stim_Onset, Stim_Offset, RT
+% Distractor Oriention, Repetition, ITI, ISI, Trial_Onset, Cue_Onset,
+% Cue_Offset, Stim_Onset, Stim_Offset, Response Time, Answer
 
 % State :
 %
@@ -118,9 +125,8 @@ Run_Seq = horzcat(Run_Seq{:});
 % 3: No Answer
 % 4: Abortion
 
-Run_Seq_Key = strings([Run_Num,1]); % Result Key
-
 % ------------------------------------------------------------------------
+
 % Open an on screen window
 [window, windowRect] = PsychImaging('OpenWindow', cfgScreen.scrNum, cfgScreen.backgroundColor, cfgScreen.fullScrn);
 
@@ -160,14 +166,14 @@ preContrastMultiplier = 0.5;
 gabortex = CreateProceduralGabor(window, Gabor_Size, Gabor_Size, [],...
     backgroundOffset, disableNorm, preContrastMultiplier);
 
-for k = 1:Run_Num
+for i = 1:Run_Num
 
     % Spatial Frequency (Cycles Per Pixel)
-    numCycles = Run_Seq{k,3};
+    numCycles = Run_Seq{i,3};
     freq = numCycles / Gabor_Size;
 
     % Properties matrix.
-    Run_Seq_Gabors{k,1} = [phase, freq, sigma, contrast, aspectRatio, 0, 0, 0];
+    Run_Seq_Gabors{i,1} = [phase, freq, sigma, contrast, aspectRatio, 0, 0, 0];
 
 end
 
@@ -243,11 +249,13 @@ Abortion = 0;
 Abortion_Pauses = zeros(Run_Num,1);
 
 Task_Onset = GetSecs();
+send_trigger(cfgEyelink, 'Task Onset');
 
 for n = 1:Run_Num
 
     if (Abortion == 1)
 
+        send_trigger(cfgEyelink, 'Abortion');
         break;
 
     end
@@ -293,9 +301,9 @@ for n = 1:Run_Num
     Target_Gabor_Rec = CenterRectOnPoint(Gabor_Rec, Target_Gabor_Position(1), Target_Gabor_Position(2));
     Distractor_Gabor_Rec = CenterRectOnPoint(Gabor_Rec, Distractor_Gabor_Position(1), Distractor_Gabor_Position(2));
 
-    ITI_Frames = round(Run_Seq{n,8} / ifi);
-
     % ITI
+
+    ITI_Frames = round(Run_Seq{n,8} / ifi);
 
     for frame = 1:ITI_Frames
 
@@ -305,6 +313,7 @@ for n = 1:Run_Num
         if (frame == 1)
             Trial_Onset = Screen('Flip',window); % swaps backbuffer to frontbuffer
             vbl = Trial_Onset;
+            send_trigger(cfgEyelink, 'Trial Onset');
         else
             vbl = Screen('Flip', window, vbl + (0.5 * ifi));
         end
@@ -316,22 +325,42 @@ for n = 1:Run_Num
     for frame = 1:Cue_Frames
 
         if (strcmp(Run_Seq{n,4}, 'Right'))
-            if (frame == 1)
-                cfgOutput.cueOnset = send_trigger(cfgEyelink, 'Right Cue');
-            end
+
             Screen('DrawTexture', window, Right_Cue_Texture, [], Cue_Rec);
+            if (frame == 1)
+                send_trigger(cfgEyelink, 'Right Cue');
+            end
 
         elseif (strcmp(Run_Seq{n,4}, 'Left'))
 
             Screen('DrawTexture', window, Left_Cue_Texture, [], Cue_Rec);
             if (frame == 1)
-            cfgOutput.cueOnset = send_trigger(cfgEyelink, 'Left Cue');
+                send_trigger(cfgEyelink, 'Left Cue');
             end
+
         end
 
         if (frame == 1)
             Cue_Onset = Screen('Flip',window); % swaps backbuffer to frontbuffer
             vbl = Cue_Onset;
+        else
+            vbl = Screen('Flip', window, vbl + (0.5 * ifi));
+        end
+
+    end
+
+    % ISI
+
+    ISI_Frames = round(Run_Seq{n,9} / ifi);
+
+    for frame = 1:ISI_Frames
+
+        % Draw the fixation cross
+        Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, black, [xCenter yCenter], 2);
+
+        if (frame == 1)
+            Cue_Offset = Screen('Flip',window); % swaps backbuffer to frontbuffer
+            vbl = Cue_Offset;
         else
             vbl = Screen('Flip', window, vbl + (0.5 * ifi));
         end
@@ -359,9 +388,9 @@ for n = 1:Run_Num
         Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 
         if (frame == 1)
-            cfgOutput.stimOnset = send_trigger(cfgEyelink, 'Gabor Onset');
             Stim_Onset = Screen('Flip',window); % swaps backbuffer to frontbuffer
             vbl = Stim_Onset;
+            send_trigger(cfgEyelink, 'Stim Onset');
             KbQueueFlush; % Flushes Buffer
         else
             vbl = Screen('Flip', window, vbl + (0.5 * ifi));
@@ -373,6 +402,7 @@ for n = 1:Run_Num
     Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, black, [xCenter yCenter], 2);
 
     Stim_Offset = Screen('Flip',window);
+    send_trigger(cfgEyelink, 'Stim Offset');
 
     noResp = 1;
 
@@ -382,14 +412,21 @@ for n = 1:Run_Num
         keyCod = find(firstPrsd,1);  % collects the pressed key code
 
         if (presd && (ismember(keyCod,Keyboard.responseKeys))) % store response variables
-            
-            cfgOutput.respOnset = send_trigger(cfgEyelink, 'Response Onset');
+
+            send_trigger(cfgEyelink, 'Response Onset');
             Response_Key_Time = firstPrsd(keyCod);  % exact time of button press
             Key = KbName(keyCod);  % which key was pressed
             Key = string(Key);
 
-            Run_Seq{n,13} = Response_Key_Time-Stim_Onset ;
-            Run_Seq_Key(n,1) = Key ;
+            old = '1!';
+            new = 'CCW -45';
+            Key = replace(Key,old,new);
+            old = '9(';
+            new = 'CW +45';
+            Key = replace(Key,old,new);
+
+            Run_Seq{n,15} = Response_Key_Time;
+            Run_Seq{n,16} = Key ;
             Run_Seq{n,2} = 1; % 1: Done
 
             noResp = 0;
@@ -399,6 +436,7 @@ for n = 1:Run_Num
 
             warning('Experiment aborted!')
             Abortion_Pauses(n,1) = Abortion_Pauses(n,1) + 1;
+            send_trigger(cfgEyelink, 'Abortion Pause');
 
             DrawFormattedText(window, 'Press C to confirm :)', 'center', 'center',[1 1 1]);
             Screen('Flip',window);
@@ -408,8 +446,8 @@ for n = 1:Run_Num
 
                 Abortion = 1;
                 Run_Seq{n,2} = 4; % 4: Abortion
-                Run_Seq{n,13} = NaN;
-                Run_Seq_Key(n,1) = 'None' ;
+                Run_Seq{n,15} = NaN;
+                Run_Seq{n,16} = 'None' ;
 
                 noResp = 0;
                 break;
@@ -418,6 +456,8 @@ for n = 1:Run_Num
 
             % -----------------------------------------
             % Repeating Trial
+
+            send_trigger(cfgEyelink, 'Repeating Trial');
 
             % ITI
 
@@ -429,6 +469,7 @@ for n = 1:Run_Num
                 if (frame == 1)
                     Trial_Onset = Screen('Flip',window); % swaps backbuffer to frontbuffer
                     vbl = Trial_Onset;
+                    send_trigger(cfgEyelink, 'Trial Onset');
                 else
                     vbl = Screen('Flip', window, vbl + (0.5 * ifi));
                 end
@@ -442,10 +483,16 @@ for n = 1:Run_Num
                 if (strcmp(Run_Seq{n,4}, 'Right'))
 
                     Screen('DrawTexture', window, Right_Cue_Texture, [], Cue_Rec);
+                    if (frame == 1)
+                        send_trigger(cfgEyelink, 'Right Cue');
+                    end
 
                 elseif (strcmp(Run_Seq{n,4}, 'Left'))
 
                     Screen('DrawTexture', window, Left_Cue_Texture, [], Cue_Rec);
+                    if (frame == 1)
+                        send_trigger(cfgEyelink, 'Left Cue');
+                    end
 
                 end
 
@@ -458,10 +505,28 @@ for n = 1:Run_Num
 
             end
 
+            % ISI
+
+            for frame = 1:ISI_Frames
+
+                % Draw the fixation cross
+                Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, black, [xCenter yCenter], 2);
+
+                if (frame == 1)
+                    Cue_Offset = Screen('Flip',window); % swaps backbuffer to frontbuffer
+                    vbl = Cue_Offset;
+                else
+                    vbl = Screen('Flip', window, vbl + (0.5 * ifi));
+                end
+
+            end
+
             % Stim (Gabors)
 
             for frame = 1:Stim_Frames
 
+                % Draw the fixation cross
+                Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, black, [xCenter yCenter], 2);
 
                 % Disable alpha-blending for Gabors
                 Screen('BlendFunction', window, 'GL_ONE', 'GL_ZERO');
@@ -479,6 +544,7 @@ for n = 1:Run_Num
                 if (frame == 1)
                     Stim_Onset = Screen('Flip',window); % swaps backbuffer to frontbuffer
                     vbl = Stim_Onset;
+                    send_trigger(cfgEyelink, 'Stim Onset');
                     KbQueueFlush; % Flushes Buffer
                 else
                     vbl = Screen('Flip', window, vbl + (0.5 * ifi));
@@ -490,14 +556,15 @@ for n = 1:Run_Num
             Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, black, [xCenter yCenter], 2);
 
             Stim_Offset = Screen('Flip',window);
+            send_trigger(cfgEyelink, 'Stim Offset');
 
             % -----------------------------------------
 
         elseif ((GetSecs - Stim_Offset) > Response_Timeout)  % Stop listening
 
             Run_Seq{n,2} = 3; % 3: No Answer
-            Run_Seq{n,13} = NaN;
-            Run_Seq_Key(n,1) = 'None' ;
+            Run_Seq{n,15} = NaN;
+            Run_Seq{n,16} = 'None' ;
 
             noResp = 0;
             break;
@@ -506,13 +573,15 @@ for n = 1:Run_Num
 
     end
 
-    Run_Seq{n,9} = Trial_Onset;
-    Run_Seq{n,10} = Cue_Onset;
-    Run_Seq{n,11} = Stim_Onset;
-    Run_Seq{n,12} = Stim_Offset;
+    Run_Seq{n,10} = Trial_Onset;
+    Run_Seq{n,11} = Cue_Onset;
+    Run_Seq{n,12} = Cue_Offset;
+    Run_Seq{n,13} = Stim_Onset;
+    Run_Seq{n,14} = Stim_Offset;
 
 end
-cfgOutput.endTmPnt = send_trigger(cfgEyelink, 'end of experiment');
+
+Task_Offset = send_trigger(cfgEyelink, 'End of experiment');
 
 DrawFormattedText(window, 'Press anykey to exit :)', 'center', 'center',[1 1 1]);
 
@@ -530,29 +599,10 @@ sca;
 
 %% saving and cleaning up
 
-Run_Seq_Table = cell2table(Run_Seq,"VariableNames",["ID", "State", "SF", ...
+cfgOutput.Output_table = cell2table(Run_Seq,"VariableNames",["ID", "State", "SF", ...
     "Attention Direction", "Target Oriention", "Distractor Oriention", ...
-    "Repetition", "ITI", "Trial_Onset", "Cue_Onset", ...
-    "Stim_Onset", "Stim_Offset", "RT"]);
-
-for q = 1:n
-
-    if (Run_Seq{q,2} == 1)
-
-        old = '1!';
-        new = 'CCW -45';
-        Run_Seq_Key(q) = replace(Run_Seq_Key(q),old,new);
-        old = '9(';
-        new = 'CW +45';
-        Run_Seq_Key(q) = replace(Run_Seq_Key(q),old,new);
-
-    end
-
-end
-
-Run_Seq_Key_Table = array2table(Run_Seq_Key,"VariableNames","Answer");
-
-cfgOutput.Output_table = [Run_Seq_Table Run_Seq_Key_Table];
+    "Repetition", "ITI", "ISI", "Trial_Onset", "Cue_Onset", ...
+    "Cue_Offset", "Stim_Onset", "Stim_Offset", "Response Time", "Answer"]);
 
 % check if the logfile is being overwritten
 if exist([cfgFile.subDir, cfgFile.BIDSname, cfgFile.logFile], 'file') > 0
@@ -575,7 +625,7 @@ catch
 end
 
 try
-    if cfgEyelink.on
+    if cfgEyelink
         el_stop(cfgFile)
     end
 catch
@@ -583,4 +633,3 @@ catch
 end
 
 Priority(0);
-

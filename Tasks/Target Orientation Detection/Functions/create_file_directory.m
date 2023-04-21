@@ -1,6 +1,6 @@
 function cfgFile = create_file_directory(cfgExp)
 % cfgFile = create_file_directory(cfgExp)
-%  cd to and creates subject directory according to OS
+% cd to and creates subject directory according to OS
 
 tmp = matlab.desktop.editor.getActive;
 cd(fileparts(tmp.Filename));  % move to the current directory
@@ -17,7 +17,6 @@ cfgFile.cue = [cd, '\Cue\'];
 clock_info = clock; % Current date and time as date vector. [year month day hour minute seconds]
 subject_ID = [cfgExp.answer.sub num2str(clock_info(2)) num2str(clock_info(3)) num2str(clock_info(4)) num2str(clock_info(5))]; % makes unique filename
 
-
 mkdir([cfgFile.res, 'sub-', subject_ID, filesep, 'ses-', cfgExp.answer.ses, filesep, 'beh', filesep]);  % make result directory with BIDS format
 cfgFile.subDir = [cfgFile.res, 'sub-', subject_ID, filesep, 'ses-' cfgExp.answer.ses, filesep, 'beh', filesep];  % store subject directory address
 cfgFile.BIDSname = ['sub-', subject_ID, '_', 'ses-', cfgExp.answer.ses, '_'...
@@ -29,4 +28,3 @@ cfgFile.logFile = ['_logfile', '.mat'];  % logfile file name
 cfgFile.csvFile = ['_logfile', '.csv'];  % logfile file name
 
 end
-

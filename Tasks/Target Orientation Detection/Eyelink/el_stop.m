@@ -14,11 +14,11 @@ if el_status > 0
 end
 cleanup;
 
-function cleanup
-    % Cleanup routine
-    Eyelink('Shutdown');  % shutdown Eyelink
-    sca;
-    ListenChar(0);  % restore keyboard output to Matlab:
-end
+    function cleanup
+        % Cleanup routine
+        Eyelink('Shutdown');  % shutdown Eyelink
+        sca;
+        ListenChar(0);  % restore keyboard output to Matlab:
+    end
 
 end
