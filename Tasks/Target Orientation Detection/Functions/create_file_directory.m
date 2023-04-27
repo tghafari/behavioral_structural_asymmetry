@@ -14,8 +14,8 @@ addpath([cd, '\Results\']);  % add result folder
 cfgFile.res = [cd, '\Results\'] ;
 cfgFile.cue = [cd, '\Cue\'];
 
-clock_info = clock; % Current date and time as date vector. [year month day hour minute seconds]
-subject_ID = [cfgExp.answer.sub num2str(clock_info(2)) num2str(clock_info(3)) num2str(clock_info(4)) num2str(clock_info(5))]; % makes unique filename
+% clock_info = clock; % Current date and time as date vector. [year month day hour minute seconds]
+subject_ID = cfgExp.answer.sub; % makes subject ID
 
 mkdir([cfgFile.res, 'sub-', subject_ID, filesep, 'ses-', cfgExp.answer.ses, filesep, 'beh', filesep]);  % make result directory with BIDS format
 cfgFile.subDir = [cfgFile.res, 'sub-', subject_ID, filesep, 'ses-' cfgExp.answer.ses, filesep, 'beh', filesep];  % store subject directory address

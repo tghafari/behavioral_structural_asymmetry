@@ -2,9 +2,9 @@ function cfgEyelink = initialise_eyelink(cfgFile, cfgEyelink, cfgScreen)
 % cfgEyelink = initialise_eyelink(cfgFile, cfgEyelink, cfgScreen)
 % initialise eye link, set parameters and start recording
 
-if cfgEyelink
+if cfgEyelink.on
     try
-        if cfgEyelink
+        if cfgEyelink.on
             cfgEyelink = el_start(cfgEyelink, cfgScreen, cfgFile);  % set parameters of eyelink and calibrate
         end
     catch

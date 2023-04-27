@@ -3,7 +3,7 @@ function timepoint = send_trigger(cfgEyelink, eyelinkMsg)
 % eyelinkMsg includes the message you want to send to eyelink as
 % trigger
 
-if cfgEyelink == 1
+if cfgEyelink.on
     Eyelink('Message', eyelinkMsg)
 end
 

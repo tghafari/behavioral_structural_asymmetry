@@ -7,13 +7,12 @@ SFs = 5:0.25:11;
 Attention_Directions = {'Right', 'Left'};
 Target_Orientions = {-45, 45};
 Distractor_Orientions = {-45, 45};
-Repetitions = 1:25;
+Repetition_Num = 25;
 
 SF_Num = size(SFs,2);
 Attention_Direction_Num = size(Attention_Directions,2);
 Target_Oriention_Num = size(Target_Orientions,2);
 Distractor_Oriention_Num = size(Target_Orientions,2);
-Repetition_Num = size(Repetitions,2);
 
 Run_Num = SF_Num * Attention_Direction_Num * Target_Oriention_Num * ...
     Distractor_Oriention_Num * Repetition_Num;
@@ -49,8 +48,8 @@ KbName('UnifyKeyNames');
 Keyboard.quitKey = KbName('ESCAPE');
 Keyboard.confirmKey = KbName('c');
 
-Keyboard.CCWkey = KbName('1!'); % CCW -45
-Keyboard.CWkey = KbName('9('); % CW +45
+Keyboard.CCWkey = KbName('LeftShift'); % CCW -45 ?
+Keyboard.CWkey = KbName('RightShifr'); % CW +45
 
 % ------------------------------------------------------------------------
 % settings
@@ -63,11 +62,10 @@ dims = [1, 40; 1, 40; 1, 40; 1, 40; 1, 40; 1, 40];
 ansr = inputdlg(prompt, 'Info',dims,defaults,opts); % opens dialog
 cfgExp.answer = cell2struct(ansr, {'sub','ses','task','run','eyetracker','skipSync'}, 1);
 
-if strcmp(cfgExp.answer.eyetracker,'y'); cfgEyelink = 1; else, cfgEyelink = 0; end
+if strcmp(cfgExp.answer.eyetracker,'y'); cfgEyelink.on = 1; else, cfgEyelink.on = 0; end
 if strcmp(cfgExp.answer.skipSync,'y'); skipSync = 1; else, skipSync = 0; end
 
 cfgFile = create_file_directory(cfgExp);  % create file directories
-cfgEyelink = initialise_eyelink(cfgFile, cfgEyelink, cfgScreen);
 
 SFs = num2cell(SFs);
 Repetitions = num2cell(Repetitions);
@@ -133,6 +131,9 @@ Run_Seq = horzcat(Run_Seq{:});
 % Maximum priority
 topPriorityLevel = MaxPriority(window);
 Priority(topPriorityLevel);
+
+% set up eyelink
+cfgEyelink = initialise_eyelink(cfgFile, cfgEyelink, cfgScreen);
 
 % Set up alpha-blending (Global)
 Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
@@ -442,7 +443,7 @@ for n = 1:Run_Num
             Screen('Flip',window);
 
             [~, abrtPrsd] = KbStrokeWait;
-            if abrtPrsd(Keyboard.confirmKey)
+            if abrtPrsd(Keyboard.confirmKey)  % no keys for not exiting
 
                 Abortion = 1;
                 Run_Seq{n,2} = 4; % 4: Abortion
@@ -600,9 +601,9 @@ sca;
 %% saving and cleaning up
 
 cfgOutput.Output_table = cell2table(Run_Seq,"VariableNames",["ID", "State", "SF", ...
-    "Attention Direction", "Target Oriention", "Distractor Oriention", ...
+    "Attention_Direction", "Target_Oriention", "Distractor_Oriention", ...
     "Repetition", "ITI", "ISI", "Trial_Onset", "Cue_Onset", ...
-    "Cue_Offset", "Stim_Onset", "Stim_Offset", "Response Time", "Answer"]);
+    "Cue_Offset", "Stim_Onset", "Stim_Offset", "Response_Time", "Answer"]);
 
 % check if the logfile is being overwritten
 if exist([cfgFile.subDir, cfgFile.BIDSname, cfgFile.logFile], 'file') > 0
