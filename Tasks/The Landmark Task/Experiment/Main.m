@@ -5,17 +5,24 @@ clear;
 
 Line_Lenghts = 20:1:23;
 Shift_Directions = {'Right', 'Left'};
-Straircase_Step_Num = 10;
+Block_Run_Num = 80;
 Block_Repetition_Num = 2; % Number of Pair Shorter/Longer Blocks
 
 % Screen properties
 PsychDefaultSetup(2);
-cfgScreen.scrNum = max(Screen('Screens'));  % get screen number - draw to the external screen if avaliable
+cfgScreen.scrNum = max(Screen('Screens'));
+% get screen number - draw to the external screen if avaliable
 
 [cfgScreen.dispSize.width, cfgScreen.dispSize.height]...
     = Screen('DisplaySize', cfgScreen.scrNum);  % get the physical size of the screen in millimeters
-cfgScreen.distance = 60;  % set the distance from participant to the monitor in cm
+cfgScreen.distance = 50;  % set the distance from participant to the monitor in cm
 cfgScreen.resolution = Screen('Resolution', cfgScreen.scrNum);  % get/set the on screen resolution
+cfgScreen.fullScrn = [0, 0, cfgScreen.resolution.width, cfgScreen.resolution.height];  % size of full screen in pixels
+
+white = WhiteIndex(cfgScreen.scrNum);
+black = BlackIndex(cfgScreen.scrNum);
+grey = (white - black) / 2;
+cfgScreen.backgroundColor = grey;
 
 Initial_Shift_Size = 1; % In Visual Degrees
 Line_Thickness = angle2pix(cfgScreen,0.1);
@@ -29,42 +36,53 @@ KbName('UnifyKeyNames');
 Keyboard.quitKey = KbName('ESCAPE');
 Keyboard.confirmKey = KbName('c');
 
-Keyboard.Rightkey = KbName('RightShift'); % Right
-Keyboard.Leftkey = KbName('LeftShift'); % Left
-Keyboard.Neutralkey = KbName('space'); % Neutral
+Keyboard.Rightkey = KbName('6^'); % Right
+Keyboard.Leftkey = KbName('4$'); % Left
+Keyboard.Neutralkey = KbName('5%'); % Neutral
 
 Noise_Contrast = 0.5;
 
 Block_Num = 2 * Block_Repetition_Num;
-Line_Lenght_Num = size(Line_Lenghts,2);
-Shift_Direction_Num = size(Shift_Directions,2);
-
-Straircase_Step_Run_Num = Line_Lenght_Num * Shift_Direction_Num;
-Block_Run_Num = Straircase_Step_Run_Num * Straircase_Step_Num;
 Run_Num = Block_Run_Num * Block_Num;
 
 Small_Break_Interval = Run_Num / Block_Num; % 1 Min
 Big_Break_Interval = Run_Num + 1; % 10 Min (Inactive)
 
 % ------------------------------------------------------------------------
+% settings
 
-prompt = {'Enter ID:'}; % description of fields
-defaults = {'',''}; % you can put in default responses
+prompt = {'Subject ID:', 'Session', 'Task', 'Run', 'Eyetracker? y/n', 'Skip sync test? y/n', 'First Block Question?'};
+dlgtitle = 'Details';
+defaults = {'','01','Landmark','01','n','n', 'Shorter'}; % you can put in default responses
 opts.Interpreter = 'tex';
-dims = [1 40];
-answer = inputdlg(prompt, 'Info',dims,defaults,opts); % opens dialog
-subject = answer{1,:};
-clock_info = clock; % Current date and time as date vector. [year month day hour minute seconds]
-Output_Name=[subject '_' num2str(clock_info(2)) '_' num2str(clock_info(3)) '_' num2str(clock_info(4)) '_' num2str(clock_info(5))]; % makes unique filename
+dims = [1, 40; 1, 40; 1, 40; 1, 40; 1, 40; 1, 40; 1, 40];
+ansr = inputdlg(prompt, 'Info',dims,defaults,opts); % opens dialog
+cfgExp.answer = cell2struct(ansr, {'sub','ses','task','run','eyetracker','skipSync', 'First_Block_Question'}, 1);
+
+if strcmp(cfgExp.answer.eyetracker,'y'); cfgEyelink.on = 1; else, cfgEyelink.on = 0; end
+if strcmp(cfgExp.answer.skipSync,'y'); skipSync = 1; else, skipSync = 0; end
+if strcmp(cfgExp.answer.First_Block_Question,'Shorter'); First_Block_Question = 1; else, First_Block_Question = 0; end
+
+if(skipSync)
+
+    Screen('Preference', 'SkipSyncTests', 1);
+
+else
+
+    Screen('Preference', 'SkipSyncTests', 0);
+
+end
+
+cfgFile = create_file_directory(cfgExp);  % create file directories
 
 Line_Lenghts = num2cell(Line_Lenghts);
 
-IDs = 1:1:Run_Num;
+IDs = 1:Run_Num;
 IDs = num2cell(IDs');
 States = zeros(Run_Num,1);
 States = num2cell(States);
 
-Blocks = 1:1:Block_Num;
+Blocks = 1:Block_Num;
 Run_Blocks = repelem(Blocks,Block_Run_Num);
 Run_Blocks = num2cell(Run_Blocks');
 
@@ -72,22 +90,17 @@ Run_Block_Questions = cell(Run_Num,1);
 
 for i = 1:Run_Num
 
-    if (mod(Run_Blocks{i,1},2) == 1)
+    if (mod(Run_Blocks{i,1},2) == First_Block_Question)
 
         Run_Block_Questions{i,1} = "Shorter";
 
-    elseif (mod(Run_Blocks{i,1},2) == 0)
+    else
 
         Run_Block_Questions{i,1} = "Longer";
 
     end
 
 end
-
-Straircase_Steps = 1:1:Straircase_Step_Num;
-Block_Straircase_Steps = repelem(Straircase_Steps,Straircase_Step_Run_Num);
-Run_Straircase_Steps = repmat(Block_Straircase_Steps,1,Block_Num);
-Run_Straircase_Steps = num2cell(Run_Straircase_Steps');
 
 Run_Factors = cell(0);
 
@@ -96,39 +109,23 @@ for i = 1:Run_Num
     if (i == Run_Num)
 
         [Run_Line_Lenghts, Run_Shift_Directions] = ...
-            BalanceFactors(1, 1, Line_Lenghts, Shift_Directions);
+            BalanceTrials(Block_Run_Num, 1, Line_Lenghts, Shift_Directions);
 
-        Run_Shift_Sizes = cell(Straircase_Step_Run_Num,1);
+        Block_Run_Factors = {Run_Line_Lenghts, Run_Shift_Directions};
+        Block_Run_Factors = horzcat(Block_Run_Factors{:});
 
-        if (Run_Straircase_Steps{i,1} == 1)
-
-            Run_Shift_Sizes = num2cell(repelem(Initial_Shift_Size,Straircase_Step_Run_Num)');
-
-        end
-
-        Straircase_Step_Run_Factors = {Run_Line_Lenghts, Run_Shift_Directions, Run_Shift_Sizes};
-        Straircase_Step_Run_Factors = horzcat(Straircase_Step_Run_Factors{:});
-
-        Run_Factors = {Run_Factors, Straircase_Step_Run_Factors};
+        Run_Factors = {Run_Factors, Block_Run_Factors};
         Run_Factors = vertcat(Run_Factors{:});
 
-    elseif ((Run_Straircase_Steps{i,1} ~= Run_Straircase_Steps{i+1,1}))
+    elseif ((Run_Blocks{i,1} ~= Run_Blocks{i+1,1}))
 
         [Run_Line_Lenghts, Run_Shift_Directions] = ...
-            BalanceFactors(1, 1, Line_Lenghts, Shift_Directions);
+            BalanceTrials(Block_Run_Num, 1, Line_Lenghts, Shift_Directions);
 
-        Run_Shift_Sizes = cell(Straircase_Step_Run_Num,1);
+        Block_Run_Factors = {Run_Line_Lenghts, Run_Shift_Directions};
+        Block_Run_Factors = horzcat(Block_Run_Factors{:});
 
-        if (Run_Straircase_Steps{i,1} == 1)
-
-            Run_Shift_Sizes = num2cell(repelem(Initial_Shift_Size,Straircase_Step_Run_Num)');
-
-        end
-
-        Straircase_Step_Run_Factors = {Run_Line_Lenghts, Run_Shift_Directions, Run_Shift_Sizes};
-        Straircase_Step_Run_Factors = horzcat(Straircase_Step_Run_Factors{:});
-
-        Run_Factors = {Run_Factors, Straircase_Step_Run_Factors};
+        Run_Factors = {Run_Factors, Block_Run_Factors};
         Run_Factors = vertcat(Run_Factors{:});
 
     end
@@ -145,15 +142,15 @@ end
 
 ITIs = num2cell(ITIs);
 
-Run_Seq = {IDs, States, Run_Blocks, Run_Block_Questions, ...
-    Run_Straircase_Steps, Run_Factors, ITIs, ...
-    num2cell(zeros(Run_Num,4)),cellstr(strings(Run_Num,1))};
+Run_Seq = {IDs, States, Run_Blocks, Run_Block_Questions, Run_Factors, ...
+    num2cell(zeros(Run_Num,1)), ITIs, num2cell(zeros(Run_Num,4)), ...
+    cellstr(strings(Run_Num,1))};
 
 Run_Seq = horzcat(Run_Seq{:});
 
-% Run_Seq : ID, State, Block Number, Block Question, Straircase Step,
-% Line Lenght, Shift Direction, Shift Size, ITI, Trial_Onset,
-% Stim_Onset, Stim_Offset, RT, Answer
+% Run_Seq : ID, State, Block Number, Block Question, Line Lenght,
+% Shift Direction, Shift Size, ITI, Trial_Onset,
+% Stim_Onset, Stim_Offset, Response Time, Answer
 
 % State :
 %
@@ -162,26 +159,30 @@ Run_Seq = horzcat(Run_Seq{:});
 % 3: No Answer
 % 4: Abortion
 
+[Staircase_Processing_Line_Lenghts, Staircase_Processing_Shift_Directions] = ...
+    BalanceFactors(1, 0, Line_Lenghts, Shift_Directions);
+
+Staircase_Processing = {Staircase_Processing_Line_Lenghts, ...
+    Staircase_Processing_Shift_Directions, ...
+    num2cell(zeros(size(Staircase_Processing_Line_Lenghts,1),1)), ...
+    num2cell(repelem(Initial_Shift_Size,size(Staircase_Processing_Line_Lenghts,1))');};
+
+Staircase_Processing = horzcat(Staircase_Processing{:});
+
+% Staircase_Processing : Line Lenght, Shift Direction,
+% Consecutive Corrects Count, Shift Size
+
 % ------------------------------------------------------------------------
 
-PsychDefaultSetup(2);
-
-% Get the screen numbers
-screens = Screen('Screens');
-
-% Draw to the external screen if avaliable
-screenNumber = max(screens);
-
-white = WhiteIndex(screenNumber);
-black = BlackIndex(screenNumber);
-grey = (white - black) / 2;
-
 % Open an on screen window
-[window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey);
+[window, windowRect] = PsychImaging('OpenWindow', cfgScreen.scrNum, cfgScreen.backgroundColor, cfgScreen.fullScrn);
 
 % Maximum priority
 topPriorityLevel = MaxPriority(window);
 Priority(topPriorityLevel);
+
+% set up eyelink
+cfgEyelink = initialise_eyelink(cfgFile, cfgEyelink, cfgScreen);
 
 % Set up alpha-blending (Global)
 Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
@@ -256,11 +257,13 @@ Abortion = 0;
 Abortion_Pauses = zeros(Run_Num,1);
 
 Task_Onset = GetSecs();
+send_trigger(cfgEyelink, 'Task Onset');
 
 for n = 1:Run_Num
 
     if (Abortion == 1)
 
+        send_trigger(cfgEyelink, 'Abortion');
         break;
 
     end
@@ -300,10 +303,12 @@ for n = 1:Run_Num
         if (strcmp(Run_Seq{n,4}, 'Shorter'))
 
             DrawFormattedText(window, 'Next Block: Which Side Is Shorter?', 'center', 'center',[1 1 1]);
+            send_trigger(cfgEyelink, 'Shorter Block');
 
         elseif (strcmp(Run_Seq{n,4}, 'Longer'))
 
             DrawFormattedText(window, 'Next Block: Which Side Is Longer?', 'center', 'center',[1 1 1]);
+            send_trigger(cfgEyelink, 'Longer Block');
 
         end
 
@@ -318,13 +323,23 @@ for n = 1:Run_Num
 
     elseif (Run_Seq{n,3} ~= Run_Seq{n-1,3})
 
+        Staircase_Processing = {Staircase_Processing_Line_Lenghts, ...
+            Staircase_Processing_Shift_Directions, ...
+            num2cell(zeros(size(Staircase_Processing_Line_Lenghts,1),1)), ...
+            num2cell(repelem(Initial_Shift_Size,size(Staircase_Processing_Line_Lenghts,1))');};
+
+        Staircase_Processing = horzcat(Staircase_Processing{:});
+
         if (strcmp(Run_Seq{n,4}, 'Shorter'))
 
             DrawFormattedText(window, 'Next Block: Which Side Is Shorter?', 'center', 'center',[1 1 1]);
+            send_trigger(cfgEyelink, 'Shorter Block');
+
 
         elseif (strcmp(Run_Seq{n,4}, 'Longer'))
 
             DrawFormattedText(window, 'Next Block: Which Side Is Longer?', 'center', 'center',[1 1 1]);
+            send_trigger(cfgEyelink, 'Longer Block');
 
         end
 
@@ -341,81 +356,12 @@ for n = 1:Run_Num
 
     % Staircase Processing -------------------------------
 
-    if (isempty(Run_Seq{n,8}))
+    for i = 1:size(Staircase_Processing,1)
 
-        % Processing_Run_Seq : Line Lenght, Block Question,
-        % Shift Direction, Answer, Shift Size
+        if ((Staircase_Processing{i,1} == Run_Seq{n,5}) && ...
+                (strcmp(Staircase_Processing{i,2}, Run_Seq{n,6})))
 
-        Processing_Run_Seq = Run_Seq(n-Straircase_Step_Run_Num:n-1,[6 4 7 14 8]);
-
-        for i = 1:Line_Lenght_Num
-
-            Processing_Count = 0;
-
-            for j = 1:Straircase_Step_Run_Num
-
-                if(Processing_Run_Seq{j,1} == Line_Lenghts{1,i})
-
-                    if((strcmp(Processing_Run_Seq{j,2}, 'Longer')) && ...
-                            (strcmp(Processing_Run_Seq{j,3}, Processing_Run_Seq{j,4})))
-
-                        Processing_Count = Processing_Count +1;
-
-                    elseif(strcmp(Processing_Run_Seq{j,2}, 'Shorter'))
-
-                        if((strcmp(Processing_Run_Seq{j,3}, 'Right')) && ...
-                                (strcmp(Processing_Run_Seq{j,4}, 'Left')))
-
-                            Processing_Count = Processing_Count +1;
-
-                        end
-
-                        if((strcmp(Processing_Run_Seq{j,3}, 'Left')) && ...
-                                (strcmp(Processing_Run_Seq{j,4}, 'Right')))
-
-                            Processing_Count = Processing_Count +1;
-
-                        end
-
-                    end
-
-                    Current_Shift = Processing_Run_Seq{j,5};
-
-                end
-
-            end
-
-            if (Processing_Count == 2)
-
-                for k = n:(n+Straircase_Step_Run_Num-1)
-
-                    if(Run_Seq{k,6} == Line_Lenghts{1,i})
-
-                        Run_Seq{k,8} = 0.8 * Current_Shift;
-
-                    end
-
-                end
-
-            elseif(Processing_Count < 2)
-
-                for k = n:(n+Straircase_Step_Run_Num-1)
-
-                    if(Run_Seq{k,6} == Line_Lenghts{1,i})
-
-                        Run_Seq{k,8} = 1.25 * Current_Shift;
-
-                        if(Run_Seq{k,8}> Initial_Shift_Size)
-
-                            Run_Seq{k,8} = Initial_Shift_Size;
-
-                        end
-
-                    end
-
-                end
-
-            end
+            Run_Seq{n,7} = Staircase_Processing{i,4};
 
         end
 
@@ -423,27 +369,27 @@ for n = 1:Run_Num
 
     % Line -----------------------------------------------
 
-    Line_Size = angle2pix(cfgScreen,Run_Seq{n,6});
+    Line_Size = angle2pix(cfgScreen,Run_Seq{n,5});
 
     Line_xCoords = [-Line_Size/2 Line_Size/2];
     Line_yCoords = [0 0];
     Line_Coords = [Line_xCoords; Line_yCoords];
 
-    if (strcmp(Run_Seq{n,7}, 'Right'))
+    if (strcmp(Run_Seq{n,6}, 'Right'))
 
-        Line_Center = [xCenter + angle2pix(cfgScreen,Run_Seq{n,8}), yCenter];
+        Line_Center = [xCenter + angle2pix(cfgScreen,Run_Seq{n,7}), yCenter];
 
-    elseif (strcmp(Run_Seq{n,7}, 'Left'))
+    elseif (strcmp(Run_Seq{n,6}, 'Left'))
 
-        Line_Center = [xCenter - angle2pix(cfgScreen,Run_Seq{n,8}), yCenter];
+        Line_Center = [xCenter - angle2pix(cfgScreen,Run_Seq{n,7}), yCenter];
 
     end
 
     % ----------------------------------------------------
 
-    ITI_Frames = round(Run_Seq{n,9} / ifi);
-
     % ITI
+
+    ITI_Frames = round(Run_Seq{n,8} / ifi);
 
     for frame = 1:ITI_Frames
 
@@ -470,9 +416,21 @@ for n = 1:Run_Num
         Screen('DrawLines', window, Line_Coords, Line_Thickness, [1 1 1], Line_Center, 2);
 
         if (frame == 1)
+
             Stim_Onset = Screen('Flip',window); % swaps backbuffer to frontbuffer
             vbl = Stim_Onset;
             KbQueueFlush; % Flushes Buffer
+
+            if (strcmp(Run_Seq{n,6}, 'Right'))
+
+                send_trigger(cfgEyelink, 'Right Shift');
+
+            elseif (strcmp(Run_Seq{n,6}, 'Left'))
+
+                send_trigger(cfgEyelink, 'Left Shift');
+
+            end
+
         else
             vbl = Screen('Flip', window, vbl + (0.5 * ifi));
         end
@@ -480,7 +438,7 @@ for n = 1:Run_Num
     end
 
     % Set new noise seed value
-    seed = randi([1000,10000]);
+    seed = randi([1000,1000000]);
 
     % Disable alpha-blending for Noise
     Screen('BlendFunction', window, 'GL_ONE', 'GL_ZERO');
@@ -503,22 +461,23 @@ for n = 1:Run_Num
 
         if (presd && (ismember(keyCod,Keyboard.responseKeys))) % store response variables
 
+            send_trigger(cfgEyelink, 'Response');
             Response_Key_Time = firstPrsd(keyCod);  % exact time of button press
             Key = KbName(keyCod);  % which key was pressed
             Key = string(Key);
 
             old = '4$';
-            new = 'Right';
+            new = 'Left';
             Key = replace(Key,old,new);
             old = '6^';
-            new = 'Left';
+            new = 'Right';
             Key = replace(Key,old,new);
             old = '5%';
             new = 'Neutral';
             Key = replace(Key,old,new);
 
-            Run_Seq{n,13} = Response_Key_Time-Stim_Onset ;
-            Run_Seq{n,14} = Key ;
+            Run_Seq{n,12} = Response_Key_Time;
+            Run_Seq{n,13} = Key ;
             Run_Seq{n,2} = 1; % 1: Done
 
             noResp = 0;
@@ -528,6 +487,7 @@ for n = 1:Run_Num
 
             warning('Experiment Aborted!')
             Abortion_Pauses(n,1) = Abortion_Pauses(n,1) + 1;
+            send_trigger(cfgEyelink, 'Pause');
 
             DrawFormattedText(window, 'Press C To Confirm :)', 'center', 'center',[1 1 1]);
             Screen('Flip',window);
@@ -537,8 +497,8 @@ for n = 1:Run_Num
 
                 Abortion = 1;
                 Run_Seq{n,2} = 4; % 4: Abortion
-                Run_Seq{n,13} = NaN;
-                Run_Seq{n,14} = 'None' ;
+                Run_Seq{n,12} = NaN;
+                Run_Seq{n,13} = 'None' ;
 
                 noResp = 0;
                 break;
@@ -547,6 +507,8 @@ for n = 1:Run_Num
 
             % -----------------------------------------
             % Repeating Trial
+
+            send_trigger(cfgEyelink, 'Repeating Trial');
 
             % ITI
 
@@ -575,9 +537,21 @@ for n = 1:Run_Num
                 Screen('DrawLines', window, Line_Coords, Line_Thickness, [1 1 1], Line_Center, 2);
 
                 if (frame == 1)
+
                     Stim_Onset = Screen('Flip',window); % swaps backbuffer to frontbuffer
                     vbl = Stim_Onset;
                     KbQueueFlush; % Flushes Buffer
+
+                    if (strcmp(Run_Seq{n,6}, 'Right'))
+
+                        send_trigger(cfgEyelink, 'Right Shift');
+
+                    elseif (strcmp(Run_Seq{n,6}, 'Left'))
+
+                        send_trigger(cfgEyelink, 'Left Shift');
+
+                    end
+
                 else
                     vbl = Screen('Flip', window, vbl + (0.5 * ifi));
                 end
@@ -585,13 +559,14 @@ for n = 1:Run_Num
             end
 
             % Set new noise seed value
-            seed = randi([1000,10000]);
+            seed = randi([1000,1000000]);
 
             % Disable alpha-blending for Noise
             Screen('BlendFunction', window, 'GL_ONE', 'GL_ZERO');
 
             % Noise
-            Screen('DrawTexture', window, Noise_Id, [], [], [], [], [], [], [], [], [Noise_Contrast, seed, 0, 0]);
+            Screen('DrawTexture', window, Noise_Id, [], [], [], [], [], [], ...
+                [], [], [Noise_Contrast, seed, 0, 0]);
 
             % Set up alpha-blending (Global)
             Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
@@ -603,8 +578,8 @@ for n = 1:Run_Num
         elseif ((GetSecs - Stim_Offset) > Response_Timeout)  % Stop listening
 
             Run_Seq{n,2} = 3; % 3: No Answer
-            Run_Seq{n,13} = NaN;
-            Run_Seq{n,14} = 'None' ;
+            Run_Seq{n,12} = NaN;
+            Run_Seq{n,13} = 'None' ;
 
             noResp = 0;
             break;
@@ -613,11 +588,70 @@ for n = 1:Run_Num
 
     end
 
-    Run_Seq{n,10} = Trial_Onset;
-    Run_Seq{n,11} = Stim_Onset;
-    Run_Seq{n,12} = Stim_Offset;
+    Run_Seq{n,9} = Trial_Onset;
+    Run_Seq{n,10} = Stim_Onset;
+    Run_Seq{n,11} = Stim_Offset;
+
+    % Staircase Processing -------------------------------
+
+    for i = 1:size(Staircase_Processing,1)
+
+        if ((Staircase_Processing{i,1} == Run_Seq{n,5}) && ...
+                (strcmp(Staircase_Processing{i,2}, Run_Seq{n,6})))
+
+            if(strcmp(Run_Seq{n,4}, 'Longer'))
+
+                if(strcmp(Run_Seq{n,6}, Run_Seq{n,13}))
+
+                    Staircase_Processing{i,3} = Staircase_Processing{i,3} +1;
+
+                else
+
+                    Staircase_Processing{i,3} = 0;
+
+                end
+
+            elseif(strcmp(Run_Seq{n,4}, 'Shorter'))
+
+                if(((strcmp(Run_Seq{n,6}, 'Right')) && (strcmp(Run_Seq{n,13}, 'Left'))) || ...
+                        ((strcmp(Run_Seq{n,6}, 'Left')) && (strcmp(Run_Seq{n,13}, 'Right'))))
+
+                    Staircase_Processing{i,3} = Staircase_Processing{i,3} +1;
+
+                else
+
+                    Staircase_Processing{i,3} = 0;
+
+                end
+
+            end
+
+            if (Staircase_Processing{i,3} == 2)
+
+                Staircase_Processing{i,4} = 0.8 * Staircase_Processing{i,4};
+                Staircase_Processing{i,3} = 0;
+
+            elseif(Staircase_Processing{i,3} == 0)
+
+                Staircase_Processing{i,4} = 1.25 * Staircase_Processing{i,4};
+
+                if(Staircase_Processing{i,4}> Initial_Shift_Size)
+
+                    Staircase_Processing{i,4} = Initial_Shift_Size;
+
+                end
+
+            end
+
+        end
+
+    end
+
+    % ----------------------------------------------------
 
 end
+
+Task_Offset = send_trigger(cfgEyelink, 'End of Experiment');
 
 DrawFormattedText(window, 'Press Anykey To Exit :)', 'center', 'center',[1 1 1]);
 
@@ -633,14 +667,39 @@ Screen('CloseAll'); % Closes Screen
 % Clear the screen
 sca;
 
-% ------------------------------------------------------------------------
+%% saving and cleaning up
 
-Output_table = cell2table(Run_Seq,"VariableNames",["ID", "State", ...
-    "Block Number", "Block Question", "Straircase Step", "Line Lenght", ...
-    "Shift Direction", "Shift Size", "ITI", "Trial_Onset", "Stim_Onset", ...
-    "Stim_Offset", "RT", "Answer"]);
+cfgOutput.Output_table = cell2table(Run_Seq,"VariableNames",["ID", "State", ...
+    "Block_Number", "Block_Question", "Line_Lenght", "Shift_Direction", ...
+    "Shift_Size", "ITI", "Trial_Onset", "Stim_Onset", ...
+    "Stim_Offset", "Response Time", "Answer"]);
 
-writetable(Output_table,strcat('Data/Subject_', Output_Name,'.csv'));
-save(strcat('Data/Subject_', Output_Name));
+% check if the logfile is being overwritten
+if exist([cfgFile.subDir, cfgFile.BIDSname, cfgFile.logFile], 'file') > 0
+    warning('log file will be overwritten!');
+    cont = input('Do you want to continue? (y/n) ','s');
+    while true
+        if cont == 'y'
+            break
+        elseif cont == 'n'
+            error('The experiment aborted by operator.')
+        end
+    end
+end
+
+try
+    save([cfgFile.subDir, cfgFile.BIDSname, cfgFile.logFile])
+    writetable(cfgOutput.Output_table,[cfgFile.subDir, cfgFile.BIDSname, cfgFile.csvFile]);
+catch
+    warning('Saving the log files failed.');
+end
+
+try
+    if cfgEyelink.on
+        el_stop(cfgFile)
+    end
+catch
+    warning('Stopping the Eyelink failed');
+end
 
 Priority(0);
