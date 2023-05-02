@@ -48,15 +48,15 @@ KbName('UnifyKeyNames');
 Keyboard.quitKey = KbName('ESCAPE');
 Keyboard.confirmKey = KbName('c');
 
-Keyboard.CCWkey = KbName('LeftShift'); % CCW -45 ?
-Keyboard.CWkey = KbName('RightShifr'); % CW +45
+Keyboard.CCWkey = KbName('LeftShift'); % CCW -45
+Keyboard.CWkey = KbName('RightShift'); % CW +45
 
 % ------------------------------------------------------------------------
 % settings
 
 prompt = {'Subject ID:', 'Session', 'Task', 'Run', 'Eyetracker? y/n', 'Skip sync test? y/n'};
 dlgtitle = 'Details';
-defaults = {'','01','Gabor','01','y','n'}; % you can put in default responses
+defaults = {'','01','Orientation_Detection','01','n','n'}; % you can put in default responses
 opts.Interpreter = 'tex';
 dims = [1, 40; 1, 40; 1, 40; 1, 40; 1, 40; 1, 40];
 ansr = inputdlg(prompt, 'Info',dims,defaults,opts); % opens dialog
@@ -65,9 +65,21 @@ cfgExp.answer = cell2struct(ansr, {'sub','ses','task','run','eyetracker','skipSy
 if strcmp(cfgExp.answer.eyetracker,'y'); cfgEyelink.on = 1; else, cfgEyelink.on = 0; end
 if strcmp(cfgExp.answer.skipSync,'y'); skipSync = 1; else, skipSync = 0; end
 
+if(skipSync)
+
+    Screen('Preference', 'SkipSyncTests', 1);
+
+else
+
+    Screen('Preference', 'SkipSyncTests', 0);
+
+end
+
 cfgFile = create_file_directory(cfgExp);  % create file directories
 
 SFs = num2cell(SFs);
+Repetitions = 1:Repetition_Num;
+% Necessary For The Proper Working Of BalanceFactors()
 Repetitions = num2cell(Repetitions);
 
 States = zeros(Run_Num,1);
@@ -419,10 +431,10 @@ for n = 1:Run_Num
             Key = KbName(keyCod);  % which key was pressed
             Key = string(Key);
 
-            old = '1!';
+            old = 'LeftShift';
             new = 'CCW -45';
             Key = replace(Key,old,new);
-            old = '9(';
+            old = 'RightShift';
             new = 'CW +45';
             Key = replace(Key,old,new);
 
@@ -443,7 +455,7 @@ for n = 1:Run_Num
             Screen('Flip',window);
 
             [~, abrtPrsd] = KbStrokeWait;
-            if abrtPrsd(Keyboard.confirmKey)  % no keys for not exiting
+            if abrtPrsd(Keyboard.confirmKey)  % Press Any Other Key To Resume
 
                 Abortion = 1;
                 Run_Seq{n,2} = 4; % 4: Abortion
@@ -626,7 +638,7 @@ catch
 end
 
 try
-    if cfgEyelink
+    if cfgEyelink.on
         el_stop(cfgFile)
     end
 catch
