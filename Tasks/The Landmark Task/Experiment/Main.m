@@ -36,16 +36,16 @@ KbName('UnifyKeyNames');
 Keyboard.quitKey = KbName('ESCAPE');
 Keyboard.confirmKey = KbName('c');
 
-Keyboard.Rightkey = KbName('6^'); % Right
-Keyboard.Leftkey = KbName('4$'); % Left
-Keyboard.Neutralkey = KbName('5%'); % Neutral
+Keyboard.Rightkey = KbName('RightArrow'); % Right
+Keyboard.Leftkey = KbName('LeftArrow'); % Left
+Keyboard.Neutralkey = KbName('DownArrow'); % Neutral
 
 Noise_Contrast = 0.5;
 
 Block_Num = 2 * Block_Repetition_Num;
 Run_Num = Block_Run_Num * Block_Num;
 
-Small_Break_Interval = Run_Num / Block_Num; % 1 Min
+Small_Break_Interval = Run_Num / Block_Num; % 2 Min
 Big_Break_Interval = Run_Num + 1; % 10 Min (Inactive)
 
 % ------------------------------------------------------------------------
@@ -273,23 +273,27 @@ for n = 1:Run_Num
     if ((ceil(n / Big_Break_Interval) ~= ceil((n-1) / Big_Break_Interval)) && n ~= 1)
 
         DrawFormattedText(window, 'Take a break For 10 Min :)', 'center', 'center',[1 1 1]);
-        vbl=Screen('Flip',window); % swaps backbuffer to frontbuffer
+        Screen('Flip',window); % swaps backbuffer to frontbuffer
 
         DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
 
-        Screen('Flip',window,vbl + 600);
+        WaitSecs(600);
+
+        Screen('Flip',window);
 
         % Wait for a key press
         KbStrokeWait;
 
     elseif ((ceil(n / Small_Break_Interval) ~= ceil((n-1) / Small_Break_Interval)) && n ~= 1)
 
-        DrawFormattedText(window, 'Take a break For 1 Min :)', 'center', 'center',[1 1 1]);
-        vbl=Screen('Flip',window); % swaps backbuffer to frontbuffer
+        DrawFormattedText(window, 'Take a break For 2 Min :)', 'center', 'center',[1 1 1]);
+        Screen('Flip',window); % swaps backbuffer to frontbuffer
 
         DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
 
-        Screen('Flip',window,vbl + 60);
+        WaitSecs(120);
+
+        Screen('Flip',window);
 
         % Wait for a key press
         KbStrokeWait;
@@ -312,11 +316,13 @@ for n = 1:Run_Num
 
         end
 
-        vbl=Screen('Flip',window); % swaps backbuffer to frontbuffer
+        Screen('Flip',window); % swaps backbuffer to frontbuffer
 
         DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
 
-        Screen('Flip',window,vbl + 4);
+        WaitSecs(4);
+
+        Screen('Flip',window);
 
         % Wait for a key press
         KbStrokeWait;
@@ -343,11 +349,13 @@ for n = 1:Run_Num
 
         end
 
-        vbl=Screen('Flip',window); % swaps backbuffer to frontbuffer
+        Screen('Flip',window); % swaps backbuffer to frontbuffer
 
         DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
 
-        Screen('Flip',window,vbl + 4);
+        WaitSecs(4);
+
+        Screen('Flip',window);
 
         % Wait for a key press
         KbStrokeWait;
@@ -377,6 +385,7 @@ for n = 1:Run_Num
 
     if (strcmp(Run_Seq{n,6}, 'Right'))
 
+        % Shift to Right: Right is Longer
         Line_Center = [xCenter + angle2pix(cfgScreen,Run_Seq{n,7}), yCenter];
 
     elseif (strcmp(Run_Seq{n,6}, 'Left'))
@@ -466,15 +475,29 @@ for n = 1:Run_Num
             Key = KbName(keyCod);  % which key was pressed
             Key = string(Key);
 
-            old = '4$';
-            new = 'Left';
-            Key = replace(Key,old,new);
-            old = '6^';
+            old = 'RightArrow';
             new = 'Right';
             Key = replace(Key,old,new);
-            old = '5%';
+            old = 'LeftArrow';
+            new = 'Left';
+            Key = replace(Key,old,new);
+            old = 'DownArrow';
             new = 'Neutral';
             Key = replace(Key,old,new);
+
+            if (strcmp(Key, 'Right'))
+
+                send_trigger(cfgEyelink, 'Right Response');
+
+            elseif (strcmp(Key, 'Left'))
+
+                send_trigger(cfgEyelink, 'Left Response');
+
+            elseif (strcmp(Key, 'Neutral'))
+
+                send_trigger(cfgEyelink, 'Neutral Response');
+
+            end
 
             Run_Seq{n,12} = Response_Key_Time;
             Run_Seq{n,13} = Key ;
