@@ -7,7 +7,7 @@ SFs = 5:0.25:11;
 Attention_Directions = {'Right', 'Left'};
 Target_Orientions = {-45, 45};
 Distractor_Orientions = {-45, 45};
-Repetition_Num = 25;
+Repetition_Num = 13;
 
 SF_Num = size(SFs,2);
 Attention_Direction_Num = size(Attention_Directions,2);
@@ -451,7 +451,7 @@ for n = 1:Run_Num
             Abortion_Pauses(n,1) = Abortion_Pauses(n,1) + 1;
             send_trigger(cfgEyelink, 'Abortion Pause');
 
-            DrawFormattedText(window, 'Press C to confirm :)', 'center', 'center',[1 1 1]);
+            DrawFormattedText(window, 'Press C to confirm exit or any other key to continue', 'center', 'center',[1 1 1]);
             Screen('Flip',window);
 
             [~, abrtPrsd] = KbStrokeWait;

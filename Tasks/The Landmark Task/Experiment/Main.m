@@ -3,9 +3,9 @@ sca;
 close all;
 clear;
 
-Line_Lenghts = 20:1:23;
+Line_Lenghts = 20:23;
 Shift_Directions = {'Right', 'Left'};
-Block_Run_Num = 80;
+Block_Run_Num = 240;
 Block_Repetition_Num = 2; % Number of Pair Shorter/Longer Blocks
 
 % Screen properties
@@ -512,7 +512,7 @@ for n = 1:Run_Num
             Abortion_Pauses(n,1) = Abortion_Pauses(n,1) + 1;
             send_trigger(cfgEyelink, 'Pause');
 
-            DrawFormattedText(window, 'Press C To Confirm :)', 'center', 'center',[1 1 1]);
+            DrawFormattedText(window, 'Press C to confirm exit or any other key to continue', 'center', 'center',[1 1 1]);
             Screen('Flip',window);
 
             [~, abrtPrsd] = KbStrokeWait;
