@@ -17,8 +17,14 @@ Distractor_Oriention_Num = size(Target_Orientions,2);
 Run_Num = SF_Num * Attention_Direction_Num * Target_Oriention_Num * ...
     Distractor_Oriention_Num * Repetition_Num;
 
-Small_Break_Interval = Run_Num / 3; % 2 Min
-Big_Break_Interval = Run_Num + 1; % 10 Min (Inactive)
+
+number_of_short_breaks = 12;  % break every 160 trials ~ 10 min
+number_of_big_breaks = 3;
+
+Small_Break_Interval = round(Run_Num / number_of_short_breaks); % 1 Min
+Big_Break_Interval = round(Run_Num / number_of_big_breaks); % 5 Min
+
+
 
 % Screen properties
 PsychDefaultSetup(2);
@@ -275,24 +281,24 @@ for n = 1:Run_Num
 
     if ((ceil(n / Big_Break_Interval) ~= ceil((n-1) / Big_Break_Interval)) && n ~= 1)
 
-        DrawFormattedText(window, 'Break For 10 Min :)', 'center', 'center',[1 1 1]);
+        DrawFormattedText(window, 'Break For 5 Min :)', 'center', 'center',[1 1 1]);
         vbl=Screen('Flip',window); % swaps backbuffer to frontbuffer
 
         DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
 
-        Screen('Flip',window,vbl + 600);
+        Screen('Flip',window,vbl + 300);
 
         % Wait for a key press
         KbStrokeWait;
 
     elseif ((ceil(n / Small_Break_Interval) ~= ceil((n-1) / Small_Break_Interval)) && n ~= 1)
 
-        DrawFormattedText(window, 'Break For 2 Min :)', 'center', 'center',[1 1 1]);
+        DrawFormattedText(window, 'Break For 1 Min :)', 'center', 'center',[1 1 1]);
         vbl=Screen('Flip',window); % swaps backbuffer to frontbuffer
 
         DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
 
-        Screen('Flip',window,vbl + 120);
+        Screen('Flip',window,vbl + 60);
 
         % Wait for a key press
         KbStrokeWait;
@@ -381,7 +387,6 @@ for n = 1:Run_Num
     end
 
     % Stim (Gabors)
-
     for frame = 1:Stim_Frames
 
         % Draw the fixation cross
@@ -431,15 +436,15 @@ for n = 1:Run_Num
             Key = KbName(keyCod);  % which key was pressed
             Key = string(Key);
 
-            old = 'LeftShift';
-            new = 'CCW -45';
-            Key = replace(Key,old,new);
-            old = 'RightShift';
-            new = 'CW +45';
-            Key = replace(Key,old,new);
+%             old = 'LeftShift';
+%             new = '-45';
+%             Key = replace(Key,old,new);
+%             old = 'RightShift';
+%             new = '45';
+%             Key = replace(Key,old,new);
 
             Run_Seq{n,15} = Response_Key_Time;
-            Run_Seq{n,16} = Key ;
+            Run_Seq{n,16} = Key;
             Run_Seq{n,2} = 1; % 1: Done
 
             noResp = 0;

@@ -44,9 +44,11 @@ Noise_Contrast = 0.5;
 
 Block_Num = 2 * Block_Repetition_Num;
 Run_Num = Block_Run_Num * Block_Num;
+number_of_short_breaks = 6;  % break every 160 trials ~ 10 min
+number_of_big_breaks = 2;
 
-Small_Break_Interval = Run_Num / Block_Num; % 2 Min
-Big_Break_Interval = Run_Num + 1; % 10 Min (Inactive)
+Small_Break_Interval = Run_Num / number_of_short_breaks; % 2 Min
+Big_Break_Interval = Run_Num / number_of_big_breaks; % 5 Min 
 
 % ------------------------------------------------------------------------
 % settings
@@ -272,12 +274,12 @@ for n = 1:Run_Num
 
     if ((ceil(n / Big_Break_Interval) ~= ceil((n-1) / Big_Break_Interval)) && n ~= 1)
 
-        DrawFormattedText(window, 'Take a break For 10 Min :)', 'center', 'center',[1 1 1]);
+        DrawFormattedText(window, 'Take a break For 5 Min :)', 'center', 'center',[1 1 1]);
         Screen('Flip',window); % swaps backbuffer to frontbuffer
 
         DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
 
-        WaitSecs(600);
+        WaitSecs(300);
 
         Screen('Flip',window);
 
@@ -286,12 +288,12 @@ for n = 1:Run_Num
 
     elseif ((ceil(n / Small_Break_Interval) ~= ceil((n-1) / Small_Break_Interval)) && n ~= 1)
 
-        DrawFormattedText(window, 'Take a break For 2 Min :)', 'center', 'center',[1 1 1]);
+        DrawFormattedText(window, 'Take a break For 1 Min :)', 'center', 'center',[1 1 1]);
         Screen('Flip',window); % swaps backbuffer to frontbuffer
 
         DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
 
-        WaitSecs(120);
+        WaitSecs(60);
 
         Screen('Flip',window);
 
@@ -475,25 +477,25 @@ for n = 1:Run_Num
             Key = KbName(keyCod);  % which key was pressed
             Key = string(Key);
 
-            old = 'RightArrow';
-            new = 'Right';
-            Key = replace(Key,old,new);
-            old = 'LeftArrow';
-            new = 'Left';
-            Key = replace(Key,old,new);
-            old = 'DownArrow';
-            new = 'Neutral';
-            Key = replace(Key,old,new);
+%             old = 'RightArrow';
+%             new = 'Right';
+%             Key = replace(Key,old,new);
+%             old = 'LeftArrow';
+%             new = 'Left';
+%             Key = replace(Key,old,new);
+%             old = 'DownArrow';
+%             new = 'Neutral';
+%             Key = replace(Key,old,new);
 
-            if (strcmp(Key, 'Right'))
+            if (strcmp(Key, 'RightArrow'))
 
                 send_trigger(cfgEyelink, 'Right Response');
 
-            elseif (strcmp(Key, 'Left'))
+            elseif (strcmp(Key, 'LeftArrow'))
 
                 send_trigger(cfgEyelink, 'Left Response');
 
-            elseif (strcmp(Key, 'Neutral'))
+            elseif (strcmp(Key, 'DownArrow'))
 
                 send_trigger(cfgEyelink, 'Neutral Response');
 
