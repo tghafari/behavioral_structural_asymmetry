@@ -274,17 +274,24 @@ for n = 1:Run_Num
 
     if ((ceil(n / Big_Break_Interval) ~= ceil((n-1) / Big_Break_Interval)) && n ~= 1)
 
-        DrawFormattedText(window, 'Take a break For 5 Min :)', 'center', 'center',[1 1 1]);
+        DrawFormattedText(window, 'Take a break For 2.5 Min :)', 'center', 'center',[1 1 1]);
         Screen('Flip',window); % swaps backbuffer to frontbuffer
 
         DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
 
-        WaitSecs(300);
+        WaitSecs(150);
 
         Screen('Flip',window);
 
         % Wait for a key press
         KbStrokeWait;
+
+        if cfgEyelink.on
+        % Calibrate or drift correction of the eye tracker
+        EyelinkDoTrackerSetup(cfgEyelink.defaults);
+        % Restarting the recording
+        Eyelink('StartRecording');
+        end
 
     elseif ((ceil(n / Small_Break_Interval) ~= ceil((n-1) / Small_Break_Interval)) && n ~= 1)
 
