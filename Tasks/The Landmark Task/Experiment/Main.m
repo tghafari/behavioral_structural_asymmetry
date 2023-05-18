@@ -44,18 +44,18 @@ Noise_Contrast = 0.5;
 
 Block_Num = 2 * Block_Repetition_Num;
 Run_Num = Block_Run_Num * Block_Num;
-number_of_short_breaks = 6;  % break every 160 trials ~ 10 min
-number_of_big_breaks = 2;
+number_of_short_breaks = 5;  % Break every 160 trials ~ 10 min
+number_of_big_breaks = 1;
 
-Small_Break_Interval = Run_Num / number_of_short_breaks; % 2 Min
-Big_Break_Interval = Run_Num / number_of_big_breaks; % 5 Min 
+Small_Break_Interval = Run_Num / (number_of_short_breaks +1); % 1 Min
+Big_Break_Interval = Run_Num / (number_of_big_breaks +1); % 2.5 Min
 
 % ------------------------------------------------------------------------
 % settings
 
 prompt = {'Subject ID:', 'Session', 'Task', 'Run', 'Eyetracker? y/n', 'Skip sync test? y/n', 'First Block Question?'};
 dlgtitle = 'Details';
-defaults = {'','01','Landmark','01','n','n', 'Shorter'}; % you can put in default responses
+defaults = {'','01','Landmark','01','n','n', 'Longer'}; % you can put in default responses
 opts.Interpreter = 'tex';
 dims = [1, 40; 1, 40; 1, 40; 1, 40; 1, 40; 1, 40; 1, 40];
 ansr = inputdlg(prompt, 'Info',dims,defaults,opts); % opens dialog
@@ -146,13 +146,13 @@ ITIs = num2cell(ITIs);
 
 Run_Seq = {IDs, States, Run_Blocks, Run_Block_Questions, Run_Factors, ...
     num2cell(zeros(Run_Num,1)), ITIs, num2cell(zeros(Run_Num,4)), ...
-    cellstr(strings(Run_Num,1))};
+    cellstr(strings(Run_Num,2))};
 
 Run_Seq = horzcat(Run_Seq{:});
 
 % Run_Seq : ID, State, Block Number, Block Question, Line Lenght,
 % Shift Direction, Shift Size, ITI, Trial_Onset,
-% Stim_Onset, Stim_Offset, Response Time, Answer
+% Stim_Onset, Stim_Offset, Response Time, Answer, Raw Answer
 
 % State :
 %
@@ -287,10 +287,10 @@ for n = 1:Run_Num
         KbStrokeWait;
 
         if cfgEyelink.on
-        % Calibrate or drift correction of the eye tracker
-        EyelinkDoTrackerSetup(cfgEyelink.defaults);
-        % Restarting the recording
-        Eyelink('StartRecording');
+            % Calibrate or drift correction of the eye tracker
+            EyelinkDoTrackerSetup(cfgEyelink.defaults);
+            % Restarting the recording
+            Eyelink('StartRecording');
         end
 
     elseif ((ceil(n / Small_Break_Interval) ~= ceil((n-1) / Small_Break_Interval)) && n ~= 1)
@@ -484,25 +484,27 @@ for n = 1:Run_Num
             Key = KbName(keyCod);  % which key was pressed
             Key = string(Key);
 
-%             old = 'RightArrow';
-%             new = 'Right';
-%             Key = replace(Key,old,new);
-%             old = 'LeftArrow';
-%             new = 'Left';
-%             Key = replace(Key,old,new);
-%             old = 'DownArrow';
-%             new = 'Neutral';
-%             Key = replace(Key,old,new);
+            Run_Seq{n,14} = Key ; % Raw Response
 
-            if (strcmp(Key, 'RightArrow'))
+            old = 'RightArrow';
+            new = 'Right';
+            Key = replace(Key,old,new);
+            old = 'LeftArrow';
+            new = 'Left';
+            Key = replace(Key,old,new);
+            old = 'DownArrow';
+            new = 'Neutral';
+            Key = replace(Key,old,new);
+
+            if (strcmp(Key, 'Right'))
 
                 send_trigger(cfgEyelink, 'Right Response');
 
-            elseif (strcmp(Key, 'LeftArrow'))
+            elseif (strcmp(Key, 'Left'))
 
                 send_trigger(cfgEyelink, 'Left Response');
 
-            elseif (strcmp(Key, 'DownArrow'))
+            elseif (strcmp(Key, 'Neutral'))
 
                 send_trigger(cfgEyelink, 'Neutral Response');
 
@@ -521,7 +523,8 @@ for n = 1:Run_Num
             Abortion_Pauses(n,1) = Abortion_Pauses(n,1) + 1;
             send_trigger(cfgEyelink, 'Pause');
 
-            DrawFormattedText(window, 'Press C to confirm exit or any other key to continue', 'center', 'center',[1 1 1]);
+            DrawFormattedText(window, 'Press C to confirm exit or any other key to continue :)', ...
+                'center', 'center',[1 1 1]);
             Screen('Flip',window);
 
             [~, abrtPrsd] = KbStrokeWait;
@@ -704,7 +707,7 @@ sca;
 cfgOutput.Output_table = cell2table(Run_Seq,"VariableNames",["ID", "State", ...
     "Block_Number", "Block_Question", "Line_Lenght", "Shift_Direction", ...
     "Shift_Size", "ITI", "Trial_Onset", "Stim_Onset", ...
-    "Stim_Offset", "Response Time", "Answer"]);
+    "Stim_Offset", "Response_Time", "Answer", "Raw_Answer"]);
 
 % check if the logfile is being overwritten
 if exist([cfgFile.subDir, cfgFile.BIDSname, cfgFile.logFile], 'file') > 0
