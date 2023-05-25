@@ -3,13 +3,13 @@ sca;
 close all;
 clear;
 
-Contrasts_log = -2:0.05:-0.8;
+Contrasts_log = -2.5:0.1:0.3;
 Contrasts = 10 .^ Contrasts_log;
 Attention_Directions = {'Right', 'Left'};
 Target_Orientions = {-45, 45};
 Distractor_Orientions = {-45, 45};
 Repetition_Num = 10;
-SF =9;
+SF = 9;
 
 Contrast_Num = size(Contrasts,2);
 Attention_Direction_Num = size(Attention_Directions,2);
@@ -19,8 +19,8 @@ Distractor_Oriention_Num = size(Target_Orientions,2);
 Run_Num = Contrast_Num * Attention_Direction_Num * Target_Oriention_Num * ...
     Distractor_Oriention_Num * Repetition_Num;
 
-number_of_short_breaks = 5;
-number_of_big_breaks = 1;
+number_of_short_breaks = 13;
+number_of_big_breaks = 3;
 
 Small_Break_Interval = Run_Num / (number_of_short_breaks +1); % 1 Min
 Big_Break_Interval = Run_Num / (number_of_big_breaks +1); % 2.5 Min
@@ -41,7 +41,7 @@ black = BlackIndex(cfgScreen.scrNum);
 grey = (white - black) / 2;
 cfgScreen.backgroundColor = grey;
 
-Periphery_Pix = angle2pix(cfgScreen,7.5);
+Periphery_Pix = angle2pix(cfgScreen,9);
 Gabor_Size = angle2pix(cfgScreen,5.6);
 Cue_Hight = angle2pix(cfgScreen,1.4);
 
@@ -288,6 +288,10 @@ for n = 1:Run_Num
 
         Screen('Flip',window,vbl + 150);
 
+        if cfgEyelink.on
+            el_drift_check(cfgEyelink, cfgScreen);
+        end
+        
         % Wait for a key press
         KbStrokeWait;
 
