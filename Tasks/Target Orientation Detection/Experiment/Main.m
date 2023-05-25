@@ -3,28 +3,27 @@ sca;
 close all;
 clear;
 
-SFs = 5:0.25:11;
+Contrasts_log = -2:0.05:-0.8;
+Contrasts = 10 .^ Contrasts_log;
 Attention_Directions = {'Right', 'Left'};
 Target_Orientions = {-45, 45};
 Distractor_Orientions = {-45, 45};
-Repetition_Num = 13;
+Repetition_Num = 10;
+SF =9;
 
-SF_Num = size(SFs,2);
+Contrast_Num = size(Contrasts,2);
 Attention_Direction_Num = size(Attention_Directions,2);
 Target_Oriention_Num = size(Target_Orientions,2);
 Distractor_Oriention_Num = size(Target_Orientions,2);
 
-Run_Num = SF_Num * Attention_Direction_Num * Target_Oriention_Num * ...
+Run_Num = Contrast_Num * Attention_Direction_Num * Target_Oriention_Num * ...
     Distractor_Oriention_Num * Repetition_Num;
 
+number_of_short_breaks = 5;
+number_of_big_breaks = 1;
 
-number_of_short_breaks = 12;  % break every 160 trials ~ 10 min
-number_of_big_breaks = 3;
-
-Small_Break_Interval = round(Run_Num / number_of_short_breaks); % 1 Min
-Big_Break_Interval = round(Run_Num / number_of_big_breaks); % 5 Min
-
-
+Small_Break_Interval = Run_Num / (number_of_short_breaks +1); % 1 Min
+Big_Break_Interval = Run_Num / (number_of_big_breaks +1); % 2.5 Min
 
 % Screen properties
 PsychDefaultSetup(2);
@@ -33,7 +32,7 @@ cfgScreen.scrNum = max(Screen('Screens'));
 
 [cfgScreen.dispSize.width, cfgScreen.dispSize.height]...
     = Screen('DisplaySize', cfgScreen.scrNum);  % get the physical size of the screen in millimeters
-cfgScreen.distance = 60;  % set the distance from participant to the monitor in cm
+cfgScreen.distance = 50;  % set the distance from participant to the monitor in cm
 cfgScreen.resolution = Screen('Resolution', cfgScreen.scrNum);  % get/set the on screen resolution
 cfgScreen.fullScrn = [0, 0, cfgScreen.resolution.width, cfgScreen.resolution.height];  % size of full screen in pixels
 
@@ -54,8 +53,8 @@ KbName('UnifyKeyNames');
 Keyboard.quitKey = KbName('ESCAPE');
 Keyboard.confirmKey = KbName('c');
 
-Keyboard.CCWkey = KbName('LeftShift'); % CCW -45
-Keyboard.CWkey = KbName('RightShift'); % CW +45
+Keyboard.CCWkey = KbName('RightShift'); % CCW +45
+Keyboard.CWkey = KbName('LeftShift'); % CW -45
 
 % ------------------------------------------------------------------------
 % settings
@@ -83,7 +82,7 @@ end
 
 cfgFile = create_file_directory(cfgExp);  % create file directories
 
-SFs = num2cell(SFs);
+Contrasts = num2cell(Contrasts);
 Repetitions = 1:Repetition_Num;
 % Necessary For The Proper Working Of BalanceFactors()
 Repetitions = num2cell(Repetitions);
@@ -91,10 +90,10 @@ Repetitions = num2cell(Repetitions);
 States = zeros(Run_Num,1);
 States = num2cell(States);
 
-[Run_SFs, Run_Attention_Directions, Run_Target_Orientions, Run_Distractor_Orientions, Run_Repetitions] = ...
-    BalanceFactors(1, 1, SFs, Attention_Directions, Target_Orientions, Distractor_Orientions, Repetitions);
+[Run_Contrasts, Run_Attention_Directions, Run_Target_Orientions, Run_Distractor_Orientions, Run_Repetitions] = ...
+    BalanceFactors(1, 1, Contrasts, Attention_Directions, Target_Orientions, Distractor_Orientions, Repetitions);
 
-Run_Factors = {Run_SFs, Run_Attention_Directions, Run_Target_Orientions, Run_Distractor_Orientions, Run_Repetitions};
+Run_Factors = {Run_Contrasts, Run_Attention_Directions, Run_Target_Orientions, Run_Distractor_Orientions, Run_Repetitions};
 Run_Factors = horzcat(Run_Factors{:});
 
 ITIs = zeros(Run_Num,1);
@@ -130,7 +129,7 @@ IDs = num2cell(IDs);
 Run_Seq = {IDs, States, Run_Factors, ITIs, ISIs, num2cell(zeros(Run_Num,5)), cellstr(strings(Run_Num,1))};
 Run_Seq = horzcat(Run_Seq{:});
 
-% Run_Seq : ID, State, SF, Attention Direction, Target Oriention,
+% Run_Seq : ID, State, Contrast, Attention Direction, Target Oriention,
 % Distractor Oriention, Repetition, ITI, ISI, Trial_Onset, Cue_Onset,
 % Cue_Offset, Stim_Onset, Stim_Offset, Response Time, Answer
 
@@ -171,7 +170,6 @@ Run_Seq_Gabors = cell(Run_Num,1);
 sigma = Gabor_Size / 7;
 
 % Parameters
-contrast = 1;
 aspectRatio = 1;
 phase = 0;
 
@@ -185,11 +183,13 @@ preContrastMultiplier = 0.5;
 gabortex = CreateProceduralGabor(window, Gabor_Size, Gabor_Size, [],...
     backgroundOffset, disableNorm, preContrastMultiplier);
 
+% Spatial Frequency (Cycles Per Pixel)
+numCycles = SF;
+freq = numCycles / Gabor_Size;
+
 for i = 1:Run_Num
 
-    % Spatial Frequency (Cycles Per Pixel)
-    numCycles = Run_Seq{i,3};
-    freq = numCycles / Gabor_Size;
+    contrast = Run_Seq{i,3};
 
     % Properties matrix.
     Run_Seq_Gabors{i,1} = [phase, freq, sigma, contrast, aspectRatio, 0, 0, 0];
@@ -281,12 +281,12 @@ for n = 1:Run_Num
 
     if ((ceil(n / Big_Break_Interval) ~= ceil((n-1) / Big_Break_Interval)) && n ~= 1)
 
-        DrawFormattedText(window, 'Break For 5 Min :)', 'center', 'center',[1 1 1]);
+        DrawFormattedText(window, 'Break For 2.5 Min :)', 'center', 'center',[1 1 1]);
         vbl=Screen('Flip',window); % swaps backbuffer to frontbuffer
 
         DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
 
-        Screen('Flip',window,vbl + 300);
+        Screen('Flip',window,vbl + 150);
 
         % Wait for a key press
         KbStrokeWait;
@@ -436,13 +436,6 @@ for n = 1:Run_Num
             Key = KbName(keyCod);  % which key was pressed
             Key = string(Key);
 
-%             old = 'LeftShift';
-%             new = '-45';
-%             Key = replace(Key,old,new);
-%             old = 'RightShift';
-%             new = '45';
-%             Key = replace(Key,old,new);
-
             Run_Seq{n,15} = Response_Key_Time;
             Run_Seq{n,16} = Key;
             Run_Seq{n,2} = 1; % 1: Done
@@ -540,7 +533,6 @@ for n = 1:Run_Num
             end
 
             % Stim (Gabors)
-
             for frame = 1:Stim_Frames
 
                 % Draw the fixation cross
@@ -617,7 +609,7 @@ sca;
 
 %% saving and cleaning up
 
-cfgOutput.Output_table = cell2table(Run_Seq,"VariableNames",["ID", "State", "SF", ...
+cfgOutput.Output_table = cell2table(Run_Seq,"VariableNames",["ID", "State", "Contrast", ...
     "Attention_Direction", "Target_Oriention", "Distractor_Oriention", ...
     "Repetition", "ITI", "ISI", "Trial_Onset", "Cue_Onset", ...
     "Cue_Offset", "Stim_Onset", "Stim_Offset", "Response_Time", "Answer"]);
