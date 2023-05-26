@@ -240,6 +240,15 @@ FixCross_allCoords = [FixCross_xCoords; FixCross_yCoords];
 % Set the line width for the fixation cross
 FixCross_lineWidthPix = 3;
 
+% Set the line width for the fixation circle
+FixCircle_lineWidthPix = 4;
+
+% Making a base Rect
+FixCircle_baseRect = [-FixCross_DimPix -FixCross_DimPix FixCross_DimPix FixCross_DimPix];
+
+% Center the rectangle on the centre of the screen
+FixCircle_centeredRect = CenterRectOnPoint(FixCircle_baseRect, xCenter, yCenter);
+
 DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
 
 % Flip to the screen
@@ -291,7 +300,7 @@ for n = 1:Run_Num
         if cfgEyelink.on
             el_drift_check(cfgEyelink, cfgScreen);
         end
-        
+
         % Wait for a key press
         KbStrokeWait;
 
@@ -395,6 +404,9 @@ for n = 1:Run_Num
 
         % Draw the fixation cross
         Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, black, [xCenter yCenter], 2);
+
+        % Draw the fixation circle
+        Screen('FrameOval', window, black, FixCircle_centeredRect, FixCircle_lineWidthPix);
 
         % Disable alpha-blending for Gabors
         Screen('BlendFunction', window, 'GL_ONE', 'GL_ZERO');
@@ -541,6 +553,9 @@ for n = 1:Run_Num
 
                 % Draw the fixation cross
                 Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, black, [xCenter yCenter], 2);
+
+                % Draw the fixation circle
+                Screen('FrameOval', window, black, FixCircle_centeredRect, FixCircle_lineWidthPix);
 
                 % Disable alpha-blending for Gabors
                 Screen('BlendFunction', window, 'GL_ONE', 'GL_ZERO');
