@@ -15,6 +15,30 @@ pd.set_option('display.max_rows', None, 'display.max_columns', None)
 
 Bias_list = []
 
+y_scale_guess = 0.5
+y_bias_guess = 0.5
+ppf = 0.75
+
+
+# Define Weibull functions:
+
+def weibull_min_cdf(x_log, shape, loc, scale, y_scale, y_bias):
+
+    y = weibull_min.cdf(x_log, shape, loc, scale)
+
+    # y_scaled = (y * y_scale) + y_bias
+    y_scaled = (y * y_scale_guess) + y_bias_guess
+
+    return y_scaled
+
+
+def weibull_min_ppf(ppf, shape, loc, scale, y_scale, y_bias):
+
+    # ppf_unscaled = (ppf - y_bias) / y_scale
+    ppf_unscaled = (ppf - y_bias_guess) / y_scale_guess
+
+    return weibull_min.ppf(ppf_unscaled, shape, loc, scale)
+
 
 # Reading file:
 
@@ -23,21 +47,23 @@ def Finalysis(file_name):
     global Files_Address
     Data = pd.read_csv('%s%s' % (Files_Address, file_name), header=0)
 
+    Data = Data[Data['State'] == 1]
+
     Contrasts = np.unique(Data['Contrast'])
-    Contrasts_Trials = np.shape(Data)[0] / np.shape(Contrasts)[0]
 
     # Results: Contrast, Right Correct Percent, Left Correct Percent, All Correct Percent
     Results = np.stack((Contrasts, np.zeros(np.shape(Contrasts)[0]),
                         np.zeros(np.shape(Contrasts)[0]),
                         np.zeros(np.shape(Contrasts)[0])), axis=1)
 
-    Data = Data[Data['State'] == 1]
-
     for Contrast in Contrasts:
 
         Contrast_Data = Data[Data['Contrast'] == Contrast]
 
+        Contrast_Trials_All = np.shape(Contrast_Data)[0]
+
         Contrast_Attention_Right = Contrast_Data[Contrast_Data['Attention_Direction'] == 'Right']
+        Contrast_Trials_Right = np.shape(Contrast_Attention_Right)[0]
 
         Contrast_Attention_Right_Corrects = Contrast_Attention_Right[((Contrast_Attention_Right['Answer'] == 'LeftShift') &
                                                                       (Contrast_Attention_Right['Target_Oriention'] == 45)) |
@@ -47,9 +73,10 @@ def Finalysis(file_name):
         Contrast_Attention_Right_Correct_Count = np.shape(
             Contrast_Attention_Right_Corrects)[0]
         Contrast_Attention_Right_Correct_Percent = Contrast_Attention_Right_Correct_Count / \
-            (Contrasts_Trials / 2)
+            Contrast_Trials_Right
 
         Contrast_Attention_Left = Contrast_Data[Contrast_Data['Attention_Direction'] == 'Left']
+        Contrast_Trials_Left = np.shape(Contrast_Attention_Left)[0]
 
         Contrast_Attention_Left_Corrects = Contrast_Attention_Left[((Contrast_Attention_Left['Answer'] == 'LeftShift') &
                                                                     (Contrast_Attention_Left['Target_Oriention'] == 45)) |
@@ -59,7 +86,7 @@ def Finalysis(file_name):
         Contrast_Attention_Left_Correct_Count = np.shape(
             Contrast_Attention_Left_Corrects)[0]
         Contrast_Attention_Left_Correct_Percent = Contrast_Attention_Left_Correct_Count / \
-            (Contrasts_Trials / 2)
+            Contrast_Trials_Left
 
         for i in range(np.shape(Results)[0]):
 
@@ -68,7 +95,7 @@ def Finalysis(file_name):
                 Results[i][1] = Contrast_Attention_Right_Correct_Percent
                 Results[i][2] = Contrast_Attention_Left_Correct_Percent
                 Results[i][3] = (Contrast_Attention_Right_Correct_Count +
-                                 Contrast_Attention_Left_Correct_Count) / Contrasts_Trials
+                                 Contrast_Attention_Left_Correct_Count) / Contrast_Trials_All
 
     Table = pd.DataFrame(data=Results, columns=[
                          "Contrast", "Right_Correct_Percent", "Left_Correct_Percent", "All_Correct_Percent"])
@@ -100,58 +127,66 @@ def save_fig(Table, file_name):
     plt.ylabel('% Answered Correct', fontsize='x-large', fontweight=1000)
 
     # Define axis starting and end points:
-    # plt.xlim(-6, 1)
+    # plt.xlim(-7, 1)
     # plt.ylim(0.45, 1)
 
     plt.xticks(np.linspace(-10, 3, 14))
-    plt.yticks([0.25, 0.5, 0.75, 1])
+    plt.yticks([0, 0.25, 0.5, 0.75, 1])
 
-    cdf_Plot_x = np.linspace(-6, 1, 800)
+    cdf_Plot_x = np.linspace(-7, 1, 1000)
 
     # All  ///////////////////////////////////////////////////////////////
+
     # Fit Weibull distribution:
     shape_All, loc_All, scale_All = weibull_min.fit(x_log)
-    fit, Temp = curve_fit(weibull_min.cdf, x_log, y, p0=[
-                          shape_All, loc_All, scale_All], maxfev=10000, check_finite=False)
+    fit, Temp = curve_fit(weibull_min_cdf, x_log, y, p0=[
+                          shape_All, loc_All, scale_All, y_scale_guess, y_bias_guess], maxfev=100000, check_finite=False)
 
     shape_All = fit[0]
     loc_All = fit[1]
     scale_All = fit[2]
+    y_scale_All = fit[3]
+    y_bias_All = fit[4]
 
-    # cdf_All = weibull_min.cdf(x_log,shape_All, loc_All, scale_All)
-    cdf_All_Plot = weibull_min.cdf(cdf_Plot_x, shape_All, loc_All, scale_All)
+    cdf_All_Plot = weibull_min_cdf(
+        cdf_Plot_x, shape_All, loc_All, scale_All, y_scale_All, y_bias_All)
 
     # Draw Weibull Curves:
     plt.plot(cdf_Plot_x, cdf_All_Plot, 'black', lw=1, label='All Weibull CDF')
 
     # Define direction of bias:
-    PSE_All = weibull_min.ppf(0.5, shape_All, loc_All, scale_All)
+    PSE_All = weibull_min_ppf(ppf, shape_All, loc_All,
+                              scale_All, y_scale_All, y_bias_All)
 
     # Draw PSE Vertical and Horizontal Lines:
     plt.axvline(x=PSE_All, color='gray', lw=1, linestyle=':')
-    plt.axhline(y=0.5, color='gray', lw=1, linestyle=':', label='PSE')
+    plt.axhline(y=ppf, color='gray', lw=1, linestyle=':', label='PSE')
 
     # Right ///////////////////////////////////////////////////////////////
 
     # Fit Weibull distribution:
     shape_Right, loc_Right, scale_Right = weibull_min.fit(x_log)
-    fit, Temp = curve_fit(weibull_min.cdf, x_log, y_Right, p0=[
-                          shape_Right, loc_Right, scale_Right], maxfev=10000, check_finite=False)
+    fit, Temp = curve_fit(weibull_min_cdf, x_log, y_Right, p0=[
+                          shape_Right, loc_Right, scale_Right, y_scale_guess, y_bias_guess], maxfev=100000, check_finite=False)
 
     shape_Right = fit[0]
     loc_Right = fit[1]
     scale_Right = fit[2]
+    y_scale_Right = fit[3]
+    y_bias_Right = fit[4]
 
-    cdf_Right = weibull_min.cdf(x_log, shape_Right, loc_Right, scale_Right)
-    cdf_Right_Plot = weibull_min.cdf(
-        cdf_Plot_x, shape_Right, loc_Right, scale_Right)
+    cdf_Right = weibull_min_cdf(
+        x_log, shape_Right, loc_Right, scale_Right, y_scale_Right, y_bias_Right)
+    cdf_Right_Plot = weibull_min_cdf(
+        cdf_Plot_x, shape_Right, loc_Right, scale_Right, y_scale_Right, y_bias_Right)
 
     # Draw Weibull Curves:
     plt.plot(cdf_Plot_x, cdf_Right_Plot, 'red',
              lw=1, label='Right Weibull CDF')
 
     # Define direction of bias:
-    PSE_Right = weibull_min.ppf(0.5, shape_Right, loc_Right, scale_Right)
+    PSE_Right = weibull_min_ppf(
+        ppf, shape_Right, loc_Right, scale_Right, y_scale_Right, y_bias_Right)
 
     # Draw PSE Vertical and Horizontal Lines:
     plt.axvline(x=PSE_Right, color='red', lw=1, linestyle=':')
@@ -162,24 +197,30 @@ def save_fig(Table, file_name):
     r_squre_Right = 1-(ss_res_Right/ss_tot_Right)
 
     # Left ///////////////////////////////////////////////////////////////
+
     # Fit Weibull distribution:
     shape_Left, loc_Left, scale_Left = weibull_min.fit(x_log)
-    fit, Temp = curve_fit(weibull_min.cdf, x_log, y_Left, p0=[
-                          shape_Left, loc_Left, scale_Left], maxfev=10000, check_finite=False)
+    fit, Temp = curve_fit(weibull_min_cdf, x_log, y_Left, p0=[
+                          shape_Left, loc_Left, scale_Left, y_scale_guess, y_bias_guess], maxfev=100000, check_finite=False)
 
     shape_Left = fit[0]
     loc_Left = fit[1]
     scale_Left = fit[2]
+    y_scale_Left = fit[3]
+    y_bias_Left = fit[4]
 
-    cdf_Left = weibull_min.cdf(x_log, shape_Left, loc_Left, scale_Left)
-    cdf_Left_Plot = weibull_min.cdf(
-        cdf_Plot_x, shape_Left, loc_Left, scale_Left)
+    cdf_Left = weibull_min_cdf(
+        x_log, shape_Left, loc_Left, scale_Left, y_scale_Left, y_bias_Left)
+    cdf_Left_Plot = weibull_min_cdf(
+        cdf_Plot_x, shape_Left, loc_Left, scale_Left, y_scale_Left, y_bias_Left)
 
     # Draw Weibull Curves:
-    plt.plot(cdf_Plot_x, cdf_Left_Plot, 'blue', lw=1, label='Left Weibull CDF')
+    plt.plot(cdf_Plot_x, cdf_Left_Plot, 'blue',
+             lw=1, label='Left Weibull CDF')
 
     # Define direction of bias:
-    PSE_Left = weibull_min.ppf(0.5, shape_Left, loc_Left, scale_Left)
+    PSE_Left = weibull_min_ppf(
+        ppf, shape_Left, loc_Left, scale_Left, y_scale_Left, y_bias_Left)
 
     # Draw PSE Vertical and Horizontal Lines:
     plt.axvline(x=PSE_Left, color='blue', lw=1, linestyle=':')
