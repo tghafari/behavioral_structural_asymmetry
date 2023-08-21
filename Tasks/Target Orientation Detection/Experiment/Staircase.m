@@ -3,22 +3,31 @@ sca;
 close all;
 clear;
 
-Contrast_Steps = 3; % Steps in each direction from the threshold
-Contrast_Step = 0.3; % Step value (log10)
-Attention_Directions = {'Right', 'Left'};
 Target_Orientions = {-45, 45};
-Distractor_Orientions = {-45, 45};
-Repetition_Num = 20;
+Repetition_Num = 4;
 SF = 9;
 
-number_of_short_breaks = 3;
-number_of_big_breaks = 3;
+Straircase_Step_Num = 16;
+Block_Repetition_Num = 1; % Number of Pair Right/Left Blocks
+Initial_Contrast = 1;
+
+Block_Num = 2 * Block_Repetition_Num;
+Target_Oriention_Num = size(Target_Orientions,2);
+
+Straircase_Step_Run_Num = Target_Oriention_Num * Repetition_Num;
+Block_Run_Num = Straircase_Step_Run_Num * Straircase_Step_Num;
+Run_Num = Block_Run_Num * Block_Num;
+
+number_of_short_breaks = 1;
+number_of_big_breaks = 1;
+
+Small_Break_Interval = Run_Num / (number_of_short_breaks +1); % 1 Min
+Big_Break_Interval = Run_Num / (number_of_big_breaks +1); % 2.5 Min
 
 % Screen properties
 PsychDefaultSetup(2);
-
-% get screen number - draw to the external screen if avaliable
 cfgScreen.scrNum = max(Screen('Screens'));
+% get screen number - draw to the external screen if avaliable
 
 [cfgScreen.dispSize.width, cfgScreen.dispSize.height]...
     = Screen('DisplaySize', cfgScreen.scrNum);  % get the physical size of the screen in millimeters
@@ -47,18 +56,17 @@ Keyboard.CCWkey = KbName('RightShift'); % CCW +45
 Keyboard.CWkey = KbName('LeftShift'); % CW -45
 
 % ------------------------------------------------------------------------
-% settings
 
-prompt = {'Subject ID:', 'Session', 'Task \color{Blue}(Main)', 'Run', 'Eyetracker? y/n', 'Skip sync test? y/n', 'Staircase Session','Staircase Run'};
-dlgtitle = 'Details';
-defaults = {'','01','Orientation_Detection','01','n','n', '01', '01'}; % you can put in default responses
+prompt = {'Subject ID:', 'Session', 'Task \color{Red}(Staircase)', 'Run', 'Eyetracker? y/n', 'Skip sync test? y/n', 'First Block Question?'};
+defaults = {'','01','Orientation_Detection_Staircase','01','n','n', 'Right'}; % you can put in default responses
 opts.Interpreter = 'tex';
-dims = [1, 40; 1, 40; 1, 40; 1, 40; 1, 40; 1, 40; 1, 40; 1, 40];
-ansr = inputdlg(prompt, 'Info',dims,defaults,opts); % opens dialog
-cfgExp.answer = cell2struct(ansr, {'sub','ses','task','run','eyetracker','skipSync', 'staircase_ses', 'staircase_run'}, 1);
+dims = [1, 40; 1, 40; 1, 40; 1, 40; 1, 40; 1, 40; 1, 40];
+ansr = inputdlg(prompt, 'Info', dims, defaults, opts); % opens dialog
+cfgExp.answer = cell2struct(ansr, {'sub','ses','task','run','eyetracker','skipSync', 'First_Block_Question'}, 1);
 
 if strcmp(cfgExp.answer.eyetracker,'y'); cfgEyelink.on = 1; else, cfgEyelink.on = 0; end
 if strcmp(cfgExp.answer.skipSync,'y'); skipSync = 1; else, skipSync = 0; end
+if strcmp(cfgExp.answer.First_Block_Question,'Right'); First_Block_Question = 1; else, First_Block_Question = 0; end
 
 if(skipSync)
 
@@ -70,33 +78,7 @@ else
 
 end
 
-Staircase_Results = check_staircase(cfgExp);
-
-if(Staircase_Results.State ~= 1)
-
-    error('Staircase Not Found!');
-
-end
-
-Contrast_Threshold_log = log10(Staircase_Results.Contrast_Threshold);
-
 cfgFile = create_file_directory(cfgExp);  % create file directories
-
-Contrasts_log = (Contrast_Threshold_log - (Contrast_Step * Contrast_Steps)):Contrast_Step:(Contrast_Threshold_log + (Contrast_Step * Contrast_Steps));
-Contrasts = 10 .^ Contrasts_log;
-
-Contrast_Num = size(Contrasts,2);
-Attention_Direction_Num = size(Attention_Directions,2);
-Target_Oriention_Num = size(Target_Orientions,2);
-Distractor_Oriention_Num = size(Target_Orientions,2);
-
-Run_Num = Contrast_Num * Attention_Direction_Num * Target_Oriention_Num * ...
-    Distractor_Oriention_Num * Repetition_Num;
-
-Small_Break_Interval = Run_Num / (number_of_short_breaks +1); % 1 Min
-Big_Break_Interval = Run_Num / (number_of_big_breaks +1); % 2.5 Min
-
-Contrasts = num2cell(Contrasts);
 
 Repetitions = 1:Repetition_Num;
 % Necessary For The Proper Working Of BalanceFactors()
@@ -107,11 +89,76 @@ IDs = num2cell(IDs');
 States = zeros(Run_Num,1);
 States = num2cell(States);
 
-[Run_Contrasts, Run_Attention_Directions, Run_Target_Orientions, Run_Distractor_Orientions, Run_Repetitions] = ...
-    BalanceFactors(1, 1, Contrasts, Attention_Directions, Target_Orientions, Distractor_Orientions, Repetitions);
+Blocks = 1:Block_Num;
+Run_Blocks = repelem(Blocks,Block_Run_Num);
+Run_Blocks = num2cell(Run_Blocks');
 
-Run_Factors = {Run_Contrasts, Run_Attention_Directions, Run_Target_Orientions, Run_Distractor_Orientions, Run_Repetitions};
-Run_Factors = horzcat(Run_Factors{:});
+Run_Block_Questions = cell(Run_Num,1);
+
+for i = 1:Run_Num
+
+    if (mod(Run_Blocks{i,1},2) == First_Block_Question)
+
+        Run_Block_Questions{i,1} = "Right";
+
+    else
+
+        Run_Block_Questions{i,1} = "Left";
+
+    end
+
+end
+
+Straircase_Steps = 1:1:Straircase_Step_Num;
+Block_Straircase_Steps = repelem(Straircase_Steps,Straircase_Step_Run_Num);
+Run_Straircase_Steps = repmat(Block_Straircase_Steps,1,Block_Num);
+Run_Straircase_Steps = num2cell(Run_Straircase_Steps');
+
+Run_Factors = cell(0);
+
+for i = 1:Run_Num
+
+    if (i == Run_Num)
+
+        [Run_Target_Orientions, Run_Repetitions] = ...
+            BalanceFactors(1, 1, Target_Orientions, Repetitions);
+
+        Run_Contrasts = cell(Straircase_Step_Run_Num,1);
+
+        if (Run_Straircase_Steps{i,1} == 1)
+
+            Run_Contrasts = num2cell(repelem(Initial_Contrast,Straircase_Step_Run_Num)');
+
+        end
+
+        Straircase_Step_Run_Factors = {Run_Target_Orientions, Run_Repetitions, Run_Contrasts};
+        Straircase_Step_Run_Factors = horzcat(Straircase_Step_Run_Factors{:});
+
+        Run_Factors = {Run_Factors, Straircase_Step_Run_Factors};
+        Run_Factors = vertcat(Run_Factors{:});
+
+    elseif ((Run_Straircase_Steps{i,1} ~= Run_Straircase_Steps{i+1,1}))
+
+        [Run_Target_Orientions, Run_Repetitions] = ...
+            BalanceFactors(1, 1, Target_Orientions, Repetitions);
+
+        Run_Contrasts = cell(Straircase_Step_Run_Num,1);
+
+        if (Run_Straircase_Steps{i,1} == 1)
+
+            Run_Contrasts = num2cell(repelem(Initial_Contrast,Straircase_Step_Run_Num)');
+
+        end
+
+        Straircase_Step_Run_Factors = {Run_Target_Orientions, Run_Repetitions, Run_Contrasts};
+        Straircase_Step_Run_Factors = horzcat(Straircase_Step_Run_Factors{:});
+
+        Run_Factors = {Run_Factors, Straircase_Step_Run_Factors};
+        Run_Factors = vertcat(Run_Factors{:});
+
+    end
+
+end
 
 ITIs = zeros(Run_Num,1);
 
@@ -133,12 +180,16 @@ end
 
 ISIs = num2cell(ISIs);
 
-Run_Seq = {IDs, States, Run_Factors, ITIs, ISIs, num2cell(zeros(Run_Num,5)), cellstr(strings(Run_Num,1))};
+Run_Seq = {IDs, States, Run_Blocks, Run_Block_Questions, Run_Straircase_Steps,...
+    Run_Factors, ITIs, ISIs, num2cell(zeros(Run_Num,5)),...
+    cellstr(strings(Run_Num,1))};
+
 Run_Seq = horzcat(Run_Seq{:});
 
-% Run_Seq : ID, State, Contrast, Attention Direction, Target Oriention,
-% Distractor Oriention, Repetition, ITI, ISI, Trial_Onset, Cue_Onset,
-% Cue_Offset, Stim_Onset, Stim_Offset, Response Time, Answer
+% Run_Seq : ID, State, Block Number, Block Question (Attention Direction),
+% Straircase Step, Target Oriention, Repetition, Contrast, ITI, ISI,
+% Trial_Onset, Cue_Onset, Cue_Offset, Stim_Onset, Stim_Offset,
+% Response Time, Answer
 
 % State :
 %
@@ -146,6 +197,26 @@ Run_Seq = horzcat(Run_Seq{:});
 % 2: -
 % 3: No Answer
 % 4: Abortion
+
+% Staircase_Results : Block Number, Block Question (Attention Direction),
+% Contrast Threshold
+
+Staircase_Results = {num2cell(Blocks.'), cellstr(strings(Block_Num,1)), num2cell(zeros(Block_Num,1))};
+Staircase_Results = horzcat(Staircase_Results{:});
+
+for i = 1:Block_Num
+
+    if (mod(Staircase_Results{i,1},2) == First_Block_Question)
+
+        Staircase_Results{i,2} = "Right";
+
+    else
+
+        Staircase_Results{i,2} = "Left";
+
+    end
+
+end
 
 % ------------------------------------------------------------------------
 
@@ -171,8 +242,6 @@ Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 %--------------------
 % Gabors
 
-Run_Seq_Gabors = cell(Run_Num,1);
-
 % Sigma of Gaussian
 sigma = Gabor_Size / 7;
 
@@ -193,15 +262,6 @@ gabortex = CreateProceduralGabor(window, Gabor_Size, Gabor_Size, [],...
 % Spatial Frequency (Cycles Per Pixel)
 numCycles = SF;
 freq = numCycles / Gabor_Size;
-
-for i = 1:Run_Num
-
-    contrast = Run_Seq{i,3};
-
-    % Properties matrix.
-    Run_Seq_Gabors{i,1} = [phase, freq, sigma, contrast, aspectRatio, 0, 0, 0];
-
-end
 
 %--------------------
 % Cues
@@ -295,6 +355,8 @@ for n = 1:Run_Num
 
     end
 
+    % Break Check -----------------------------------------------------
+
     if ((ceil(n / Big_Break_Interval) ~= ceil((n-1) / Big_Break_Interval)) && n ~= 1)
 
         DrawFormattedText(window, 'Break For 2.5 Min :)', 'center', 'center',[1 1 1]);
@@ -325,24 +387,136 @@ for n = 1:Run_Num
 
     end
 
+    % Block Check -----------------------------------------------------
+
+    if (n == 1)
+
+        if (strcmp(Run_Seq{n,4}, 'Right'))
+
+            DrawFormattedText(window, 'Next Block: Right', 'center', 'center',[1 1 1]);
+
+        elseif (strcmp(Run_Seq{n,4}, 'Left'))
+
+            DrawFormattedText(window, 'Next Block: Left', 'center', 'center',[1 1 1]);
+
+        end
+
+        vbl=Screen('Flip',window); % swaps backbuffer to frontbuffer
+
+        DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
+
+        Screen('Flip',window,vbl + 4);
+
+        % Wait for a key press
+        KbStrokeWait;
+
+    elseif (Run_Seq{n,3} ~= Run_Seq{n-1,3})
+
+        if (strcmp(Run_Seq{n,4}, 'Right'))
+
+            DrawFormattedText(window, 'Next Block: Right', 'center', 'center',[1 1 1]);
+
+        elseif (strcmp(Run_Seq{n,4}, 'Left'))
+
+            DrawFormattedText(window, 'Next Block: Left', 'center', 'center',[1 1 1]);
+
+        end
+
+        vbl=Screen('Flip',window); % swaps backbuffer to frontbuffer
+
+        DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
+
+        Screen('Flip',window,vbl + 4);
+
+        % Wait for a key press
+        KbStrokeWait;
+
+    end
+
+    % Staircase Processing -------------------------------
+
+    if (isempty(Run_Seq{n,8}))
+
+        % Processing_Run_Seq : Target Oriention, Answer, Contrast
+
+        Processing_Run_Seq = Run_Seq(n-Straircase_Step_Run_Num:n-1,[6 17 8]);
+
+        Processing_Count = 0;
+
+        for j = 1:Straircase_Step_Run_Num
+
+            if(Processing_Run_Seq{j,1} == 45) && ...
+                    (strcmp(Processing_Run_Seq{j,2}, 'LeftShift'))
+
+                Processing_Count = Processing_Count +1;
+
+            elseif(Processing_Run_Seq{j,1} == -45) && ...
+                    (strcmp(Processing_Run_Seq{j,2}, 'RightShift'))
+
+                Processing_Count = Processing_Count +1;
+
+            end
+
+        end
+
+        Current_Contrast = Processing_Run_Seq{j,3};
+
+        if(Processing_Count >= (Straircase_Step_Run_Num * 0.8))
+
+            for k = n:(n+Straircase_Step_Run_Num-1)
+
+                Run_Seq{k,8} = 0.5 * Current_Contrast;
+
+            end
+
+        elseif(Processing_Count < (Straircase_Step_Run_Num * 0.7))
+
+            for k = n:(n+Straircase_Step_Run_Num-1)
+
+                Run_Seq{k,8} = 2 * Current_Contrast;
+
+                if(Run_Seq{k,8}> Initial_Contrast)
+
+                    Run_Seq{k,8} = Initial_Contrast;
+
+                end
+
+            end
+
+        else
+
+            for k = n:(n+Straircase_Step_Run_Num-1)
+
+                Run_Seq{k,8} = Current_Contrast;
+
+            end
+
+        end
+
+    end
+
+    % ------------------------------------------------------
+
+    contrast = Run_Seq{n,8};
+
+    % Properties matrix.
+    Run_Seq_Gabor = [phase, freq, sigma, contrast, aspectRatio, 0, 0, 0];
+
     if (strcmp(Run_Seq{n,4}, 'Right'))
         Target_Gabor_Position = [xCenter + Periphery_Pix, yCenter];
-        Distractor_Gabor_Position = [xCenter - Periphery_Pix, yCenter];
 
     elseif (strcmp(Run_Seq{n,4}, 'Left'))
         Target_Gabor_Position = [xCenter - Periphery_Pix, yCenter];
-        Distractor_Gabor_Position = [xCenter + Periphery_Pix, yCenter];
 
     end
 
     Gabor_Rec = [0 0 Gabor_Size Gabor_Size];
 
     Target_Gabor_Rec = CenterRectOnPoint(Gabor_Rec, Target_Gabor_Position(1), Target_Gabor_Position(2));
-    Distractor_Gabor_Rec = CenterRectOnPoint(Gabor_Rec, Distractor_Gabor_Position(1), Distractor_Gabor_Position(2));
 
     % ITI
 
-    ITI_Frames = round(Run_Seq{n,8} / ifi);
+    ITI_Frames = round(Run_Seq{n,9} / ifi);
 
     for frame = 1:ITI_Frames
 
@@ -390,7 +564,7 @@ for n = 1:Run_Num
 
     % ISI
 
-    ISI_Frames = round(Run_Seq{n,9} / ifi);
+    ISI_Frames = round(Run_Seq{n,10} / ifi);
 
     for frame = 1:ISI_Frames
 
@@ -420,10 +594,7 @@ for n = 1:Run_Num
 
         % Draw the Gabors
         Screen('DrawTexture', window, gabortex, [], Target_Gabor_Rec, ...
-            Run_Seq{n,5}, [], [], [], [], kPsychDontDoRotation, Run_Seq_Gabors{n,1}');
-
-        Screen('DrawTexture', window, gabortex, [], Distractor_Gabor_Rec, ...
-            Run_Seq{n,6}, [], [], [], [], kPsychDontDoRotation, Run_Seq_Gabors{n,1}');
+            Run_Seq{n,6}, [], [], [], [], kPsychDontDoRotation, Run_Seq_Gabor');
 
         % Set up alpha-blending (Global)
         Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
@@ -459,8 +630,8 @@ for n = 1:Run_Num
             Key = KbName(keyCod);  % which key was pressed
             Key = string(Key);
 
-            Run_Seq{n,15} = Response_Key_Time;
-            Run_Seq{n,16} = Key;
+            Run_Seq{n,16} = Response_Key_Time;
+            Run_Seq{n,17} = Key;
             Run_Seq{n,2} = 1; % 1: Done
 
             noResp = 0;
@@ -480,8 +651,8 @@ for n = 1:Run_Num
 
                 Abortion = 1;
                 Run_Seq{n,2} = 4; % 4: Abortion
-                Run_Seq{n,15} = NaN;
-                Run_Seq{n,16} = 'None' ;
+                Run_Seq{n,16} = NaN;
+                Run_Seq{n,17} = 'None' ;
 
                 noResp = 0;
                 break;
@@ -494,6 +665,8 @@ for n = 1:Run_Num
             send_trigger(cfgEyelink, 'Repeating Trial');
 
             % ITI
+
+            ITI_Frames = round(Run_Seq{n,9} / ifi);
 
             for frame = 1:ITI_Frames
 
@@ -541,6 +714,8 @@ for n = 1:Run_Num
 
             % ISI
 
+            ISI_Frames = round(Run_Seq{n,10} / ifi);
+
             for frame = 1:ISI_Frames
 
                 % Draw the fixation cross
@@ -569,10 +744,7 @@ for n = 1:Run_Num
 
                 % Draw the Gabors
                 Screen('DrawTexture', window, gabortex, [], Target_Gabor_Rec, ...
-                    Run_Seq{n,5}, [], [], [], [], kPsychDontDoRotation, Run_Seq_Gabors{n,1}');
-
-                Screen('DrawTexture', window, gabortex, [], Distractor_Gabor_Rec, ...
-                    Run_Seq{n,6}, [], [], [], [], kPsychDontDoRotation, Run_Seq_Gabors{n,1}');
+                    Run_Seq{n,6}, [], [], [], [], kPsychDontDoRotation, Run_Seq_Gabor');
 
                 % Set up alpha-blending (Global)
                 Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
@@ -599,8 +771,8 @@ for n = 1:Run_Num
         elseif ((GetSecs - Stim_Offset) > Response_Timeout)  % Stop listening
 
             Run_Seq{n,2} = 3; % 3: No Answer
-            Run_Seq{n,15} = NaN;
-            Run_Seq{n,16} = 'None' ;
+            Run_Seq{n,16} = NaN;
+            Run_Seq{n,17} = 'None' ;
 
             noResp = 0;
             break;
@@ -609,11 +781,11 @@ for n = 1:Run_Num
 
     end
 
-    Run_Seq{n,10} = Trial_Onset;
-    Run_Seq{n,11} = Cue_Onset;
-    Run_Seq{n,12} = Cue_Offset;
-    Run_Seq{n,13} = Stim_Onset;
-    Run_Seq{n,14} = Stim_Offset;
+    Run_Seq{n,11} = Trial_Onset;
+    Run_Seq{n,12} = Cue_Onset;
+    Run_Seq{n,13} = Cue_Offset;
+    Run_Seq{n,14} = Stim_Onset;
+    Run_Seq{n,15} = Stim_Offset;
 
 end
 
@@ -633,12 +805,116 @@ Screen('CloseAll'); % Closes Screen
 % Clear the screen
 sca;
 
+% Staircase Results -------------------------------
+
+Abortion_Blocks = 0;
+
+for i = 1:Block_Num
+
+    if(Abortion_Blocks == 1)
+
+        Contrast_Final = NaN;
+
+    else
+
+        for j = 1:Run_Num
+
+            if(Run_Seq{j,3} == i)
+
+                if(isempty(Run_Seq{j,8}) == false)
+
+                    Contrast_Last = Run_Seq{j,8};
+
+                    if(Run_Seq{j,2} == 4)
+
+                        Abortion_Blocks = 1;
+
+                    end
+
+                else
+
+                    break;
+
+                end
+
+            end
+
+        end
+
+        if(Abortion_Blocks == 1)
+
+            Contrast_Final = Contrast_Last;
+
+        else
+
+            % Staircase Processing -------------------------------
+
+            % Processing_Run_Seq : Target Oriention, Answer, Contrast
+
+            Processing_Run_Seq = Run_Seq(j-Straircase_Step_Run_Num:j-1,[6 17 8]);
+
+            Processing_Count = 0;
+
+            for l = 1:Straircase_Step_Run_Num
+
+                if(Processing_Run_Seq{l,1} == 45) && ...
+                        (strcmp(Processing_Run_Seq{l,2}, 'LeftShift'))
+
+                    Processing_Count = Processing_Count +1;
+
+                elseif(Processing_Run_Seq{l,1} == -45) && ...
+                        (strcmp(Processing_Run_Seq{l,2}, 'RightShift'))
+
+                    Processing_Count = Processing_Count +1;
+
+                end
+
+            end
+
+            if(Processing_Count >= (Straircase_Step_Run_Num * 0.8))
+
+                Contrast_Final = 0.5 * Contrast_Last;
+
+            elseif(Processing_Count < (Straircase_Step_Run_Num * 0.7))
+
+                Contrast_Final = 2 * Contrast_Last;
+
+                if(Contrast_Final> Initial_Contrast)
+
+                    Contrast_Final = Initial_Contrast;
+
+                end
+
+            else
+
+                Contrast_Final = Contrast_Last;
+
+            end
+
+            % ------------------------------------------------------
+
+        end
+
+    end
+
+    Staircase_Results{i,3} = Contrast_Final;
+
+end
+
+Contrast_Threshold = mean(vertcat(Staircase_Results{:,3}), 1, "omitnan");
+
+% ------------------------------------------------
+
 %% saving and cleaning up
 
-cfgOutput.Output_table = cell2table(Run_Seq,"VariableNames",["ID", "State", "Contrast", ...
-    "Attention_Direction", "Target_Oriention", "Distractor_Oriention", ...
-    "Repetition", "ITI", "ISI", "Trial_Onset", "Cue_Onset", ...
+cfgOutput.Output_table = cell2table(Run_Seq,"VariableNames",["ID", "State", "Block_Number", ...
+    "Block_Question_(Attention_Direction)", "Straircase_Step", "Target_Oriention", ...
+    "Repetition", "Contrast", "ITI", "ISI", "Trial_Onset", "Cue_Onset", ...
     "Cue_Offset", "Stim_Onset", "Stim_Offset", "Response_Time", "Answer"]);
+
+cfgOutput.Staircase_Results = Staircase_Results;
+
+cfgOutput.Contrast_Threshold = Contrast_Threshold;
 
 % check if the logfile is being overwritten
 if exist([cfgFile.subDir, cfgFile.BIDSname, cfgFile.logFile], 'file') > 0
@@ -655,7 +931,7 @@ end
 
 try
     save([cfgFile.subDir, cfgFile.BIDSname, cfgFile.logFile])
-    writetable(cfgOutput.Output_table,[cfgFile.subDir, cfgFile.BIDSname, cfgFile.csvFile]);
+    % writetable(cfgOutput.Output_table,[cfgFile.subDir, cfgFile.BIDSname, cfgFile.csvFile]);
 catch
     warning('Saving the log files failed.');
 end
