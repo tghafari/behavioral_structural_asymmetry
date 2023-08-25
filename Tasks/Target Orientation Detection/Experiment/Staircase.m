@@ -18,7 +18,7 @@ Straircase_Step_Run_Num = Target_Oriention_Num * Repetition_Num;
 Block_Run_Num = Straircase_Step_Run_Num * Straircase_Step_Num;
 Run_Num = Block_Run_Num * Block_Num;
 
-number_of_short_breaks = 1;
+number_of_short_breaks = 0;
 number_of_big_breaks = 1;
 
 Small_Break_Interval = Run_Num / (number_of_short_breaks +1); % 1 Min
@@ -373,7 +373,7 @@ for n = 1:Run_Num
         % Wait for a key press
         KbStrokeWait;
 
-    elseif ((ceil(n / Small_Break_Interval) ~= ceil((n-1) / Small_Break_Interval)) && n ~= 1)
+    elseif ((ceil(n / Small_Break_Interval) ~= ceil((n-1) / Small_Break_Interval)) && n ~= 1 && n~= Run_Num)
 
         DrawFormattedText(window, 'Break For 1 Min :)', 'center', 'center',[1 1 1]);
         vbl=Screen('Flip',window); % swaps backbuffer to frontbuffer
