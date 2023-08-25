@@ -279,19 +279,16 @@ for n = 1:Run_Num
 
         DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
 
-        WaitSecs(150);
+        WaitSecs(15);
 
         Screen('Flip',window);
+        
+        if cfgEyelink.on
+            el_drift_check(cfgEyelink, cfgScreen);
+        end
 
         % Wait for a key press
         KbStrokeWait;
-
-        if cfgEyelink.on
-            % Calibrate or drift correction of the eye tracker
-            EyelinkDoTrackerSetup(cfgEyelink.defaults);
-            % Restarting the recording
-            Eyelink('StartRecording');
-        end
 
     elseif ((ceil(n / Small_Break_Interval) ~= ceil((n-1) / Small_Break_Interval)) && n ~= 1)
 
@@ -300,7 +297,7 @@ for n = 1:Run_Num
 
         DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
 
-        WaitSecs(60);
+        WaitSecs(6);
 
         Screen('Flip',window);
 
