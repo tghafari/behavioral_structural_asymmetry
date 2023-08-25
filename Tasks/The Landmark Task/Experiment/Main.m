@@ -279,7 +279,7 @@ for n = 1:Run_Num
 
         DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
 
-        WaitSecs(15);
+        WaitSecs(150);
 
         Screen('Flip',window);
         
@@ -297,7 +297,7 @@ for n = 1:Run_Num
 
         DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
 
-        WaitSecs(6);
+        WaitSecs(60);
 
         Screen('Flip',window);
 
