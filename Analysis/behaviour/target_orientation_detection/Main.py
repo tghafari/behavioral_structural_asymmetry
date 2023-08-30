@@ -19,8 +19,8 @@ y_scale_guess = 0.5
 y_bias_guess = 0.5
 ppf = 0.75
 
-
 # Define Weibull functions:
+
 
 def weibull_min_cdf(x_log, shape, loc, scale, y_scale, y_bias):
 
@@ -107,17 +107,17 @@ def Finalysis(file_name):
 def save_fig(Table, file_name):
 
     dfi.export(Table, './Results/%s Table.png' %
-               (file_name.replace('.csv', '')), dpi=300)
+               (file_name.replace('.csv', '')), dpi=400)
 
     # Plot scatter plot:
     # x = Table.index
-    x_log = np.log(Table.index)
+    x_log = np.log10(Table.index)
     y = Table['All_Correct_Percent']
     y_Right = Table['Right_Correct_Percent']
     y_Left = Table['Left_Correct_Percent']
 
     plt.figure(figsize=(9, 9))
-    # plt.scatter(x_log, y, marker='*', color='black', s=25)
+    plt.scatter(x_log, y, marker='*', color='black', s=25)
     plt.scatter(x_log, y_Right, marker='x', color='red', s=25)
     plt.scatter(x_log, y_Left, marker='+', color='blue', s=25)
 
@@ -127,13 +127,13 @@ def save_fig(Table, file_name):
     plt.ylabel('% Answered Correct', fontsize='x-large', fontweight=1000)
 
     # Define axis starting and end points:
-    # plt.xlim(-7, 1)
+    # plt.xlim(-4, 0)
     # plt.ylim(0.45, 1)
 
-    plt.xticks(np.linspace(-10, 3, 14))
+    plt.xticks(np.linspace(-10, 5, 16))
     plt.yticks([0, 0.25, 0.5, 0.75, 1])
 
-    cdf_Plot_x = np.linspace(-7, 1, 1000)
+    cdf_Plot_x = np.linspace(-4, 0, 1000)
 
     # All  ///////////////////////////////////////////////////////////////
 
@@ -247,7 +247,7 @@ def save_fig(Table, file_name):
     plt.tight_layout()
 
     # Save figure plot:
-    plt.savefig(r'./Results/%s Figure.png' % (title), dpi=800)
+    plt.savefig(r'./Results/%s Figure.png' % (title), dpi=1000)
 
     plt.close()
 
