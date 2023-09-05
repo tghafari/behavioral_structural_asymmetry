@@ -7,7 +7,7 @@ Target_Orientions = {-45, 45};
 Repetition_Num = 4;
 SF = 9;
 
-Straircase_Step_Num = 16;
+Straircase_Step_Num = 14;
 Block_Repetition_Num = 1; % Number of Pair Right/Left Blocks
 Initial_Contrast = 1;
 
@@ -197,26 +197,6 @@ Run_Seq = horzcat(Run_Seq{:});
 % 2: -
 % 3: No Answer
 % 4: Abortion
-
-% Staircase_Results : Block Number, Block Question (Attention Direction),
-% Contrast Threshold
-
-Staircase_Results = {num2cell(Blocks.'), cellstr(strings(Block_Num,1)), num2cell(zeros(Block_Num,1))};
-Staircase_Results = horzcat(Staircase_Results{:});
-
-for i = 1:Block_Num
-
-    if (mod(Staircase_Results{i,1},2) == First_Block_Question)
-
-        Staircase_Results{i,2} = "Right";
-
-    else
-
-        Staircase_Results{i,2} = "Left";
-
-    end
-
-end
 
 % ------------------------------------------------------------------------
 
@@ -805,7 +785,27 @@ Screen('CloseAll'); % Closes Screen
 % Clear the screen
 sca;
 
-% Staircase Results -------------------------------
+%% Staircase Results
+
+% Staircase_Results : Block Number, Block Question (Attention Direction),
+% Contrast Threshold
+
+Staircase_Results = {num2cell(Blocks.'), cellstr(strings(Block_Num,1)), num2cell(zeros(Block_Num,1))};
+Staircase_Results = horzcat(Staircase_Results{:});
+
+for i = 1:Block_Num
+
+    if (mod(Staircase_Results{i,1},2) == First_Block_Question)
+
+        Staircase_Results{i,2} = "Right";
+
+    else
+
+        Staircase_Results{i,2} = "Left";
+
+    end
+
+end
 
 Abortion_Blocks = 0;
 
@@ -849,9 +849,27 @@ for i = 1:Block_Num
 
             % Staircase Processing -------------------------------
 
-            % Processing_Run_Seq : Target Oriention, Answer, Contrast
+            for j = 1:Run_Num
 
-            Processing_Run_Seq = Run_Seq(j-Straircase_Step_Run_Num:j-1,[6 17 8]);
+                if(Run_Seq{j,3} == i)
+
+                    if(j == Run_Num)
+
+                        % Processing_Run_Seq : Target Oriention, Answer, Contrast
+
+                        Processing_Run_Seq = Run_Seq(j-Straircase_Step_Run_Num+1:j,[6 17 8]);
+
+                    elseif(Run_Seq{j+1,3} ~= i)
+
+                        % Processing_Run_Seq : Target Oriention, Answer, Contrast
+
+                        Processing_Run_Seq = Run_Seq(j-Straircase_Step_Run_Num+1:j,[6 17 8]);
+
+                    end
+
+                end
+
+            end
 
             Processing_Count = 0;
 
@@ -902,8 +920,6 @@ for i = 1:Block_Num
 end
 
 Contrast_Threshold = mean(vertcat(Staircase_Results{:,3}), 1, "omitnan");
-
-% ------------------------------------------------
 
 %% saving and cleaning up
 

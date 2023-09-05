@@ -3,16 +3,16 @@ sca;
 close all;
 clear;
 
-Contrast_Steps = 3; % Steps in each direction from the threshold
+Contrast_Steps = 4; % Steps in each direction from the threshold
 Contrast_Step = 0.3; % Step value (log10)
 Attention_Directions = {'Right', 'Left'};
 Target_Orientions = {-45, 45};
 Distractor_Orientions = {-45, 45};
-Repetition_Num = 20;
+Repetition_Num = 15;
 SF = 9;
 
-number_of_short_breaks = 3;
-number_of_big_breaks = 3;
+number_of_short_breaks = 4;
+number_of_big_breaks = 4;
 
 % Screen properties
 PsychDefaultSetup(2);
