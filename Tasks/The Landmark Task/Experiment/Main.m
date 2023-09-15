@@ -145,14 +145,15 @@ end
 ITIs = num2cell(ITIs);
 
 Run_Seq = {IDs, States, Run_Blocks, Run_Block_Questions, Run_Factors, ...
-    num2cell(zeros(Run_Num,1)), ITIs, num2cell(zeros(Run_Num,4)), ...
+    num2cell(zeros(Run_Num,1)), ITIs, num2cell(zeros(Run_Num,3)), ...
+    cellstr(strings(Run_Num,1)), num2cell(zeros(Run_Num,1)), ...
     cellstr(strings(Run_Num,2))};
 
 Run_Seq = horzcat(Run_Seq{:});
 
 % Run_Seq : ID, State, Block Number, Block Question, Line Lenght,
-% Shift Direction, Shift Size, ITI, Trial_Onset,
-% Stim_Onset, Stim_Offset, Response Time, Answer, Raw Answer
+% Shift Direction, Shift Size, ITI, Trial_Onset, Stim_Onset,
+% Stim_Offset, Correct Answer, Response Time, Answer, Raw Answer
 
 % State :
 %
@@ -160,6 +161,41 @@ Run_Seq = horzcat(Run_Seq{:});
 % 2: -
 % 3: No Answer
 % 4: Abortion
+
+% Correct Answer
+
+for i = 1:Run_Num
+
+    if(strcmp(Run_Seq{i,4}, 'Longer'))
+
+        if(strcmp(Run_Seq{i,6}, 'Right'))
+
+            Run_Seq{i,12} =  KbName(Keyboard.Rightkey);
+
+        elseif(strcmp(Run_Seq{i,6}, 'Left'))
+
+            Run_Seq{i,12} =  KbName(Keyboard.Leftkey);
+
+        end
+
+    elseif(strcmp(Run_Seq{i,4}, 'Shorter'))
+
+        if(strcmp(Run_Seq{i,6}, 'Right'))
+
+            Run_Seq{i,12} =  KbName(Keyboard.Leftkey);
+
+        elseif(strcmp(Run_Seq{i,6}, 'Left'))
+
+            Run_Seq{i,12} =  KbName(Keyboard.Rightkey);
+
+        end
+
+    end
+
+end
+
+% Staircase_Processing : Line Lenght, Shift Direction,
+% Consecutive Corrects Count, Shift Size
 
 [Staircase_Processing_Line_Lenghts, Staircase_Processing_Shift_Directions] = ...
     BalanceFactors(1, 0, Line_Lenghts, Shift_Directions);
@@ -170,9 +206,6 @@ Staircase_Processing = {Staircase_Processing_Line_Lenghts, ...
     num2cell(repelem(Initial_Shift_Size,size(Staircase_Processing_Line_Lenghts,1))');};
 
 Staircase_Processing = horzcat(Staircase_Processing{:});
-
-% Staircase_Processing : Line Lenght, Shift Direction,
-% Consecutive Corrects Count, Shift Size
 
 % ------------------------------------------------------------------------
 
@@ -282,7 +315,7 @@ for n = 1:Run_Num
         WaitSecs(150);
 
         Screen('Flip',window);
-        
+
         if cfgEyelink.on
             el_drift_check(cfgEyelink, cfgScreen);
         end
@@ -481,7 +514,7 @@ for n = 1:Run_Num
             Key = KbName(keyCod);  % which key was pressed
             Key = string(Key);
 
-            Run_Seq{n,14} = Key ; % Raw Response
+            Run_Seq{n,15} = Key ; % Raw Response
 
             old = 'RightArrow';
             new = 'Right';
@@ -507,8 +540,8 @@ for n = 1:Run_Num
 
             end
 
-            Run_Seq{n,12} = Response_Key_Time;
-            Run_Seq{n,13} = Key ;
+            Run_Seq{n,13} = Response_Key_Time;
+            Run_Seq{n,14} = Key ;
             Run_Seq{n,2} = 1; % 1: Done
 
             noResp = 0;
@@ -529,8 +562,8 @@ for n = 1:Run_Num
 
                 Abortion = 1;
                 Run_Seq{n,2} = 4; % 4: Abortion
-                Run_Seq{n,12} = NaN;
-                Run_Seq{n,13} = 'None' ;
+                Run_Seq{n,13} = NaN;
+                Run_Seq{n,14} = 'None' ;
 
                 noResp = 0;
                 break;
@@ -543,6 +576,8 @@ for n = 1:Run_Num
             send_trigger(cfgEyelink, 'Repeating Trial');
 
             % ITI
+
+            ITI_Frames = round(Run_Seq{n,8} / ifi);
 
             for frame = 1:ITI_Frames
 
@@ -610,8 +645,8 @@ for n = 1:Run_Num
         elseif ((GetSecs - Stim_Offset) > Response_Timeout)  % Stop listening
 
             Run_Seq{n,2} = 3; % 3: No Answer
-            Run_Seq{n,12} = NaN;
-            Run_Seq{n,13} = 'None' ;
+            Run_Seq{n,13} = NaN;
+            Run_Seq{n,14} = 'None' ;
 
             noResp = 0;
             break;
@@ -633,7 +668,7 @@ for n = 1:Run_Num
 
             if(strcmp(Run_Seq{n,4}, 'Longer'))
 
-                if(strcmp(Run_Seq{n,6}, Run_Seq{n,13}))
+                if(strcmp(Run_Seq{n,6}, Run_Seq{n,14}))
 
                     Staircase_Processing{i,3} = Staircase_Processing{i,3} +1;
 
@@ -645,8 +680,8 @@ for n = 1:Run_Num
 
             elseif(strcmp(Run_Seq{n,4}, 'Shorter'))
 
-                if(((strcmp(Run_Seq{n,6}, 'Right')) && (strcmp(Run_Seq{n,13}, 'Left'))) || ...
-                        ((strcmp(Run_Seq{n,6}, 'Left')) && (strcmp(Run_Seq{n,13}, 'Right'))))
+                if(((strcmp(Run_Seq{n,6}, 'Right')) && (strcmp(Run_Seq{n,14}, 'Left'))) || ...
+                        ((strcmp(Run_Seq{n,6}, 'Left')) && (strcmp(Run_Seq{n,14}, 'Right'))))
 
                     Staircase_Processing{i,3} = Staircase_Processing{i,3} +1;
 
@@ -703,8 +738,8 @@ sca;
 
 cfgOutput.Output_table = cell2table(Run_Seq,"VariableNames",["ID", "State", ...
     "Block_Number", "Block_Question", "Line_Lenght", "Shift_Direction", ...
-    "Shift_Size", "ITI", "Trial_Onset", "Stim_Onset", ...
-    "Stim_Offset", "Response_Time", "Answer", "Raw_Answer"]);
+    "Shift_Size", "ITI", "Trial_Onset", "Stim_Onset", "Stim_Offset", ...
+    "Correct_Answer", "Response_Time", "Answer", "Raw_Answer"]);
 
 % check if the logfile is being overwritten
 if exist([cfgFile.subDir, cfgFile.BIDSname, cfgFile.logFile], 'file') > 0

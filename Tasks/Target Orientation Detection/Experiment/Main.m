@@ -43,8 +43,8 @@ KbName('UnifyKeyNames');
 Keyboard.quitKey = KbName('ESCAPE');
 Keyboard.confirmKey = KbName('c');
 
-Keyboard.CCWkey = KbName('RightShift'); % CCW +45
-Keyboard.CWkey = KbName('LeftShift'); % CW -45
+Keyboard.CWkey = KbName('RightShift'); % CW -45
+Keyboard.CCWkey = KbName('LeftShift'); % CCW +45
 
 % ------------------------------------------------------------------------
 % settings
@@ -133,12 +133,13 @@ end
 
 ISIs = num2cell(ISIs);
 
-Run_Seq = {IDs, States, Run_Factors, ITIs, ISIs, num2cell(zeros(Run_Num,5)), cellstr(strings(Run_Num,1))};
+Run_Seq = {IDs, States, Run_Factors, ITIs, ISIs, num2cell(zeros(Run_Num,5)), ...
+    cellstr(strings(Run_Num,1)), num2cell(zeros(Run_Num,1)), cellstr(strings(Run_Num,1))};
 Run_Seq = horzcat(Run_Seq{:});
 
 % Run_Seq : ID, State, Contrast, Attention Direction, Target Oriention,
 % Distractor Oriention, Repetition, ITI, ISI, Trial_Onset, Cue_Onset,
-% Cue_Offset, Stim_Onset, Stim_Offset, Response Time, Answer
+% Cue_Offset, Stim_Onset, Stim_Offset, Correct Answer, Response Time, Answer
 
 % State :
 %
@@ -146,6 +147,20 @@ Run_Seq = horzcat(Run_Seq{:});
 % 2: -
 % 3: No Answer
 % 4: Abortion
+
+for i = 1:Run_Num
+
+    if(Run_Seq{i,5} == 45)
+
+        Run_Seq{i,15} = 'LeftShift';
+
+    elseif(Run_Seq{i,5} == -45)
+
+        Run_Seq{i,15} = 'RightShift';
+
+    end
+
+end
 
 % ------------------------------------------------------------------------
 
@@ -459,8 +474,8 @@ for n = 1:Run_Num
             Key = KbName(keyCod);  % which key was pressed
             Key = string(Key);
 
-            Run_Seq{n,15} = Response_Key_Time;
-            Run_Seq{n,16} = Key;
+            Run_Seq{n,16} = Response_Key_Time;
+            Run_Seq{n,17} = Key;
             Run_Seq{n,2} = 1; % 1: Done
 
             noResp = 0;
@@ -480,8 +495,8 @@ for n = 1:Run_Num
 
                 Abortion = 1;
                 Run_Seq{n,2} = 4; % 4: Abortion
-                Run_Seq{n,15} = NaN;
-                Run_Seq{n,16} = 'None' ;
+                Run_Seq{n,16} = NaN;
+                Run_Seq{n,17} = 'None' ;
 
                 noResp = 0;
                 break;
@@ -494,6 +509,8 @@ for n = 1:Run_Num
             send_trigger(cfgEyelink, 'Repeating Trial');
 
             % ITI
+
+            ITI_Frames = round(Run_Seq{n,8} / ifi);
 
             for frame = 1:ITI_Frames
 
@@ -540,6 +557,8 @@ for n = 1:Run_Num
             end
 
             % ISI
+
+            ISI_Frames = round(Run_Seq{n,9} / ifi);
 
             for frame = 1:ISI_Frames
 
@@ -599,8 +618,8 @@ for n = 1:Run_Num
         elseif ((GetSecs - Stim_Offset) > Response_Timeout)  % Stop listening
 
             Run_Seq{n,2} = 3; % 3: No Answer
-            Run_Seq{n,15} = NaN;
-            Run_Seq{n,16} = 'None' ;
+            Run_Seq{n,16} = NaN;
+            Run_Seq{n,17} = 'None' ;
 
             noResp = 0;
             break;
@@ -637,8 +656,8 @@ sca;
 
 cfgOutput.Output_table = cell2table(Run_Seq,"VariableNames",["ID", "State", "Contrast", ...
     "Attention_Direction", "Target_Oriention", "Distractor_Oriention", ...
-    "Repetition", "ITI", "ISI", "Trial_Onset", "Cue_Onset", ...
-    "Cue_Offset", "Stim_Onset", "Stim_Offset", "Response_Time", "Answer"]);
+    "Repetition", "ITI", "ISI", "Trial_Onset", "Cue_Onset", "Cue_Offset", ...
+    "Stim_Onset", "Stim_Offset", "Correct_Answer", "Response_Time", "Answer"]);
 
 % check if the logfile is being overwritten
 if exist([cfgFile.subDir, cfgFile.BIDSname, cfgFile.logFile], 'file') > 0
