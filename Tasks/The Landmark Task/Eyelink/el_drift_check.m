@@ -8,7 +8,7 @@ try
     cfgEyelink.defaults = EyelinkInitDefaults(window_EL);  % details about the graphics environment and initializations
     ListenChar(1);  % disable key output to Matlab window - change to 2 on real data collection
     disp('window open')
-    
+
     disp('Starting Calibration');
     EyelinkDoTrackerSetup(cfgEyelink.defaults);
 

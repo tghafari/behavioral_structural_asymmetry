@@ -8,21 +8,20 @@ Contrast_Step = 0.3; % Step value (log10)
 Attention_Directions = {'Right', 'Left'};
 Target_Orientions = {-45, 45};
 Distractor_Orientions = {-45, 45};
-Repetition_Num = 15;
+Repetition_Num = 20;
 SF = 9;
 
-number_of_short_breaks = 4;
+number_of_short_breaks = 8;
 number_of_big_breaks = 4;
 
 % Screen properties
 PsychDefaultSetup(2);
-
-% get screen number - draw to the external screen if avaliable
 cfgScreen.scrNum = max(Screen('Screens'));
+% get screen number - draw to the external screen if avaliable
 
 [cfgScreen.dispSize.width, cfgScreen.dispSize.height]...
     = Screen('DisplaySize', cfgScreen.scrNum);  % get the physical size of the screen in millimeters
-cfgScreen.distance = 50;  % set the distance from participant to the monitor in cm
+cfgScreen.distance = 67;  % set the distance from participant to the monitor in cm
 cfgScreen.resolution = Screen('Resolution', cfgScreen.scrNum);  % get/set the on screen resolution
 cfgScreen.fullScrn = [0, 0, cfgScreen.resolution.width, cfgScreen.resolution.height];  % size of full screen in pixels
 
@@ -33,11 +32,13 @@ cfgScreen.backgroundColor = grey;
 
 Periphery_Pix = angle2pix(cfgScreen,9);
 Gabor_Size = angle2pix(cfgScreen,5.6);
-Cue_Hight = angle2pix(cfgScreen,1);
+Cue_Hight = angle2pix(cfgScreen,0.65);
 
 Cue_Time = 0.2;
 Stim_Time = 0.05;
 Response_Timeout = 1;
+
+Noise_Contrast = 0.5;
 
 KbName('UnifyKeyNames');
 Keyboard.quitKey = KbName('ESCAPE');
@@ -219,6 +220,12 @@ for i = 1:Run_Num
 end
 
 %--------------------
+% Noise
+
+[Noise_Id, Noise_Rec] = CreateProceduralNoise(window, Gabor_Size, ...
+    Gabor_Size, 'Perlin', [0.5 0.5 0.5 0]);
+
+%--------------------
 % Cues
 
 [Right_Cue_Image, ~, alpha] = imread([cfgFile.cue, 'Right.png']);
@@ -260,7 +267,7 @@ FixCross_yCoords = [0 0 -FixCross_DimPix FixCross_DimPix];
 FixCross_allCoords = [FixCross_xCoords; FixCross_yCoords];
 
 % Set the line width for the fixation cross
-FixCross_lineWidthPix = 3;
+FixCross_lineWidthPix = 4;
 
 % Set the line width for the fixation circle
 FixCircle_lineWidthPix = 4;
@@ -314,10 +321,10 @@ for n = 1:Run_Num
 
         DrawFormattedText(window, 'Break For 2.5 Min :)', 'center', 'center',[1 1 1]);
         vbl=Screen('Flip',window); % swaps backbuffer to frontbuffer
+        WaitSecs(150)
 
         DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
-
-        Screen('Flip',window,vbl + 150);
+        vbl = Screen('Flip', window, vbl + (0.5 * ifi));
 
         if cfgEyelink.on
             el_drift_check(cfgEyelink, cfgScreen);
@@ -330,10 +337,10 @@ for n = 1:Run_Num
 
         DrawFormattedText(window, 'Break For 1 Min :)', 'center', 'center',[1 1 1]);
         vbl=Screen('Flip',window); % swaps backbuffer to frontbuffer
+        WaitSecs(60)
 
         DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
-
-        Screen('Flip',window,vbl + 60);
+        vbl = Screen('Flip', window, vbl + (0.5 * ifi));
 
         % Wait for a key press
         KbStrokeWait;
@@ -359,10 +366,31 @@ for n = 1:Run_Num
 
     ITI_Frames = round(Run_Seq{n,8} / ifi);
 
+    % Set new noise seed value
+    seed = randi([1000,1000000]);
+
     for frame = 1:ITI_Frames
 
         % Draw the fixation cross
         Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, black, [xCenter yCenter], 2);
+
+        if (n~=1)
+
+            % Disable alpha-blending for Noise
+            Screen('BlendFunction', window, 'GL_ONE', 'GL_ZERO');
+
+            % Noise
+            Screen('DrawTexture', window, Noise_Id, [], Target_Gabor_Rec, [], [], ...
+                [], [], [], [], [Noise_Contrast, seed, 0, 0]);
+
+            % Noise
+            Screen('DrawTexture', window, Noise_Id, [], Distractor_Gabor_Rec, [], [], ...
+                [], [], [], [], [Noise_Contrast, seed, 0, 0]);
+
+            % Set up alpha-blending (Global)
+            Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
+
+        end
 
         if (frame == 1)
             Trial_Onset = Screen('Flip',window); % swaps backbuffer to frontbuffer
@@ -425,10 +453,10 @@ for n = 1:Run_Num
     for frame = 1:Stim_Frames
 
         % Draw the fixation cross
-        Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, black, [xCenter yCenter], 2);
+        Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, [0.3 0.3 0.3], [xCenter yCenter], 2);
 
-        % Draw the fixation circle
-        Screen('FrameOval', window, black, FixCircle_centeredRect, FixCircle_lineWidthPix);
+        % % Draw the fixation circle
+        % Screen('FrameOval', window, black, FixCircle_centeredRect, FixCircle_lineWidthPix);
 
         % Disable alpha-blending for Gabors
         Screen('BlendFunction', window, 'GL_ONE', 'GL_ZERO');
@@ -510,12 +538,28 @@ for n = 1:Run_Num
 
             % ITI
 
-            ITI_Frames = round(Run_Seq{n,8} / ifi);
-
             for frame = 1:ITI_Frames
 
                 % Draw the fixation cross
                 Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, black, [xCenter yCenter], 2);
+
+                if (n~=1)
+
+                    % Disable alpha-blending for Noise
+                    Screen('BlendFunction', window, 'GL_ONE', 'GL_ZERO');
+
+                    % Noise
+                    Screen('DrawTexture', window, Noise_Id, [], Target_Gabor_Rec, [], [], ...
+                        [], [], [], [], [Noise_Contrast, seed, 0, 0]);
+
+                    % Noise
+                    Screen('DrawTexture', window, Noise_Id, [], Distractor_Gabor_Rec, [], [], ...
+                        [], [], [], [], [Noise_Contrast, seed, 0, 0]);
+
+                    % Set up alpha-blending (Global)
+                    Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
+
+                end
 
                 if (frame == 1)
                     Trial_Onset = Screen('Flip',window); % swaps backbuffer to frontbuffer
@@ -558,8 +602,6 @@ for n = 1:Run_Num
 
             % ISI
 
-            ISI_Frames = round(Run_Seq{n,9} / ifi);
-
             for frame = 1:ISI_Frames
 
                 % Draw the fixation cross
@@ -578,10 +620,10 @@ for n = 1:Run_Num
             for frame = 1:Stim_Frames
 
                 % Draw the fixation cross
-                Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, black, [xCenter yCenter], 2);
+                Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, [0.3 0.3 0.3], [xCenter yCenter], 2);
 
-                % Draw the fixation circle
-                Screen('FrameOval', window, black, FixCircle_centeredRect, FixCircle_lineWidthPix);
+                % % Draw the fixation circle
+                % Screen('FrameOval', window, black, FixCircle_centeredRect, FixCircle_lineWidthPix);
 
                 % Disable alpha-blending for Gabors
                 Screen('BlendFunction', window, 'GL_ONE', 'GL_ZERO');

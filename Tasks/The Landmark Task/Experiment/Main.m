@@ -15,7 +15,7 @@ cfgScreen.scrNum = max(Screen('Screens'));
 
 [cfgScreen.dispSize.width, cfgScreen.dispSize.height]...
     = Screen('DisplaySize', cfgScreen.scrNum);  % get the physical size of the screen in millimeters
-cfgScreen.distance = 50;  % set the distance from participant to the monitor in cm
+cfgScreen.distance = 67;  % set the distance from participant to the monitor in cm
 cfgScreen.resolution = Screen('Resolution', cfgScreen.scrNum);  % get/set the on screen resolution
 cfgScreen.fullScrn = [0, 0, cfgScreen.resolution.width, cfgScreen.resolution.height];  % size of full screen in pixels
 
@@ -264,7 +264,7 @@ Response_Timeout_Frames = round(Response_Timeout / ifi);
 Screen('TextFont', window, 'Ariel');
 Screen('TextSize', window, 32);
 
-DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
+DrawFormattedText(window, 'Press anykey to start :)', 'center', 'center',[1 1 1]);
 
 % Flip to the screen
 Screen('Flip', window);
@@ -307,10 +307,10 @@ for n = 1:Run_Num
 
     if ((ceil(n / Big_Break_Interval) ~= ceil((n-1) / Big_Break_Interval)) && n ~= 1)
 
-        DrawFormattedText(window, 'Take a break For 2.5 Min :)', 'center', 'center',[1 1 1]);
+        DrawFormattedText(window, 'Take a break for 2.5 min :)', 'center', 'center',[1 1 1]);
         Screen('Flip',window); % swaps backbuffer to frontbuffer
 
-        DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
+        DrawFormattedText(window, 'Press anykey to start :)', 'center', 'center',[1 1 1]);
 
         WaitSecs(150);
 
@@ -325,10 +325,10 @@ for n = 1:Run_Num
 
     elseif ((ceil(n / Small_Break_Interval) ~= ceil((n-1) / Small_Break_Interval)) && n ~= 1)
 
-        DrawFormattedText(window, 'Take a break For 1 Min :)', 'center', 'center',[1 1 1]);
+        DrawFormattedText(window, 'Take a break for 1 min :)', 'center', 'center',[1 1 1]);
         Screen('Flip',window); % swaps backbuffer to frontbuffer
 
-        DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
+        DrawFormattedText(window, 'Press anykey to start :)', 'center', 'center',[1 1 1]);
 
         WaitSecs(60);
 
@@ -345,19 +345,19 @@ for n = 1:Run_Num
 
         if (strcmp(Run_Seq{n,4}, 'Shorter'))
 
-            DrawFormattedText(window, 'Next Block: Which Side Is Shorter?', 'center', 'center',[1 1 1]);
+            DrawFormattedText(window, 'Which side is shorter?', 'center', 'center',[1 1 1]);
             send_trigger(cfgEyelink, 'Shorter Block');
 
         elseif (strcmp(Run_Seq{n,4}, 'Longer'))
 
-            DrawFormattedText(window, 'Next Block: Which Side Is Longer?', 'center', 'center',[1 1 1]);
+            DrawFormattedText(window, 'Which side is longer?', 'center', 'center',[1 1 1]);
             send_trigger(cfgEyelink, 'Longer Block');
 
         end
 
         Screen('Flip',window); % swaps backbuffer to frontbuffer
 
-        DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
+        DrawFormattedText(window, 'Press anykey to start :)', 'center', 'center',[1 1 1]);
 
         WaitSecs(4);
 
@@ -377,20 +377,20 @@ for n = 1:Run_Num
 
         if (strcmp(Run_Seq{n,4}, 'Shorter'))
 
-            DrawFormattedText(window, 'Next Block: Which Side Is Shorter?', 'center', 'center',[1 1 1]);
+            DrawFormattedText(window, 'Which side is shorter?', 'center', 'center',[1 1 1]);
             send_trigger(cfgEyelink, 'Shorter Block');
 
 
         elseif (strcmp(Run_Seq{n,4}, 'Longer'))
 
-            DrawFormattedText(window, 'Next Block: Which Side Is Longer?', 'center', 'center',[1 1 1]);
+            DrawFormattedText(window, 'Which side is longer?', 'center', 'center',[1 1 1]);
             send_trigger(cfgEyelink, 'Longer Block');
 
         end
 
         Screen('Flip',window); % swaps backbuffer to frontbuffer
 
-        DrawFormattedText(window, 'Press Anykey To Start :)', 'center', 'center',[1 1 1]);
+        DrawFormattedText(window, 'Press anykey to start :)', 'center', 'center',[1 1 1]);
 
         WaitSecs(4);
 
@@ -577,8 +577,6 @@ for n = 1:Run_Num
 
             % ITI
 
-            ITI_Frames = round(Run_Seq{n,8} / ifi);
-
             for frame = 1:ITI_Frames
 
                 % Draw the fixation cross
@@ -624,9 +622,6 @@ for n = 1:Run_Num
                 end
 
             end
-
-            % Set new noise seed value
-            seed = randi([1000,1000000]);
 
             % Disable alpha-blending for Noise
             Screen('BlendFunction', window, 'GL_ONE', 'GL_ZERO');
