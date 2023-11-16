@@ -10,7 +10,7 @@ el.targetbeep = 0;
 el.feedbackbeep = 0;
 el.displayCalResults = 1;
 el.eyeimagesize = 50;  % percentage of screen
-el.cameraDistance = 67;  % distance between participant and camera in cm
+el.cameraDistance = 55;  % distance between participant and camera in cm
 el.backgroundcolour = cfgScreen.backgroundColor;  % set the eyelink background color
 el.foregroundcolour = 255; %cfgScreen.white;  % set the text/fixation cross color of eyelink
 el.imgtitlecolour = 255; %cfgScreen.white;
@@ -18,7 +18,7 @@ el.calibrationtargetcolour = [255, 255, 255]; %[cfgScreen.white, cfgScreen.white
 el.msgfontcolour = 255; %cfgScreen.white;
 
 % size of the screen to use for eyetracking
-num_pix_smaller_than_fullScrn = 100;
+num_pix_smaller_than_fullScrn = 300;
 
 try
     disp('Updating Parameters')
