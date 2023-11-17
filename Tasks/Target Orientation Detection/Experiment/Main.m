@@ -32,7 +32,7 @@ cfgScreen.backgroundColor = grey;
 
 Periphery_Pix = angle2pix(cfgScreen,9);
 Gabor_Size = angle2pix(cfgScreen,5.6);
-Cue_Hight = angle2pix(cfgScreen,0.65);
+Cue_Hight = angle2pix(cfgScreen,1);
 
 Cue_Time = 0.2;
 Stim_Time = 0.05;
