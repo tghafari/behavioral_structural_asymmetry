@@ -42,7 +42,7 @@ cfgScreen.backgroundColor = grey;
 
 Periphery_Pix = angle2pix(cfgScreen,9);
 Gabor_Size = angle2pix(cfgScreen,5.6);
-Cue_Hight = angle2pix(cfgScreen,1);
+Cue_Hight = angle2pix(cfgScreen,0.8);
 
 Cue_Time = 0.2;
 Stim_Time = 0.05;
@@ -248,8 +248,8 @@ freq = numCycles / Gabor_Size;
 %--------------------
 % Noise
 
-[Noise_Id, Noise_Rec] = CreateProceduralNoise(window, Gabor_Size, ...
-    Gabor_Size, 'Perlin', [0.5 0.5 0.5 0]);
+[Noise_Id, Noise_Rec] = CreateProceduralNoise(window, screenXpixels, ...
+    screenYpixels, 'Perlin', [0.5 0.5 0.5 0]);
 
 %--------------------
 % Cues
@@ -510,30 +510,26 @@ for n = 1:Run_Num
     ITI_Frames = round(Run_Seq{n,9} / ifi);
 
     % Set new noise seed value
-    seed = randi([1000,1000000]);
+    seed = randi([10000,10000000]);
 
     for frame = 1:ITI_Frames
 
-        % Draw the fixation cross
-        Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, black, [xCenter yCenter], 2);
-
-        if (n~=1)
+        if ((n ~= 1) && (frame <= (ITI_Frames / 2)))
 
             % Disable alpha-blending for Noise
             Screen('BlendFunction', window, 'GL_ONE', 'GL_ZERO');
 
             % Noise
-            Screen('DrawTexture', window, Noise_Id, [], Target_Gabor_Rec, [], [], ...
+            Screen('DrawTexture', window, Noise_Id, [], [], [], [], ...
                 [], [], [], [], [Noise_Contrast, seed, 0, 0]);
-
-            % % Noise
-            % Screen('DrawTexture', window, Noise_Id, [], Distractor_Gabor_Rec, [], [], ...
-            %     [], [], [], [], [Noise_Contrast, seed, 0, 0]);
 
             % Set up alpha-blending (Global)
             Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 
         end
+
+        % Draw the fixation cross
+        Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, black, [xCenter yCenter], 2);
 
         if (frame == 1)
             Trial_Onset = Screen('Flip',window); % swaps backbuffer to frontbuffer
@@ -596,7 +592,7 @@ for n = 1:Run_Num
     for frame = 1:Stim_Frames
 
         % Draw the fixation cross
-        Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, [0.3 0.3 0.3], [xCenter yCenter], 2);
+        Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, [0.2 0.2 0.2], [xCenter yCenter], 2);
 
         % % Draw the fixation circle
         % Screen('FrameOval', window, black, FixCircle_centeredRect, FixCircle_lineWidthPix);
@@ -680,26 +676,22 @@ for n = 1:Run_Num
 
             for frame = 1:ITI_Frames
 
-                % Draw the fixation cross
-                Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, black, [xCenter yCenter], 2);
-
-                if (n~=1)
+                if ((n ~= 1) && (frame <= (ITI_Frames / 2)))
 
                     % Disable alpha-blending for Noise
                     Screen('BlendFunction', window, 'GL_ONE', 'GL_ZERO');
 
                     % Noise
-                    Screen('DrawTexture', window, Noise_Id, [], Target_Gabor_Rec, [], [], ...
+                    Screen('DrawTexture', window, Noise_Id, [], [], [], [], ...
                         [], [], [], [], [Noise_Contrast, seed, 0, 0]);
-
-                    % % Noise
-                    % Screen('DrawTexture', window, Noise_Id, [], Distractor_Gabor_Rec, [], [], ...
-                    %     [], [], [], [], [Noise_Contrast, seed, 0, 0]);
 
                     % Set up alpha-blending (Global)
                     Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 
                 end
+
+                % Draw the fixation cross
+                Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, black, [xCenter yCenter], 2);
 
                 if (frame == 1)
                     Trial_Onset = Screen('Flip',window); % swaps backbuffer to frontbuffer
@@ -760,7 +752,7 @@ for n = 1:Run_Num
             for frame = 1:Stim_Frames
 
                 % Draw the fixation cross
-                Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, [0.3 0.3 0.3], [xCenter yCenter], 2);
+                Screen('DrawLines', window, FixCross_allCoords, FixCross_lineWidthPix, [0.2 0.2 0.2], [xCenter yCenter], 2);
 
                 % % Draw the fixation circle
                 % Screen('FrameOval', window, black, FixCircle_centeredRect, FixCircle_lineWidthPix);
