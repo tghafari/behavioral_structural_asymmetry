@@ -11,8 +11,8 @@ Distractor_Orientions = {-45, 45};
 Repetition_Num = 20;
 SF = 9;
 
-number_of_short_breaks = 8;
-number_of_big_breaks = 4;
+number_of_short_breaks = 5;
+number_of_big_breaks = 3;
 
 % Screen properties
 PsychDefaultSetup(2);
