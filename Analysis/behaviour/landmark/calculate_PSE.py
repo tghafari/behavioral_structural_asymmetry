@@ -46,8 +46,6 @@ def weibull_min_ppf(ppf, shape, loc, scale, y_scale, y_bias):
 
 # this function plots figure 3A from 'cite sabine's paper'
 def Figure3A(fpath, savefig_path):
-
-    bias_list = [] # list of PSEs for figure B
     Data = pd.read_csv(fpath)
     
     # Data binning
@@ -115,7 +113,6 @@ def Figure3A(fpath, savefig_path):
                             scale_x, y_scale, y_bias)
     # Define direction of bias:
     PSE_x = weibull_min_ppf(0.5, shape_x, loc_x, scale_x, y_scale, y_bias)
-    bias_list.append(PSE_x)
     if PSE_x < 0:
         Bias = 'Lefward Bias'
     elif PSE_x > 0:
@@ -141,9 +138,10 @@ def Figure3A(fpath, savefig_path):
     plt.gca().spines['top'].set_visible(False)
     plt.gca().spines['right'].set_visible(False)
     
-    return bias_list, r2
+    return PSE_x, r2
 
 # Plot figure 3-A for all subjects:
+bias_list = [] # list of PSEs for figure B
 for sub in subjects:
     print(sub)
     sub_code = f"sub-S100{sub}"
@@ -151,7 +149,8 @@ for sub in subjects:
     savefig_path = op.join(save_dir, sub_code + '_figure3A.png')
     fpath = op.join(Files_Address, sub_code, 'ses-01\\beh', file_name)
     # plot figure 3A
-    bias_list, r2 = Figure3A(fpath, savefig_path)
+    PSE_x, r2 = Figure3A(fpath, savefig_path)
+    bias_list.append(PSE_x)
     # Define plot(s) title:
     plt.title('Figure 3-A. Subject %s _ r2 = %s' % (sub_code, r2), pad=10, fontsize=10, fontweight=100, loc='left')
     # Full screnn plot:
