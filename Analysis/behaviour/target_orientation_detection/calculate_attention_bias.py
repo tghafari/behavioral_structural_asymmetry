@@ -119,7 +119,7 @@ def Finalysis(fpath):
 
     contrast_Table = pd.DataFrame(data=Results, columns=[
                          "Contrast", "Right_Correct_Percent", "Left_Correct_Percent", "All_Correct_Percent"])
-    contrast_Table = Table.set_index(['Contrast'])
+    contrast_Table = contrast_Table.set_index(['Contrast'])
 
     return contrast_Table
 
@@ -266,20 +266,18 @@ for sub in subjects:
     
     contrast_Table = Finalysis(fpath)
     
+    PSE_Right, r_square_Right, PSE_Left, r_square_Left = plot_fitted_data(contrast_Table, sub_code)
     plt.title(f"Subject {sub_code} Right PSE = {round(PSE_Right, 3)}, Right r2 = {round(r_square_Right, 3)}, "\
               f"Left PSE = {round(PSE_Left, 3)}, Left r2 = {round(r_square_Left, 3)}", pad=15, fontsize=10, fontweight=200, loc='left')
    
     plt.tight_layout()   # full screnn plot
     plt.savefig(savefig_path, dpi=300)
 
-    PSE_Right, r_square_Right, PSE_Left, r_square_Left = plot_fitted_data(contrast_Table, sub_code)
+# number_of_files = len(list_of_files)
+# out = Finalysis(list_of_files[0])
+# for i in range(1, number_of_files):
+#     contrast_Table = Finalysis(list_of_files[i])
+#     out = out + contrast_Table
 
-
-number_of_files = len(list_of_files)
-out = Finalysis(list_of_files[0])
-for i in range(1, number_of_files):
-    contrast_Table = Finalysis(list_of_files[i])
-    out = out + contrast_Table
-
-contrast_Table_all = out / number_of_files
-plot_fitted_data(contrast_Table, 'All')
+# contrast_Table_all = out / number_of_files
+# plot_fitted_data(contrast_Table, 'All')
