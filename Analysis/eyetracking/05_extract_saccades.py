@@ -384,33 +384,34 @@ def GetVelocityThreshold(velocity):
 
 
 # load in params and epochs
-sub_code= '105'
-output_fpath = r'Z:\Projects\Subcortical_Structures\SubStr_and_behavioral_bias\Analysis\target_orientation\eyetracking'
-output_dir = op.join(output_fpath,'sub-S' + sub_code)
-with open(op.join(output_dir, 'EL_params.json'), 'rb') as f:
-    params = pickle.load(f)
+for sub_code in range(1,7):
+    base_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias'
+    output_fpath = op.join(base_dir, 'results', 'target_orientation', 'eyetracking')
+    output_dir = op.join(output_fpath,'sub-S100' + str(sub_code))
+    with open(op.join(output_dir, 'EL_params.json'), 'rb') as f:
+        params = pickle.load(f)
+        
+    # Microsaccades in attention right epochs
+    with open(op.join(output_dir, 'EL_noblinks_right.json'), 'rb') as f:
+        blink_data_right = pickle.load(f)
+        
+    EpochDataNoBlinks_right = blink_data_right[0]
+    gazeData_right = [df[['LX', 'LY', 'RX', 'RY']] for df in EpochDataNoBlinks_right]
     
-# Microsaccades in attention right epochs
-with open(op.join(output_dir, 'EL_noblinks_right.json'), 'rb') as f:
-    blink_data_right = pickle.load(f)
+    saccadeinfo_right = ExtractSaccades(gazeData_right, params, getBinocular=True)
     
-EpochDataNoBlinks_right = blink_data_right[0]
-gazeData_right = [df[['LX', 'LY', 'RX', 'RY']] for df in EpochDataNoBlinks_right]
-
-saccadeinfo_right = ExtractSaccades(gazeData_right, params, getBinocular=True)
-
-# Microsaccades in attention left epochs
-with open(op.join(output_dir, 'EL_noblinks_left.json'), 'rb') as f:
-    blink_data_left = pickle.load(f)
+    # Microsaccades in attention left epochs
+    with open(op.join(output_dir, 'EL_noblinks_left.json'), 'rb') as f:
+        blink_data_left = pickle.load(f)
+        
+    EpochDataNoBlinks_left = blink_data_left[0]
+    gazeData_left = [df[['LX', 'LY', 'RX', 'RY']] for df in EpochDataNoBlinks_left]
     
-EpochDataNoBlinks_left = blink_data_left[0]
-gazeData_left = [df[['LX', 'LY', 'RX', 'RY']] for df in EpochDataNoBlinks_left]
-
-saccadeinfo_left = ExtractSaccades(gazeData_left, params, getBinocular=True)
-
-# Save
-with open(op.join(output_dir, 'EL_saccadeinfo_right.json'), 'wb') as f:
-    pickle.dump(saccadeinfo_right, f)
-with open(op.join(output_dir, 'EL_saccadeinfo_left.json'), 'wb') as f:
-    pickle.dump(saccadeinfo_left, f)
+    saccadeinfo_left = ExtractSaccades(gazeData_left, params, getBinocular=True)
+    
+    # Save
+    with open(op.join(output_dir, 'EL_saccadeinfo_right.json'), 'wb') as f:
+        pickle.dump(saccadeinfo_right, f)
+    with open(op.join(output_dir, 'EL_saccadeinfo_left.json'), 'wb') as f:
+        pickle.dump(saccadeinfo_left, f)
         

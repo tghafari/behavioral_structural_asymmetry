@@ -159,23 +159,23 @@ def ParseEyeLinkAsc(eyetracking_asc_file):
        
 
 # Define file names
-sub_code = '105'
-base_dir = r'Z:\Projects\Subcortical_Structures\SubStr_and_behavioral_bias'
-task_dir = r'Data\target_orientation_detection\Results'
-sub_dir = op.join('sub-S' + sub_code, r'ses-01\beh')
-eyetracking_fpath = op.join(base_dir, task_dir, sub_dir, 'e01S' + sub_code) 
-eyetracking_asc_file = eyetracking_fpath + '.asc'
-
+for sub_code in range(2,7):
+    base_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias'
+    task_dir = r'programming\MATLAB\main-study\target-orientation-detection\Results'
+    sub_dir = op.join('sub-S100' + str(sub_code), r'ses-01\beh')
+    eyetracking_fpath = op.join(base_dir, task_dir, sub_dir, 'e01S100' + str(sub_code)) 
+    eyetracking_asc_file = eyetracking_fpath + '.asc'
     
-eyeData = ParseEyeLinkAsc(eyetracking_asc_file)
-
-# save eyeData as json file
-output_fpath = r'Z:\Projects\Subcortical_Structures\SubStr_and_behavioral_bias\Analysis\target_orientation\eyetracking'
-output_dir = op.join(output_fpath,'sub-S' + sub_code)
-if not op.exists(output_dir):
-   os.makedirs(output_dir)
-               
-with open(op.join(output_dir, 'EL_eyeData.json'), 'wb') as f:
-    pickle.dump(eyeData, f)
+        
+    eyeData = ParseEyeLinkAsc(eyetracking_asc_file)
+    
+    # save eyeData as json file
+    output_fpath = op.join(base_dir, 'results', 'target_orientation', 'eyetracking')
+    output_dir = op.join(output_fpath,'sub-S100' + str(sub_code))
+    if not op.exists(output_dir):
+       os.makedirs(output_dir)
+                   
+    with open(op.join(output_dir, 'EL_eyeData.json'), 'wb') as f:
+        pickle.dump(eyeData, f)
     
     

@@ -112,19 +112,20 @@ def SequenceEyeData(params, eyeData):
 
 
 # load in eyeData and params
-sub_code = '105'
-output_fpath = r'Z:\Projects\Subcortical_Structures\SubStr_and_behavioral_bias\Analysis\target_orientation\eyetracking'
-output_dir = op.join(output_fpath,'sub-S' + sub_code)
-with open(op.join(output_dir, 'EL_eyeData.json'), 'rb') as f:
-    eyeData = pickle.load(f)
+for sub_code in range(1,7):
+    base_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias'
+    output_fpath = op.join(base_dir, 'results', 'target_orientation', 'eyetracking')
+    output_dir = op.join(output_fpath,'sub-S100' + str(sub_code))
+    with open(op.join(output_dir, 'EL_eyeData.json'), 'rb') as f:
+        eyeData = pickle.load(f)
+        
+    with open(op.join(output_dir, 'EL_params.json'), 'rb') as f:
+        params = pickle.load(f)
+        
+    epoch_data = SequenceEyeData(params, eyeData)
     
-with open(op.join(output_dir, 'EL_params.json'), 'rb') as f:
-    params = pickle.load(f)
-    
-epoch_data = SequenceEyeData(params, eyeData)
-
-# save epoch_data as json file
-with open(op.join(output_dir, 'EL_epochs.json'), 'wb') as f:
-    pickle.dump(epoch_data, f)
-    
+    # save epoch_data as json file
+    with open(op.join(output_dir, 'EL_epochs.json'), 'wb') as f:
+        pickle.dump(epoch_data, f)
+        
     

@@ -17,6 +17,7 @@ written by Tara Ghafari
 ===============================================
 """
 import os.path as op
+import pandas as pd
 import pickle
 from statistics import mean    
     
@@ -31,24 +32,33 @@ def read_ms_direction(saccadeinfo):
     return attention_ms_direction
     
 
+ms_lateralisation_table =[]
 # Load microsaccade info lists
-output_fpath = r'Z:\Projects\Subcortical_Structures\SubStr_and_behavioral_bias\Analysis\target_orientation\eyetracking'
-sub_code = '105'
-output_dir = op.join(output_fpath,'sub-S' + sub_code)
+for sub_code in range(1,7):
+    base_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias'
+    output_fpath = op.join(base_dir, 'results', 'target_orientation', 'eyetracking')
+    output_dir = op.join(output_fpath,'sub-S100' + str(sub_code))
 
-with open(op.join(output_dir, 'EL_saccadeinfo_right.json'), 'rb') as f:
-    saccadeinfo_right = pickle.load(f)
-with open(op.join(output_dir, 'EL_saccadeinfo_left.json'), 'rb') as f:
-    saccadeinfo_left = pickle.load(f)
+    with open(op.join(output_dir, 'EL_saccadeinfo_right.json'), 'rb') as f:
+        saccadeinfo_right = pickle.load(f)
+    with open(op.join(output_dir, 'EL_saccadeinfo_left.json'), 'rb') as f:
+        saccadeinfo_left = pickle.load(f)
+        
+    # pick across direction of microsaccade in attention right and left conditions
+    attention_right_ms_direction = read_ms_direction(saccadeinfo_right)
+    attention_left_ms_direction = read_ms_direction(saccadeinfo_left)
     
-# pick across direction of microsaccade in attention right and left conditions
-attention_right_ms_direction = read_ms_direction(saccadeinfo_right)
-attention_left_ms_direction = read_ms_direction(saccadeinfo_left)
+    # average 
+    right_att_mean_direction = mean(attention_right_ms_direction)
+    left_att_mean_direction = mean(attention_left_ms_direction)
+    
+    # calculate ms bias index
+    microsaccade_lateralisation_idx = (right_att_mean_direction - left_att_mean_direction) /\
+                                      (right_att_mean_direction + left_att_mean_direction)  
+    ms_lateralisation_table.append(microsaccade_lateralisation_idx)
 
-# average 
-right_att_mean_direction = mean(attention_right_ms_direction)
-left_att_mean_direction = mean(attention_left_ms_direction)
-
-# calculate ms bias index
-microsaccade_lateralisation_idx = (right_att_mean_direction - left_att_mean_direction) /\
-                                  (right_att_mean_direction + left_att_mean_direction)  
+# first convert table to df then save as .csv
+all_subs_fpath = op.join(output_fpath,'all-subs', 'ms_lateralisation_6subs.csv')
+ms_lateralisation_df = pd.DataFrame(ms_lateralisation_table)     
+ms_lateralisation_df.to_csv(all_subs_fpath,index=True)      
+                                      

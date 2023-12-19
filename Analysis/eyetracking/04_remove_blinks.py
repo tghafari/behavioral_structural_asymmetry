@@ -76,24 +76,25 @@ def RemoveBlinks(epoch_data, params):
     return EpochDataNoBlinks, Blinks, BlinkArray.T
 
 # load in params and epochs
-sub_code= '105'
-output_fpath = r'Z:\Projects\Subcortical_Structures\SubStr_and_behavioral_bias\Analysis\target_orientation\eyetracking'
-output_dir = op.join(output_fpath,'sub-S' + sub_code)
-with open(op.join(output_dir, 'EL_params.json'), 'rb') as f:
-    params = pickle.load(f)
+for sub_code in range(2,7):
+    base_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias'
+    output_fpath = op.join(base_dir, 'results', 'target_orientation', 'eyetracking')
+    output_dir = op.join(output_fpath,'sub-S100' + str(sub_code))
+    with open(op.join(output_dir, 'EL_params.json'), 'rb') as f:
+        params = pickle.load(f)
+        
+    with open(op.join(output_dir, 'EL_epochs.json'), 'rb') as f:
+        epoch_data = pickle.load(f)
     
-with open(op.join(output_dir, 'EL_epochs.json'), 'rb') as f:
-    epoch_data = pickle.load(f)
-
-
-blink_data_left = RemoveBlinks(epoch_data[1], params)  # epoch_data[2] includes both right and left attention epochs
-blink_data_right = RemoveBlinks(epoch_data[0], params)  # epoch_data[1] includes left attention epochs
-                                                        # epoch_data[0] includes right attention epochs
-
-with open(op.join(output_dir, 'EL_noblinks_left.json'), 'wb') as f:
-    pickle.dump(blink_data_left, f)
-with open(op.join(output_dir, 'EL_noblinks_right.json'), 'wb') as f:
-    pickle.dump(blink_data_right, f)
+    
+    blink_data_left = RemoveBlinks(epoch_data[1], params)  # epoch_data[2] includes both right and left attention epochs
+    blink_data_right = RemoveBlinks(epoch_data[0], params)  # epoch_data[1] includes left attention epochs
+                                                            # epoch_data[0] includes right attention epochs
+    
+    with open(op.join(output_dir, 'EL_noblinks_left.json'), 'wb') as f:
+        pickle.dump(blink_data_left, f)
+    with open(op.join(output_dir, 'EL_noblinks_right.json'), 'wb') as f:
+        pickle.dump(blink_data_right, f)
     
     
     

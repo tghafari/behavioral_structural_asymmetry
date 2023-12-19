@@ -76,17 +76,18 @@ def InitParams(eyeData, participantCode, fs, eye):
     return params
 
 # load in eyeData
-sub_code = '105'
-output_fpath = r'Z:\Projects\Subcortical_Structures\SubStr_and_behavioral_bias\Analysis\target_orientation\eyetracking'
-output_dir = op.join(output_fpath,'sub-S' + sub_code)
-with open(op.join(output_dir, 'EL_eyeData.json'), 'rb') as f:
-    eyeData = pickle.load(f)
-
-fs = 500  # sampling frequency
-eye = 'B'
-
-params = InitParams(eyeData, 'S'+ sub_code, fs, eye)
-
-# save params as json file
-with open(op.join(output_dir, 'EL_params.json'), 'wb') as f:
-    pickle.dump(params, f)
+for sub_code in range(2,7):
+    base_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias'
+    output_fpath = op.join(base_dir, 'results', 'target_orientation', 'eyetracking')
+    output_dir = op.join(output_fpath,'sub-S100' + str(sub_code))
+    with open(op.join(output_dir, 'EL_eyeData.json'), 'rb') as f:
+        eyeData = pickle.load(f)
+    
+    fs = 500  # sampling frequency
+    eye = 'B'
+    
+    params = InitParams(eyeData, 'S100'+ str(sub_code), fs, eye)
+    
+    # save params as json file
+    with open(op.join(output_dir, 'EL_params.json'), 'wb') as f:
+        pickle.dump(params, f)
