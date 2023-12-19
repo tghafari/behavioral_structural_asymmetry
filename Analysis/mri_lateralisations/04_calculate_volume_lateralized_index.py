@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import os.path as op
 
-volume_sheet_dir = r'Z:\Projects\Subcortical_Structures\SubStr_and_behavioral_bias\Analysis\MRI_lateralisations\lateralisation_indices'
+volume_sheet_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias\results\MRI_lateralisations\lateralisation_indices'
 volume_sheet_fname = op.join(volume_sheet_dir, 'all_subs_substr_volumes.csv')
 output_fname = op.join(volume_sheet_dir, 'lateralisation_volumes.csv')
 

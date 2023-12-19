@@ -16,18 +16,13 @@ import os.path as op
 import pandas as pd
 
 # Define where to read and write the data
-mri_deriv_dir = r'Z:\Projects\Subcortical_Structures\SubStr_and_behavioral_bias\Analysis\MRI_lateralisations'
+mri_deriv_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias\results\MRI_lateralisations'
 subStr_segmented_dir = op.join(mri_deriv_dir, 'substr_segmented')
 output_dir = op.join(mri_deriv_dir, 'lateralisation_indices')
 output_fname = op.join(output_dir, 'all_subs_substr_volumes.csv')
 
 # list of subjects folders
-dir_subject_list = [r'20211007#C4DF_nifti_ClemAtkin\20211007#C4DF_nifti.SubVol',
-                     r'20211103#C59B_nifti_SiddhantBhutkar\20211103#C59B_nifti.SubVol',
-                     r'20221102#C59E_nifti_BethHudson\20221102#C59E_nifti.SubVol',
-                     r'20221214#C40F_nifti_VaentinPiscuc\20221214#C40F_nifti.SubVol',
-                     r'20230202#C64A_nifti_SrishtiNarang\20230202#C64A_nifti.SubVol',
-                     r'20230519#C345_nifti_SumedhaRaj\20230519#C345_nifti.SubVol']
+num_sub_list = range(1,7)
 
 # Specify labels assigned to structures thatwere segmented by FSL
 labels = [10, 11, 12, 13, 16, 17, 18, 26, 49, 50, 51, 52, 53, 54, 58]
@@ -39,29 +34,29 @@ all_subject_substr_volume_table = np.full((6, 15), np.nan)
 sub_IDs =[]
 
 # Read good subjects 
-for i, subject_dir in enumerate(dir_subject_list):
-    substr_dir = op.join(subStr_segmented_dir, subject_dir)
+for i, num_sub in enumerate(num_sub_list):
+    substr_dir = op.join(subStr_segmented_dir, 'S100' + str(num_sub) + '.SubVol')
     if op.exists(substr_dir):
         for idx, label in enumerate(labels):
             volume_label = 'volume' + str(label) + '.txt'
             substr_vol_fname = op.join(substr_dir, volume_label)
             if op.exists(substr_vol_fname):
-                print(f"reading structure {structures[idx]} in subject # {i}")
+                print(f"reading structure {structures[idx]} in subject #S100 {str(num_sub)}")
                 # Read the text file
                 with open(substr_vol_fname, "r") as file:
                     line = file.readline()
                 substr_volume_array = np.fromstring(line.strip(), sep=' ')[1]     
             else:
-                print(f"no volume for substructure {structures[idx]} found for subject # {i}")
+                print(f"no volume for substructure {structures[idx]} found for subject #S100 {str(num_sub)}")
                 substr_volume_array = np.nan  
             
             # Store the volume of each substr in one columne and data of each subject in one row  
             all_subject_substr_volume_table[i, idx] = substr_volume_array
     else:
-        print('no substructures segmented by fsl for subject # ', i)
+        print('no substructures segmented by fsl for subject #S100' + str(num_sub))
         all_subject_substr_volume_table[i, :] = np.nan 
     
-    sub_IDs.append(i)
+    sub_IDs.append(num_sub)
     
  
 # Create a dataframe for all the data

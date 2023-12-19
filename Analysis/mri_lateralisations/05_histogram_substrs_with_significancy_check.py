@@ -19,7 +19,7 @@ import os.path as op
 
 
 # Load the lateralization index sheet
-volume_sheet_dir = r'Z:\Projects\Subcortical_Structures\SubStr_and_behavioral_bias\Analysis\MRI_lateralisations\lateralisation_indices'
+volume_sheet_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias\results\MRI_lateralisations\lateralisation_indices'
 lat_sheet_fname = op.join(volume_sheet_dir, 'lateralisation_volumes.csv')
 df = pd.read_csv(lat_sheet_fname)
 lateralisation_volume = df.iloc[:,1:8].to_numpy()
