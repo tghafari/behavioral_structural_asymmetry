@@ -26,7 +26,7 @@ def DataBin(column):
 def DataBinB(column):
     return math.floor(column)
 
-# Define Weibull distrbituion function:
+# Define Weibull distrbituion parameters
 y_scale_guess = 1
 y_bias_guess = 0
 ppf = 0.5
@@ -143,7 +143,6 @@ def Figure3A(fpath, savefig_path):
 # Plot figure 3-A for all subjects:
 bias_list = [] # list of PSEs for figure B
 for sub in subjects:
-    print(sub)
     sub_code = f"sub-S100{sub}"
     file_name = f"sub-S100{sub}_ses-01_task-Landmark_run-01_logfile.csv"
     savefig_path = op.join(save_dir, sub_code + '_figure3A.png')
@@ -175,10 +174,10 @@ plt.bar(Bias_x, Bias_y, width=0.5, color='black')
 plt.xlabel('Spatial Bias (Log of Deg. Vis. Ang.)',
            fontsize='x-large', fontweight=1000)
 plt.ylabel('Number of Subjets', fontsize='x-large', fontweight=1000)
-# Define axis starting and end points:
+# Define axis starting and end points
 plt.xlim(-12.1, 12.1)
 plt.ylim(0, 10)
-# Define axis ticks:
+# Define axis ticks
 listofxticks = range(-12, 12, 1)
 plt.xticks(ticks=listofxticks)
 plt.yticks(np.arange(0, 10, 1))

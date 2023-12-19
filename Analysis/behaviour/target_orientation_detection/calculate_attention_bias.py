@@ -6,7 +6,7 @@ this code will read in the data from target
 orientation detection task and calculates
 each participants bias towards right and left
 
-written by Mohammad Ebrahim Katebi (mekatebi.2000@gmail.com)
+written by Ebrahim Katebi (email?)
 adapted by Tara Ghafari
 ==============================================  
 ToDos:
@@ -27,10 +27,10 @@ from scipy.stats import weibull_min
 from scipy.optimize import curve_fit
 
 # Define address of resuls and figures
-Files_Address = r'./Data/'
-save_dir = r'./Results/'
+Files_Address = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias\programming\MATLAB\main-study\target-orientation-detection\Results'
+save_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias\results\target_orientation\figures'
 
-subjects = range(1, 6)  # number of subjects
+subjects = range(1,6)  # number of subjects
 
 # Obligate pandas to show entire data
 pd.set_option('display.max_rows', None, 'display.max_columns', None)
@@ -41,11 +41,9 @@ y_bias_guess = 0.5
 ppf = 0.75
 
 # Define Weibull functions
-
-
 def weibull_min_cdf(x_log, shape, loc, scale, y_scale, y_bias):
 
-    y = weibull_min.cdf(x_log, shape, loc, scale)
+    y = weibull_min.cdf(x_log, shape, loc, scale)  # leave the parameters to be optimized
 
     # y_scaled = (y * y_scale) + y_bias
     y_scaled = (y * y_scale_guess) + y_bias_guess
@@ -66,7 +64,7 @@ def Finalysis(fpath):
     number of correct trials in right and left attention.
     Returns a table containing those values
     """
-
+    
     Data = pd.read_csv(fpath)  # address to csv file from PTB
 
     Data = Data[Data['State'] == 1]
@@ -120,7 +118,7 @@ def Finalysis(fpath):
                                  Contrast_Attention_Left_Correct_Count) / Contrast_Trials_All
 
     contrast_Table = pd.DataFrame(data=Results, columns=[
-        "Contrast", "Right_Correct_Percent", "Left_Correct_Percent", "All_Correct_Percent"])
+                         "Contrast", "Right_Correct_Percent", "Left_Correct_Percent", "All_Correct_Percent"])
     contrast_Table = contrast_Table.set_index(['Contrast'])
 
     return contrast_Table
@@ -128,8 +126,7 @@ def Finalysis(fpath):
 
 def plot_fitted_data(contrast_Table, sub_code):
 
-    dfi.export(contrast_Table, op.join(
-        save_dir, sub_code + '_contrast_table.png'), dpi=400)
+    dfi.export(contrast_Table, op.join(save_dir, sub_code + '_contrast_table.png'), dpi=400)
 
     # Plot scatter plot:
     x_log = np.log10(contrast_Table.index)
@@ -147,18 +144,14 @@ def plot_fitted_data(contrast_Table, sub_code):
                fontsize='x-large', fontweight=1000)
     plt.ylabel('% Answered Correct', fontsize='x-large', fontweight=1000)
 
-    plot_xlim_min = round(x_log.min() - 1)
-    plot_xlim_max = round(x_log.max() + 1)
-
     # Define axis starting and end points:
-    plt.xlim(plot_xlim_min, plot_xlim_max)
+    # plt.xlim(-4, 0)
     # plt.ylim(0.45, 1)
 
-    plt.xticks(np.linspace(plot_xlim_min, plot_xlim_max,
-               (plot_xlim_max - plot_xlim_min) + 1))
+    plt.xticks(np.linspace(-10, 5, 16))
     plt.yticks([0, 0.25, 0.5, 0.75, 1])
 
-    cdf_Plot_x = np.linspace(plot_xlim_min, plot_xlim_max, 1000)
+    cdf_Plot_x = np.linspace(-4, 0, 1000)
 
     # All  ///////////////////////////////////////////////////////////////
 
@@ -261,27 +254,22 @@ def plot_fitted_data(contrast_Table, sub_code):
 
     # Remove top and left frames:
     plt.gca().spines['top'].set_visible(False)
-    plt.gca().spines['right'].set_visible(False)
-
+    plt.gca().spines['right'].set_visible(False)   
+    
     return PSE_Right, r_square_Right, PSE_Left, r_square_Left
-
 
 for sub in subjects:
     sub_code = f"sub-S100{sub}"
     file_name = f"sub-S100{sub}_ses-01_task-Orientation_Detection_run-01_logfile.csv"
-    # fpath = op.join(Files_Address, sub_code, 'ses-01\\beh', file_name)
-    fpath = op.join(Files_Address, file_name)
-
-    savefig_path = op.join(save_dir, sub_code +
-                           '_contrast_psychometric_plot.png')
-
+    fpath = op.join(Files_Address, sub_code, 'ses-01\\beh', file_name)
+    savefig_path = op.join(save_dir, sub_code + '_contrast_psychometric_plot.png')
+    
     contrast_Table = Finalysis(fpath)
-
-    PSE_Right, r_square_Right, PSE_Left, r_square_Left = plot_fitted_data(
-        contrast_Table, sub_code)
-    plt.title(f"Subject {sub_code} Right PSE = {round(PSE_Right, 3)}, Right r2 = {round(r_square_Right, 3)}, "
+    
+    PSE_Right, r_square_Right, PSE_Left, r_square_Left = plot_fitted_data(contrast_Table, sub_code)
+    plt.title(f"Subject {sub_code} Right PSE = {round(PSE_Right, 3)}, Right r2 = {round(r_square_Right, 3)}, "\
               f"Left PSE = {round(PSE_Left, 3)}, Left r2 = {round(r_square_Left, 3)}", pad=15, fontsize=10, fontweight=200, loc='left')
-
+   
     plt.tight_layout()   # full screnn plot
     plt.savefig(savefig_path, dpi=300)
 
