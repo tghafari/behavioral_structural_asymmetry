@@ -39,6 +39,7 @@ y_bias_guess = 0
 ppf = 0.5
 
 
+# Define Weibull distrbituion function
 def weibull_min_cdf(x_weibull, shape, loc, scale, y_scale, y_bias):
     y = weibull_min.cdf(x_weibull, shape, loc, scale)
     # y_scaled = (y * y_scale) + y_bias
