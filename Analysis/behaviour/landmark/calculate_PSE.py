@@ -189,18 +189,29 @@ for l in Left_Bias_list:
 Bias_List=Bias_List+No_Bias_list
 Bias_Data['PSE']=Bias_List
 # Plot figure 3-B:
+Bias_Table=pd.DataFrame()
+Bias_Table['Number of Subjets']=Bias_Data.groupby(['PSE'])['PSE'].count()
+Bias_x=Bias_Table.index.get_level_values('PSE')
+Bias_y=Bias_Table['Number of Subjets']
 plt.figure(figsize=(8, 8))
 plt.bar(Bias_x, Bias_y, width=0.5, color='black')
 # Define axis lables:
 plt.xlabel('Spatial Bias (Log of Deg. Vis. Ang.)',
            fontsize='x-large', fontweight=1000)
 plt.ylabel('Number of Subjets', fontsize='x-large', fontweight=1000)
-# Define axis starting and end points
-plt.xlim(-12.1, 12.1)
-plt.ylim(0, 10)
+# Define axis start and end points
+plt.xlim(Left_Bias_max*-1-2,Right_Bias_max+1)
+plt.ylim(0,10)
 # Define axis ticks
-listofxticks = range(-12, 12, 1)
-plt.xticks(ticks=listofxticks)
+xaxisticks_Bias = range(Left_Bias_max*-1-1,Right_Bias_max+1, 1)
+xaxislables_Bias = ['-0.8\u00b0']
+for i in range(Left_Bias_max*-1,Right_Bias_max):
+    if i == 0:
+        xaxislables_Bias.append('0')
+    else:
+        xaxislables_Bias.append('')
+xaxislables_Bias.append('+0.8\u00b0')
+plt.xticks(ticks=xaxisticks_Bias, labels=xaxislables_Bias)
 plt.yticks(np.arange(0, 10, 1))
 # Draw "veridical Midponit" line:
 plt.axvline(x=0, color='black', linestyle='--', dashes=(5, 3),
