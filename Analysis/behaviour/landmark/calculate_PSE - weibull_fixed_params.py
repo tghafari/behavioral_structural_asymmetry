@@ -12,10 +12,12 @@ from scipy.optimize import curve_fit
 pd.set_option('display.max_rows', None, 'display.max_columns', None)
 
 # Define address of resuls and figures
-Files_Address = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias\programming\MATLAB\main-study\landmark-task\Results'
-save_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias\results\landmark\figure3'
+rds_dir = '/Volumes/jenseno-avtemporal-attention'
+behavioural_bias_dir = r'Projects/subcortical-structures/SubStr-and-behavioral-bias'
+landmark_resutls_dir = op.join(rds_dir, behavioural_bias_dir, 'programming/MATLAB/main-study/landmark-task/Results')
+deriv_dir = op.join(rds_dir, behavioural_bias_dir, 'derivatives/landmark/figure3')
 
-subjects = range(1,7) # number of subjects
+subjects = np.arange(1,20) # number of subjects
 
 
 # Define databinning function for figure A
@@ -30,7 +32,6 @@ def DataBinB(column):
 y_scale_guess = 1
 y_bias_guess = 0
 ppf = 0.5
-
 
 def weibull_min_cdf(x_weibull, shape, loc, scale, y_scale, y_bias):
     y = weibull_min.cdf(x_weibull, shape, loc, scale)
@@ -54,7 +55,7 @@ def Figure3A(fpath, savefig_path):
     Data['Bin'] = Data['Shift_Size'].apply(DataBin)
     Data['Shift_Size'] = np.where(Data['Shift_Direction'] == 'Left', Data['Shift_Size'] * -10, Data['Shift_Size'])
     Data['Shift_Size'] = np.where(Data['Shift_Direction'] == 'Right', Data['Shift_Size'] * 10, Data['Shift_Size'])
-    Data['Bin Mean'] = Data['Shift_Size'].apply(DataBin)
+    Data['Bin_Mean'] = Data['Shift_Size'].apply(DataBin)
     # Define "Biggerright" column:
     Data['Biggerright'] = 0
     Data['Biggerright'] = np.where((Data['Block_Question'] == 'Longer') & (Data['Answer'] == 'Right'),
@@ -118,10 +119,10 @@ def Figure3A(fpath, savefig_path):
 # Plot figure 3-A for all subjects:
 for sub in subjects:
     print(sub)
-    sub_code = f"sub-S100{sub}"
-    file_name = f"sub-S100{sub}_ses-01_task-Landmark_run-01_logfile.csv"
-    savefig_path = op.join(save_dir, sub_code + '_figure3A.png')
-    fpath = op.join(Files_Address, sub_code, 'ses-01\\beh', file_name)
+    sub_code = f"sub-S{sub+1000}"
+    file_name = f"sub-S{sub+1000}_ses-01_task-Landmark_run-01_logfile.csv"
+    savefig_path = op.join(deriv_dir, sub_code + '_figure3A.png')
+    fpath = op.join(landmark_resutls_dir, sub_code, 'ses-01/beh', file_name)
     # plot figure 3A
     Figure_3_A = Figure3A(fpath, savefig_path)
     # Define plot(s) title:
@@ -133,7 +134,7 @@ for sub in subjects:
     
 #Figure 3-B. Raw Data:
 Bias_Data=pd.DataFrame()
-Bias_Data['PSE']=Bias_list
+Bias_Data['PSE'] = Bias_list
 #Figure 3-B. Data binning:
 Bias_Data['Bin Mean']=Bias_Data['PSE'].apply(DataBin)
 Bias_Table=pd.DataFrame()
@@ -165,5 +166,5 @@ plt.gca().spines['right'].set_visible(False)
 # Full screnn plot:
 plt.tight_layout()
 # Save figure 3-B plot:
-savefig_path_3B = op.join(save_dir, 'figure3B.png')
+savefig_path_3B = op.join(deriv_dir, 'figure3B.png')
 plt.savefig(savefig_path_3B, dpi=300)
