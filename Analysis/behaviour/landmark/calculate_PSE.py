@@ -59,6 +59,9 @@ No_Bias_list=[]
 
 # this function plots figure 3A from 'cite sabine's paper'
 def Figure3A(fpath, savefig_path):
+    global Left_Bias_list
+    global Right_Bias_list
+    global No_Bias_list
     Data = pd.read_csv(fpath)
     
     # Data binning
