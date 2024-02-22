@@ -52,6 +52,11 @@ def weibull_min_ppf(ppf, shape, loc, scale, y_scale, y_bias):
     ppf_unscaled = (ppf - y_bias_guess) / y_scale_guess
     return weibull_min.ppf(ppf_unscaled, shape, loc, scale)
 
+# These below lists are used to list calculated bias of each subject. list will be used to plot figure 3-B:
+Left_Bias_list=[]
+Right_Bias_list=[]
+No_Bias_list=[]
+
 # this function plots figure 3A from 'cite sabine's paper'
 def Figure3A(fpath, savefig_path):
     Data = pd.read_csv(fpath)
