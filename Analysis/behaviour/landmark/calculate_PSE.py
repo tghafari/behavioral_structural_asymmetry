@@ -1,12 +1,10 @@
-"""
-calculate_PSE.py
-
-this script is (apparently)
-the most updated version.
-"""
-
-
-
+===============================================
+This code will read the data from the landmark task, calculate the PSE for each
+subject using the Weibull distribution (Figure 3-A)
+Finally, it plots the PSE and bias direction of all subjects in Figure 3-B
+Author: S.M.H Ghafari
+Email: m8ghafari@gamil.com
+==============================================  
 
 import os
 import os.path as op
