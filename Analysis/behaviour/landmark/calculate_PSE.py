@@ -98,7 +98,7 @@ def Figure3A(fpath, savefig_path):
                fontsize='x-large', fontweight=1000)
     plt.ylabel('Proportion Reported Right',
                fontsize='x-large', fontweight=1000)
-    # Define axis starting and end points:
+    # Define axis start and end points:
     plt.xlim(Leftvaluesmax*-1 - 1, Rightvaluesmax + 1)
     plt.ylim(0, 1.1)
     # Define axis ticks:
