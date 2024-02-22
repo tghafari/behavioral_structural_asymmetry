@@ -177,14 +177,17 @@ for sub in subjects:
     
 #Figure 3-B. Raw Data:
 Bias_Data=pd.DataFrame()
-Bias_Data['PSE']=bias_list
-# Figure 3-B.
-Bias_Data['Bin_Mean'] = Bias_Data['PSE'].apply(DataBinB)
-Bias_Table = pd.DataFrame()
-Bias_Table['Number_of_Subjets'] = Bias_Data.groupby(['Bin_Mean'])[
-    'PSE'].count()
-Bias_x = Bias_Table.index.get_level_values('Bin_Mean')
-Bias_y = Bias_Table['Number_of_Subjets']
+Right_Bias_max=max(Right_Bias_list)
+Left_Bias_max=max(Left_Bias_list)
+Bias_List=[]
+for r in Right_Bias_list:
+    r=Right_Bias_max-r+1
+    Bias_List.append(r)
+for l in Left_Bias_list:
+    l=l-Left_Bias_max-1
+    Bias_List.append(l)
+Bias_List=Bias_List+No_Bias_list
+Bias_Data['PSE']=Bias_List
 # Plot figure 3-B:
 plt.figure(figsize=(8, 8))
 plt.bar(Bias_x, Bias_y, width=0.5, color='black')
