@@ -126,12 +126,17 @@ def Figure3A(fpath, savefig_path):
                             scale_x, y_scale, y_bias)
     # Define direction of bias:
     PSE_x = weibull_min_ppf(0.5, shape_x, loc_x, scale_x, y_scale, y_bias)
-    if PSE_x < 0:
+     if PSE < 0:
         Bias = 'Lefward Bias'
+        PSE=Leftvaluesmax+PSE
+        Left_Bias_list.append(PSE)
     elif PSE_x > 0:
         Bias = 'Righward Bias'
+        PSE=Rightvaluesmax-PSE+1
+        Right_Bias_list.append(PSE)
     else:
         Bias = 'No Bias'
+        No_Bias_list.append(PSE)
     # Draw Weibull Curves:
     plt.plot(x_weibull, cdf_y, 'blue', lw=1.3, label='Weibull CDF')
     # Draw "veridical Midponit" line:
