@@ -26,14 +26,6 @@ import matplotlib.pyplot as plt
 from scipy.stats import weibull_min
 from scipy.optimize import curve_fit
 
-# Define address of resuls and figures
-rds_dir = '/Volumes/jenseno-avtemporal-attention'
-behavioural_bias_dir = r'Projects/subcortical-structures/SubStr-and-behavioral-bias'
-target_resutls_dir = op.join(rds_dir, behavioural_bias_dir, 'programming/MATLAB/main-study/target-orientation-detection/Results')
-deriv_dir = op.join(rds_dir, behavioural_bias_dir, 'derivatives/target_orientation/figuresB')
-
-subjects = np.arange(1,20) # number of subjects
-
 # Obligate pandas to show entire data
 pd.set_option('display.max_rows', None, 'display.max_columns', None)
 
@@ -47,16 +39,16 @@ def weibull_min_cdf(x_log, shape, loc, scale, y_scale, y_bias):
 
     y = weibull_min.cdf(x_log, shape, loc, scale)  # leave the parameters to be optimized
 
-    # y_scaled = (y * y_scale) + y_bias
-    y_scaled = (y * y_scale_guess) + y_bias_guess
+    #y_scaled = (y * y_scale) + y_bias  # uses parameters from weibull
+    y_scaled = (y * y_scale_guess) + y_bias_guess  # uses fixed parameters - final decision
 
     return y_scaled
 
 
 def weibull_min_ppf(ppf, shape, loc, scale, y_scale, y_bias):
 
-    # ppf_unscaled = (ppf - y_bias) / y_scale
-    ppf_unscaled = (ppf - y_bias_guess) / y_scale_guess
+    #ppf_unscaled = (ppf - y_bias) / y_scale  # uses parameters from weibull
+    ppf_unscaled = (ppf - y_bias_guess) / y_scale_guess  # uses fixed parameters - final decision
 
     return weibull_min.ppf(ppf_unscaled, shape, loc, scale)
 
@@ -73,7 +65,7 @@ def Finalysis(fpath):
 
     Contrasts = np.unique(Data['Contrast'])
 
-    # Results: Contrast, Right Correct Percent, Left Correct Percent, All Correct Percent
+    # preallocate Results: Contrast, Right Correct Percent, Left Correct Percent, All Correct Percent
     Results = np.stack((Contrasts, np.zeros(np.shape(Contrasts)[0]),
                         np.zeros(np.shape(Contrasts)[0]),
                         np.zeros(np.shape(Contrasts)[0])), axis=1)
@@ -111,6 +103,7 @@ def Finalysis(fpath):
             Contrast_Trials_Left
 
         for i in range(np.shape(Results)[0]):
+            """puts right corrects and left corrects and total corrects in Result matrix"""
 
             if Results[i][0] == Contrast:
 
@@ -127,11 +120,11 @@ def Finalysis(fpath):
 
 
 def plot_fitted_data(contrast_Table, sub_code):
-
-    dfi.export(contrast_Table, op.join(deriv_dir, sub_code + '_contrast_table.png'), dpi=400)
+    """scatter plots corrects with log x-axis"""
+    # dfi.export(contrast_Table, op.join(deriv_dir, sub_code + '_contrast_table.png'), dpi=400)  # figures the contrasts with correct responses
 
     # Plot scatter plot:
-    x_log = np.log10(contrast_Table.index)
+    x_log = np.log10(contrast_Table.index)  # contrasts are in log10
     y = contrast_Table['All_Correct_Percent']
     y_Right = contrast_Table['Right_Correct_Percent']
     y_Left = contrast_Table['Left_Correct_Percent']
@@ -147,13 +140,14 @@ def plot_fitted_data(contrast_Table, sub_code):
     plt.ylabel('% Answered Correct', fontsize='x-large', fontweight=1000)
 
     # Define axis starting and end points:
-    # plt.xlim(-4, 0)
-    # plt.ylim(0.45, 1)
+    plt.xlim(x_log[0]-1, x_log[-1]+1)
+    plt.ylim(0.2, 1.1)
 
-    plt.xticks(np.linspace(-10, 5, 16))
-    plt.yticks([0, 0.25, 0.5, 0.75, 1])
-
-    cdf_Plot_x = np.linspace(-4, 0, 1000)
+    # plt.xticks(np.linspace(-10, 5, 16))
+    plt.yticks([0.25, 0.5, 0.75, 1])
+    # plt.show()
+    
+    cdf_Plot_x = np.linspace(x_log[0]-1, x_log[-1]+1, 1000)
 
     # All  ///////////////////////////////////////////////////////////////
 
@@ -220,6 +214,8 @@ def plot_fitted_data(contrast_Table, sub_code):
 
     # Fit Weibull distribution:
     shape_Left, loc_Left, scale_Left = weibull_min.fit(x_log)
+
+    # Use non-linear least squares to fit weibull_min_cdf function, to x_log
     fit, Temp = curve_fit(weibull_min_cdf, x_log, y_Left, p0=[
                           shape_Left, loc_Left, scale_Left, y_scale_guess, y_bias_guess], maxfev=100000, check_finite=False)
 
@@ -260,6 +256,16 @@ def plot_fitted_data(contrast_Table, sub_code):
     
     return PSE_Right, r_square_Right, PSE_Left, r_square_Left
 
+#====================================== main body of code ==================================#
+
+# Define address of resuls and figures
+rds_dir = '/Volumes/jenseno-avtemporal-attention'
+behavioural_bias_dir = r'Projects/subcortical-structures/SubStr-and-behavioral-bias'
+target_resutls_dir = op.join(rds_dir, behavioural_bias_dir, 'programming/MATLAB/main-study/target-orientation-detection/Results')
+deriv_dir = op.join(rds_dir, behavioural_bias_dir, 'derivatives/target_orientation/figures-optimised')
+
+subjects = np.arange(1,20) # number of subjects
+
 for sub in subjects:
     sub_code = f"sub-S{sub+1000}"
     file_name = f"sub-S{sub+1000}_ses-01_task-Orientation_Detection_run-01_logfile.csv"
@@ -274,12 +280,3 @@ for sub in subjects:
    
     plt.tight_layout()   # full screnn plot
     plt.savefig(savefig_path, dpi=300)
-
-# number_of_files = len(list_of_files)
-# out = Finalysis(list_of_files[0])
-# for i in range(1, number_of_files):
-#     contrast_Table = Finalysis(list_of_files[i])
-#     out = out + contrast_Table
-
-# contrast_Table_all = out / number_of_files
-# plot_fitted_data(contrast_Table, 'All')
