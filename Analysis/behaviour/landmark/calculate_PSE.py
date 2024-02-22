@@ -32,9 +32,6 @@ subjects = np.arange(1,20) # number of subjects
 def DataBin(column):
     return round(math.log(column, 0.8))
 
-# databining for figure B
-def DataBinB(column):
-    return math.floor(column)
 
 # Define Weibull distrbituion parameters
 y_scale_guess = 1
