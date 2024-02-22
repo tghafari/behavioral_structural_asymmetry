@@ -22,7 +22,6 @@ from scipy.optimize import curve_fit
 pd.set_option('display.max_rows', None, 'display.max_columns', None)
 
 # Define address of resuls and figures
-# Define address of resuls and figures
 rds_dir = '/Volumes/jenseno-avtemporal-attention'
 behavioural_bias_dir = r'Projects/subcortical-structures/SubStr-and-behavioral-bias'
 landmark_resutls_dir = op.join(rds_dir, behavioural_bias_dir, 'programming/MATLAB/main-study/landmark-task/Results')

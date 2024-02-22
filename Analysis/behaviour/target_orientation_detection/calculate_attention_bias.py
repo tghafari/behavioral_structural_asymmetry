@@ -27,10 +27,12 @@ from scipy.stats import weibull_min
 from scipy.optimize import curve_fit
 
 # Define address of resuls and figures
-Files_Address = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias\programming\MATLAB\main-study\target-orientation-detection\Results'
-save_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias\results\target_orientation\figures'
+rds_dir = '/Volumes/jenseno-avtemporal-attention'
+behavioural_bias_dir = r'Projects/subcortical-structures/SubStr-and-behavioral-bias'
+target_resutls_dir = op.join(rds_dir, behavioural_bias_dir, 'programming/MATLAB/main-study/target-orientation-detection/Results')
+deriv_dir = op.join(rds_dir, behavioural_bias_dir, 'derivatives/target_orientation/figuresB')
 
-subjects = range(1,6)  # number of subjects
+subjects = np.arange(1,20) # number of subjects
 
 # Obligate pandas to show entire data
 pd.set_option('display.max_rows', None, 'display.max_columns', None)
@@ -126,7 +128,7 @@ def Finalysis(fpath):
 
 def plot_fitted_data(contrast_Table, sub_code):
 
-    dfi.export(contrast_Table, op.join(save_dir, sub_code + '_contrast_table.png'), dpi=400)
+    dfi.export(contrast_Table, op.join(deriv_dir, sub_code + '_contrast_table.png'), dpi=400)
 
     # Plot scatter plot:
     x_log = np.log10(contrast_Table.index)
@@ -259,10 +261,10 @@ def plot_fitted_data(contrast_Table, sub_code):
     return PSE_Right, r_square_Right, PSE_Left, r_square_Left
 
 for sub in subjects:
-    sub_code = f"sub-S100{sub}"
-    file_name = f"sub-S100{sub}_ses-01_task-Orientation_Detection_run-01_logfile.csv"
-    fpath = op.join(Files_Address, sub_code, 'ses-01\\beh', file_name)
-    savefig_path = op.join(save_dir, sub_code + '_contrast_psychometric_plot.png')
+    sub_code = f"sub-S{sub+1000}"
+    file_name = f"sub-S{sub+1000}_ses-01_task-Orientation_Detection_run-01_logfile.csv"
+    fpath = op.join(target_resutls_dir, sub_code, 'ses-01/beh', file_name)
+    savefig_path = op.join(deriv_dir, sub_code + '_contrast_psychometric_plot.png')
     
     contrast_Table = Finalysis(fpath)
     
