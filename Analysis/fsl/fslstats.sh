@@ -7,15 +7,17 @@
 
 module purge
 module load bluebear
-module load FSL/6.0.5.1-foss-2021a-fslpython
+module load FSL/6.0.7.9
+# module load FSL/6.0.5.1-foss-2021a-fslpython
 
 set -e
+source ${FSLDIR}/etc/fslconf/fsl.sh  # set environment variables
 
 # Define the location of the file
 
 export base_dir="/rds/projects/j/jenseno-avtemporal-attention/Projects/subcortical-structures/SubStr-and-behavioral-bias"
 mri_deriv_dir="${base_dir}/results/MRI_lateralisations/substr_segmented"
-subject_name="S1005"
+subject_name="S1020"
 subject_mri_dir="${mri_deriv_dir}/${subject_name}.anat/first_results"
 
 
