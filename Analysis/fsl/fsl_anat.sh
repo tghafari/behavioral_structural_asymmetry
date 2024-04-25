@@ -4,6 +4,7 @@
 #SBATCH --time 150
 #SBATCH --nodes 1 # ensure the job runs on a single node
 #SBATCH --ntasks 5 # this will give you circa 40G RAM 
+#SBATCH --array=0-10%1  # Run one task for each subject name
 
 
 module purge
@@ -24,14 +25,15 @@ t1_fnames=('S1021_20220923#C47E_nifti' 'S1022_20221102#C5F2_nifti' 'S1023_202402
             'S1028_20221202#C47B_nifti' 'S1029_20240229#C515_nifti' 'S1030_20220308#C3A1_nifti'
             'S1031_20240215#C416_nifti' 'S1032_20240229#C472_nifti')
 
-for t1_fname in "${t1_fnames[@]}"; do
-    output_fpath="${output_dir}/${t1_fname:0:5}"
-    preproc_dir="${base_dir}/T1-scans/${t1_fname}"
+# Get the subject name for each array task
+t1_fname="${t1_fnames[$SLURM_ARRAY_TASK_ID]}"
 
-    mkdir -p "${output_fpath}.anat"
-    T1W_name="T1_vol_v1_5.nii.gz"
-    T1W_fpath="${preproc_dir}/${T1W_name}"
+output_fpath="${output_dir}/${t1_fname:0:5}"
+preproc_dir="${base_dir}/T1-scans/${t1_fname}"
 
-    # Run fsl anat
-    fsl_anat -i "$T1W_fpath" -o "$output_fpath" --clobber
-done
+mkdir -p "${output_fpath}.anat"
+T1W_name="T1_vol_v1_5.nii.gz"
+T1W_fpath="${preproc_dir}/${T1W_name}"
+
+# Run fsl anat
+fsl_anat -i "$T1W_fpath" -o "$output_fpath" --clobber
