@@ -15,14 +15,22 @@ import numpy as np
 import os.path as op
 import pandas as pd
 
+platform = 'mac'
+
 # Define where to read and write the data
-mri_deriv_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias\results\MRI_lateralisations'
+if platform == 'bluebear':
+    jenseno_dir = '/rds/projects/j/jenseno-avtemporal-attention'
+elif platform == 'mac':
+    jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
+
+# Define where to read and write the data
+mri_deriv_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/MRI_lateralisations')
 subStr_segmented_dir = op.join(mri_deriv_dir, 'substr_segmented')
 output_dir = op.join(mri_deriv_dir, 'lateralisation_indices')
-output_fname = op.join(output_dir, 'all_subs_substr_volumes.csv')
+output_fname = op.join(output_dir, 'all_subs_substr_volumes_1_32.csv')
 
 # list of subjects folders
-num_sub_list = range(1,7)
+num_sub_list = range(1001,1032)
 
 # Specify labels assigned to structures thatwere segmented by FSL
 labels = [10, 11, 12, 13, 16, 17, 18, 26, 49, 50, 51, 52, 53, 54, 58]
@@ -30,12 +38,12 @@ structures = ['L-Thal', 'L-Caud', 'L-Puta', 'L-Pall', 'BrStem /4th Ventricle',
               'L-Hipp', 'L-Amyg', 'L-Accu', 'R-Thal', 'R-Caud', 'R-Puta',
               'R-Pall', 'R-Hipp', 'R-Amyg', 'R-Accu']
 
-all_subject_substr_volume_table = np.full((6, 15), np.nan)
+all_subject_substr_volume_table = np.full((13, 15), np.nan)
 sub_IDs =[]
 
 # Read good subjects 
 for i, num_sub in enumerate(num_sub_list):
-    substr_dir = op.join(subStr_segmented_dir, 'S100' + str(num_sub) + '.SubVol')
+    substr_dir = op.join(subStr_segmented_dir, 'S' + str(num_sub) + '.SubVol')
     if op.exists(substr_dir):
         for idx, label in enumerate(labels):
             volume_label = 'volume' + str(label) + '.txt'
@@ -47,7 +55,7 @@ for i, num_sub in enumerate(num_sub_list):
                     line = file.readline()
                 substr_volume_array = np.fromstring(line.strip(), sep=' ')[1]     
             else:
-                print(f"no volume for substructure {structures[idx]} found for subject #S100 {str(num_sub)}")
+                print(f"no volume for substructure {structures[idx]} found for subject #S{str(num_sub)}")
                 substr_volume_array = np.nan  
             
             # Store the volume of each substr in one columne and data of each subject in one row  

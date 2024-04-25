@@ -1,10 +1,15 @@
+
+"""
 ===============================================
 This code will read the data from the landmark task, calculate the PSE for each
 subject using the Weibull distribution (Figure 3-A)
 Finally, it plots the PSE and bias direction of all subjects in Figure 3-B
+
 Author: S.M.H Ghafari
 Email: m8ghafari@gamil.com
 ==============================================  
+1. where are we using Data['Bin'] and ['Shift_Size']?
+"""
 
 import os
 import os.path as op
@@ -19,17 +24,29 @@ from scipy.optimize import curve_fit
 # Obligate pandas to show entire data
 pd.set_option('display.max_rows', None, 'display.max_columns', None)
 
-# Define address of resuls and figures
-rds_dir = '/Volumes/jenseno-avtemporal-attention'
-behavioural_bias_dir = r'Projects/subcortical-structures/SubStr-and-behavioral-bias'
-landmark_resutls_dir = op.join(rds_dir, behavioural_bias_dir, 'programming/MATLAB/main-study/landmark-task/Results')
-deriv_dir = op.join(rds_dir, behavioural_bias_dir, 'derivatives/landmark/figure3')
 
-subjects = np.arange(1,20) # number of subjects
+platform = 'mac'
+
+# Define where to read and write the data
+if platform == 'bluebear':
+    jenseno_dir = '/rds/projects/j/jenseno-avtemporal-attention'
+elif platform == 'mac':
+    jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
+
+behavioural_bias_dir = 'Projects/subcortical-structures/SubStr-and-behavioral-bias'
+landmark_resutls_dir = op.join(jenseno_dir, behavioural_bias_dir, 'programming/MATLAB/main-study/landmark-task/Results')
+deriv_dir = op.join(jenseno_dir, behavioural_bias_dir, 'derivatives/landmark/figure3')
+
+subjects = np.arange(1,33) # number of subjects
 
 
 # Define databinning function for figure A
-def DataBin(column):
+def DataBinner(column):
+    if column <= 0:
+        temp_col = column * -1
+        temp_ret = round(math.log(temp_col, 0.8)) * -1
+        return temp_ret
+    
     return round(math.log(column, 0.8))
 
 
@@ -58,14 +75,11 @@ Right_Bias_list=[]
 No_Bias_list=[]
 
 # this function plots figure 3A from 'cite sabine's paper'
-def Figure3A(fpath, savefig_path):
-    global Left_Bias_list
-    global Right_Bias_list
-    global No_Bias_list
+def Figure3A(fpath):
     Data = pd.read_csv(fpath)
-    
+
     # Data binning
-    Data['Bin'] = Data['Shift_Size'].apply(DataBin)
+    Data['Bin'] = Data['Shift_Size'].apply(DataBinner)
     Rightvalues = Data.loc[Data['Shift_Direction'] == 'Right', 'Bin']
     Rightvaluesmax = Rightvalues.max()+1
     Leftvalues = Data.loc[Data['Shift_Direction'] == 'Left', 'Bin']
@@ -128,18 +142,18 @@ def Figure3A(fpath, savefig_path):
     cdf_y = weibull_min_cdf(x_weibull, shape_x, loc_x,
                             scale_x, y_scale, y_bias)
     # Define direction of bias:
-    PSE_x = weibull_min_ppf(0.5, shape_x, loc_x, scale_x, y_scale, y_bias)
-     if PSE < 0:
+    PSE = weibull_min_ppf(0.5, shape_x, loc_x, scale_x, y_scale, y_bias)
+    if PSE < 0:
         Bias = 'Lefward Bias'
-        PSE=Leftvaluesmax+PSE
-        Left_Bias_list.append(PSE)
-    elif PSE_x > 0:
+        PSE_x = Leftvaluesmax + PSE
+        Left_Bias_list.append(PSE_x)
+    elif PSE > 0:
         Bias = 'Righward Bias'
-        PSE=Rightvaluesmax-PSE+1
-        Right_Bias_list.append(PSE)
+        PSE_x = Rightvaluesmax - PSE + 1
+        Right_Bias_list.append(PSE_x)
     else:
         Bias = 'No Bias'
-        No_Bias_list.append(PSE)
+        No_Bias_list.append(PSE_x)
     # Draw Weibull Curves:
     plt.plot(x_weibull, cdf_y, 'blue', lw=1.3, label='Weibull CDF')
     # Draw "veridical Midponit" line:
@@ -159,56 +173,76 @@ def Figure3A(fpath, savefig_path):
     plt.gca().spines['top'].set_visible(False)
     plt.gca().spines['right'].set_visible(False)
     
-    return PSE_x, r2
+    return PSE_x, r2, Left_Bias_list, Right_Bias_list, No_Bias_list
 
 # Plot figure 3-A for all subjects:
-bias_list = [] # list of PSEs for figure B
+PSE_list = [] # list of PSEs for figure B
+Bias_Data = pd.DataFrame()
 for sub in subjects:
     sub_code = f"sub-S{sub+1000}"
     file_name = f"sub-S{sub+1000}_ses-01_task-Landmark_run-01_logfile.csv"
     savefig_path = op.join(deriv_dir, sub_code + '_figure3A2.png')
     fpath = op.join(landmark_resutls_dir, sub_code, 'ses-01/beh', file_name)
     # plot figure 3A
-    PSE_x, r2 = Figure3A(fpath, savefig_path)
-    bias_list.append(PSE_x)
+    PSE_x, r2, left_bias_list, right_bias_list, no_bias_list = Figure3A(fpath)
+    PSE_list.append(PSE_x)
     # Define plot(s) title:
     plt.title('Figure 3-A. Subject %s _ r2 = %s' % (sub_code, r2), pad=10, fontsize=10, fontweight=100, loc='left')
     # Full screnn plot:
     plt.tight_layout()
     # Save figure 3-A plot(s):
     plt.savefig(savefig_path, dpi=300)
-    
-#Figure 3-B. Raw Data:
-Bias_Data=pd.DataFrame()
-Right_Bias_max=max(Right_Bias_list)
-Left_Bias_max=max(Left_Bias_list)
-Bias_List=[]
-for r in Right_Bias_list:
-    r=Right_Bias_max-r+1
-    Bias_List.append(r)
-for l in Left_Bias_list:
-    l=l-Left_Bias_max-1
-    Bias_List.append(l)
-Bias_List=Bias_List+No_Bias_list
-Bias_Data['PSE']=Bias_List
+    plt.close()
+
+Bias_Data['PSE'] = PSE_list
+
+# Calculate mean and standard deviation
+mean_PSE = np.mean(Bias_Data['PSE'])
+std_PSE = np.std(Bias_Data['PSE'])
+
+# Define boolean mask to identify elements to keep (non outliers)
+mask = (Bias_Data['PSE'] >= mean_PSE - 2 * std_PSE) & (Bias_Data['PSE'] <= mean_PSE + 2 * std_PSE)
+
+# Remove outliers outside the range of mean ± 2 * std
+outliers = Bias_Data['PSE'][~mask].to_numpy()
+Bias_Data = Bias_Data[mask]
+
+# Filter right_list and left_list using the mask
+right_list = [x for x in right_bias_list if x not in outliers]
+left_list= [x for x in left_bias_list if x not in outliers]
+
+# Divide left and right bias based on PSEs
+right_bias_max = max(right_list)
+left_bias_max = max(left_list)
+bias_list=[]
+for r in right_list:
+    right = right_bias_max - r + 1
+    bias_list.append(right)
+for l in left_list:
+    left = l - left_bias_max - 1
+    bias_list.append(left)
+bias_list = bias_list + no_bias_list
+Bias_Data['bias'] = bias_list
+
 # Plot figure 3-B:
+Bias_Data['PSE_log'] = Bias_Data['PSE'].apply(DataBinner)
 Bias_Table=pd.DataFrame()
-Bias_Table['Number of Subjets']=Bias_Data.groupby(['PSE'])['PSE'].count()
-Bias_x=Bias_Table.index.get_level_values('PSE')
-Bias_y=Bias_Table['Number of Subjets']
+Bias_Table['Number_Subjets'] = Bias_Data.groupby(['PSE_log'])['PSE_log'].count()
+Bias_x = Bias_Table.index.get_level_values('PSE_log')
+Bias_y = Bias_Table['Number_Subjets']
 plt.figure(figsize=(8, 8))
 plt.bar(Bias_x, Bias_y, width=0.5, color='black')
 # Define axis lables:
 plt.xlabel('Spatial Bias (Log of Deg. Vis. Ang.)',
            fontsize='x-large', fontweight=1000)
-plt.ylabel('Number of Subjets', fontsize='x-large', fontweight=1000)
+plt.ylabel('# Subjets', fontsize='x-large', fontweight=1000)
 # Define axis start and end points
-plt.xlim(Left_Bias_max*-1-2,Right_Bias_max+1)
+plt.xlim(left_bias_max*-1-2,right_bias_max+1)
 plt.ylim(0,10)
 # Define axis ticks
-xaxisticks_Bias = range(Left_Bias_max*-1-1,Right_Bias_max+1, 1)
+xaxisticks_Bias = np.arange(left_bias_max*-1-1,right_bias_max+1)
 xaxislables_Bias = ['-0.8\u00b0']
-for i in range(Left_Bias_max*-1,Right_Bias_max):
+for i in np.arange(left_bias_max*-1,right_bias_max):
     if i == 0:
         xaxislables_Bias.append('0')
     else:

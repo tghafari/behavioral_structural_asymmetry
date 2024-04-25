@@ -15,9 +15,18 @@ import numpy as np
 import pandas as pd
 import os.path as op
 
-volume_sheet_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias\results\MRI_lateralisations\lateralisation_indices'
-volume_sheet_fname = op.join(volume_sheet_dir, 'all_subs_substr_volumes.csv')
-output_fname = op.join(volume_sheet_dir, 'lateralisation_volumes.csv')
+platform = 'mac'
+
+# Define where to read and write the data
+if platform == 'bluebear':
+    jenseno_dir = '/rds/projects/j/jenseno-avtemporal-attention'
+elif platform == 'mac':
+    jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
+
+# Define where to read and write the data
+volume_sheet_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/MRI_lateralisations/lateralisation_indices')
+volume_sheet_fname = op.join(volume_sheet_dir, 'all_subs_substr_volumes_1_32.csv')
+output_fname = op.join(volume_sheet_dir, 'lateralisation_volumes_1_32.csv')
 
 labels = [10, 11, 12, 13, 16, 17, 18, 26, 49, 50, 51, 52, 53, 54, 58]
 structures = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu']

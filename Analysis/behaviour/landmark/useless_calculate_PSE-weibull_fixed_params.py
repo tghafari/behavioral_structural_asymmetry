@@ -11,20 +11,29 @@ from scipy.optimize import curve_fit
 # Obligate pandas to show entire data
 pd.set_option('display.max_rows', None, 'display.max_columns', None)
 
-# Define address of resuls and figures
-rds_dir = '/Volumes/jenseno-avtemporal-attention'
-behavioural_bias_dir = r'Projects/subcortical-structures/SubStr-and-behavioral-bias'
-landmark_resutls_dir = op.join(rds_dir, behavioural_bias_dir, 'programming/MATLAB/main-study/landmark-task/Results')
-deriv_dir = op.join(rds_dir, behavioural_bias_dir, 'derivatives/landmark/figure3')
+platform = 'mac'
 
-subjects = np.arange(1,20) # number of subjects
+# Define where to read and write the data
+if platform == 'bluebear':
+    jenseno_dir = '/rds/projects/j/jenseno-avtemporal-attention'
+elif platform == 'mac':
+    jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
+
+# Define where to read and write the data
+
+# Define address of resuls and figures
+behavioural_bias_dir = 'Projects/subcortical-structures/SubStr-and-behavioral-bias'
+landmark_resutls_dir = op.join(jenseno_dir, behavioural_bias_dir, 'programming/MATLAB/main-study/landmark-task/Results')
+deriv_dir = op.join(jenseno_dir, behavioural_bias_dir, 'derivatives/landmark/figure3')
+
+subjects = np.arange(19,32) # number of subjects
 
 
 # Define databinning function for figure A
 def DataBin(column):
     return round(math.log(column, 0.8))
 
-# databining for figure B
+# databining for figure B  - extra
 def DataBinB(column):
     return math.floor(column)
 
@@ -44,6 +53,9 @@ def weibull_min_ppf(ppf, shape, loc, scale, y_scale, y_bias):
     # ppf_unscaled = (ppf - y_bias) / y_scale
     ppf_unscaled = (ppf - y_bias_guess) / y_scale_guess
     return weibull_min.ppf(ppf_unscaled, shape, loc, scale)
+
+# empty lists removed
+# global vars removed
 
 # this function plots figure 3A from 'cite sabine's paper'
 def Figure3A(fpath, savefig_path):

@@ -1,13 +1,15 @@
 #!/bin/bash
 #SBATCH --account jenseno-avtemporal-attention
 #SBATCH --qos bbdefault
-#SBATCH --time 90
+#SBATCH --time 150
 #SBATCH --nodes 1 # ensure the job runs on a single node
 #SBATCH --ntasks 5 # this will give you circa 40G RAM 
 
 module purge
 module load bluebear
+module load bear-apps/2022b
 module load FSL/6.0.7.9
+# module load FSL/6.0.5.1-foss-2021a-fslpython
 
 set -e
 source ${FSLDIR}/etc/fslconf/fsl.sh  # set environment variables
@@ -46,7 +48,7 @@ for subject_name in $(seq -w 1020 1032); do
 
         echo "Volumetring S${subject_name} done"
     else
-        echo "${subject_mri_dir}.anat/first_results was NOT found found"
+        echo "${subject_mri_dir}.anat/first_results was NOT found"
     fi
 done
 

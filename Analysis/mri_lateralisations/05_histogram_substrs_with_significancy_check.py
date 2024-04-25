@@ -17,10 +17,17 @@ import numpy as np
 import pandas as pd
 import os.path as op
 
+platform = 'mac'
 
-# Load the lateralization index sheet
-volume_sheet_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias\results\MRI_lateralisations\lateralisation_indices'
-lat_sheet_fname = op.join(volume_sheet_dir, 'lateralisation_volumes.csv')
+# Define where to read and write the data
+if platform == 'bluebear':
+    jenseno_dir = '/rds/projects/j/jenseno-avtemporal-attention'
+elif platform == 'mac':
+    jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
+
+# Define where to read and write the data
+volume_sheet_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/MRI_lateralisations/lateralisation_indices')
+lat_sheet_fname = op.join(volume_sheet_dir, 'lateralisation_volumes_1_32.csv')
 df = pd.read_csv(lat_sheet_fname)
 lateralisation_volume = df.iloc[:,1:8].to_numpy()
 

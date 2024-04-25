@@ -18,9 +18,17 @@ import os.path as op
 import matplotlib.pyplot as plt
 from scipy.stats import (pearsonr, spearmanr)
 
-# Read the CSV file
-volume_sheet_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias\results\collated'
-lat_volume_csv = op.join(volume_sheet_dir, 'lateralisation_indices.csv')
+platform= 'mac'
+
+if platform == 'bluebear':
+    jenseno_dir = '/rds/projects/j/jenseno-avtemporal-attention'
+elif platform == 'mac':
+    jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
+
+# Define where to read and write the data
+volume_sheet_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/MRI_lateralisations/lateralisation_indices')
+lat_volume_csv = op.join(volume_sheet_dir, 'lateralisation_volumes_1_32.csv')
+
 data = []
 with open(lat_volume_csv, 'r') as file:
     reader = csv.reader(file)
@@ -32,20 +40,20 @@ with open(lat_volume_csv, 'r') as file:
 # keep = [1,3,4,6]
 # cols = np.setxor1d(np.arange(1,7),remove)
 # if no NaNs
-cols = range(1,7)
+cols = range(1001,1032)
 
 # Extract the columns of lateralisation indices
 data = np.array(data)
-columns = data[cols, 1:7].astype(float)
+columns = data[cols, 1:32].astype(float)
 
 # what are you plotting? PSE_landmark or microssaccades
 plotting = 'MS_target'
 
 # Extract PSE column
-PSE_column = data[1:, 8].astype(float)
+PSE_column = data[1:, 8].astype(float)  # these data should be added to the csv file manually before running this script
 
 # Extract MS column
-ms_column = data[cols, 9].astype(float)
+ms_column = data[cols, 9].astype(float) # these data should be added to the csv file manually before running this script
 
 # Plot the data and calculate correlations
 correlations = []
