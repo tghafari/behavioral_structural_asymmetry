@@ -187,8 +187,6 @@ def Figure3A(fpath):
     return PSE, r2, Left_Bias_list, Right_Bias_list, No_Bias_list
 
 # Plot figure 3-A for all subjects:
-PSE_list = [] # list of PSEs for figure B
-Bias_Data = pd.DataFrame()
 for sub in subjects:
     sub_code = f"sub-S{sub+1000}"
     file_name = f"sub-S{sub+1000}_ses-01_task-Landmark_run-01_logfile.csv"
@@ -203,19 +201,20 @@ for sub in subjects:
     # Save figure 3-A plot(s):
     plt.savefig(savefig_path, dpi=300)
     plt.close()
-
-Bias_Data['PSE'] = PSE_list
+PSE_Data = pd.DataFrame()
+PSE_list = right_list + left_list + no_bias_list
+PSE_Data['PSE']=PSE_List
 
 # Calculate mean and standard deviation
-mean_PSE = np.mean(Bias_Data['PSE'])
-std_PSE = np.std(Bias_Data['PSE'])
+mean_PSE = np.mean(PSE_Data['PSE'])
+std_PSE = np.std(PSE_Data['PSE'])
 
 # Define boolean mask to identify elements to keep (non outliers)
-mask = (Bias_Data['PSE'] >= mean_PSE - 2 * std_PSE) & (Bias_Data['PSE'] <= mean_PSE + 2 * std_PSE)
+mask = (PSE_Data['PSE'] >= mean_PSE - 2 * std_PSE) & (PSE_Data['PSE'] <= mean_PSE + 2 * std_PSE)
 
 # Remove outliers outside the range of mean ± 2 * std
-outliers = Bias_Data['PSE'][~mask].to_numpy()
-Bias_Data = Bias_Data[mask]
+outliers = PSE_Data['PSE'][~mask].to_numpy()
+PSE_Data = PSE_Data[mask]
 
 # Filter right_list and left_list using the mask
 right_list = [x for x in right_bias_list if x not in outliers]
@@ -232,10 +231,10 @@ for l in left_list:
     left = l - left_bias_max - 1
     bias_list.append(left)
 bias_list = bias_list + no_bias_list
+Bias_Data = pd.DataFrame()
 Bias_Data['bias'] = bias_list
 
 # Plot figure 3-B:
-#Bias_Data['PSE_log'] = Bias_Data['PSE'].apply(DataBinner)
 Bias_Table=pd.DataFrame()
 Bias_Table['Number_Subjets'] = Bias_Data.groupby(['PSE'])['PSE'].count()
 Bias_x = Bias_Table.index.get_level_values('PSE')
