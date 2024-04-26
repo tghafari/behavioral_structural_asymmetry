@@ -172,7 +172,7 @@ def Figure3A(fpath):
     plt.gca().spines['top'].set_visible(False)
     plt.gca().spines['right'].set_visible(False)
     
-    return PSE, r2, Left_Bias_list, Right_Bias_list, No_Bias_list
+    return r2, Left_Bias_list, Right_Bias_list, No_Bias_list
 
 # Plot figure 3-A for all subjects:
 for sub in subjects:
@@ -181,7 +181,7 @@ for sub in subjects:
     savefig_path = op.join(deriv_dir, sub_code + '_figure3A2.png')
     fpath = op.join(landmark_resutls_dir, sub_code, 'ses-01/beh', file_name)
     # plot figure 3A
-    _, r2, left_bias_list, right_bias_list, no_bias_list = Figure3A(fpath)
+    r2, left_bias_list, right_bias_list, no_bias_list = Figure3A(fpath)
     # Define plot(s) title:
     plt.title('Figure 3-A. Subject %s _ r2 = %s' % (sub_code, r2), pad=10, fontsize=10, fontweight=100, loc='left')
     # Full screnn plot:
