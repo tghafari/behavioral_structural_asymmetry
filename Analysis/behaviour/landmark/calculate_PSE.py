@@ -157,10 +157,12 @@ def Figure3A(fpath):
     plt.axhline(y=0.5, color='grey', lw=1, linestyle=':', label='PSE')
     # Find the Best Location for Plot Guide Box:
     if PSE > 0:
-        plt.legend(loc=2, title='PSE={} VA{} ({})'.format(round(PSE, 4), chr(176), Bias), title_fontsize='x-large',
+        PSE = Rightvaluesmax - PSE
+        plt.legend(loc=2, title='PSE={} VA{} ({})'.format(round(0.8**PSE, 4), chr(176), Bias), title_fontsize='x-large',
                alignment='left', fontsize='large')
     else:
-        plt.legend(loc=2, title='PSE=-{} VA{} ({})'.format(round(PSE, 4), chr(176), Bias), title_fontsize='x-large',
+        PSE = Leftvaluesmax + PSE
+        plt.legend(loc=2, title='PSE=-{} VA{} ({})'.format(round(0.8**PSE, 4), chr(176), Bias), title_fontsize='x-large',
               alignment='left', fontsize='large')
     # Goodness of Weibull fit statistics (R-squared):
     Table_r2 = Table.sort_values(by=['Bin_Mean'])
