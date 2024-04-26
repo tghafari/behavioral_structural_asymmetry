@@ -81,7 +81,7 @@ def Figure3A(fpath):
     # Data binning
     Data['Bin'] = Data['Shift_Size'].apply(DataBinner)
     Rightvalues = Data.loc[Data['Shift_Direction'] == 'Right', 'Bin']
-    Rightvaluesmax = Rightvalues.max()+1
+    Rightvaluesmax = Rightvalues.max()+1  # why +1?
     Leftvalues = Data.loc[Data['Shift_Direction'] == 'Left', 'Bin']
     Leftvaluesmax = Leftvalues.max()+1
     Data.loc[Data['Shift_Direction'] == 'Left', 'Bin_Mean'] = Leftvaluesmax - \
@@ -160,7 +160,7 @@ def Figure3A(fpath):
     plt.axvline(x=0, color='black', linestyle='--', dashes=(5, 3),
                 lw=1.75, label='Veridical Midponit')
     # Draw PSE Vertical and Horizontal Lines:
-    plt.axvline(x=PSE_x, color='grey', lw=1, linestyle=':')
+    plt.axvline(x=PSE, color='grey', lw=1, linestyle=':')
     plt.axhline(y=0.5, color='grey', lw=1, linestyle=':', label='PSE')
     # Find the Best Location for Plot Guide Box:
     plt.legend(loc=2, title='PSE={} VA{} ({})'.format(round(PSE_x, 4), chr(176), Bias), title_fontsize='x-large',
