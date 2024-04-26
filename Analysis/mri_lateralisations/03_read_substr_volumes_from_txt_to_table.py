@@ -38,7 +38,7 @@ structures = ['L-Thal', 'L-Caud', 'L-Puta', 'L-Pall', 'BrStem /4th Ventricle',
               'L-Hipp', 'L-Amyg', 'L-Accu', 'R-Thal', 'R-Caud', 'R-Puta',
               'R-Pall', 'R-Hipp', 'R-Amyg', 'R-Accu']
 
-all_subject_substr_volume_table = np.full((13, 15), np.nan)
+all_subject_substr_volume_table = np.full((31, 15), np.nan)
 sub_IDs =[]
 
 # Read good subjects 
@@ -61,7 +61,7 @@ for i, num_sub in enumerate(num_sub_list):
             # Store the volume of each substr in one columne and data of each subject in one row  
             all_subject_substr_volume_table[i, idx] = substr_volume_array
     else:
-        print('no substructures segmented by fsl for subject #S100' + str(num_sub))
+        print(f'no substructures segmented by fsl for subject #S{1000+num_sub}')
         all_subject_substr_volume_table[i, :] = np.nan 
     
     sub_IDs.append(num_sub)
