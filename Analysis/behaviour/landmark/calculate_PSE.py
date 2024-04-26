@@ -153,10 +153,7 @@ def Figure3A(fpath):
     plt.axvline(x=0, color='black', linestyle='--', dashes=(5, 3),
                 lw=1.75, label='Veridical Midponit')
     # Draw PSE Vertical and Horizontal Lines:
-    if PSE_x<0:
-        plt.axvline(x=PSE_x+1, color='grey', lw=1, linestyle=':')
-    else:
-        plt.axvline(x=PSE_x, color='grey', lw=1, linestyle=':'))
+    plt.axvline(x=PSE_x, color='grey', lw=1, linestyle=':'))
     plt.axhline(y=0.5, color='grey', lw=1, linestyle=':', label='PSE')
     # Find the Best Location for Plot Guide Box:
     if PSE > 0:
