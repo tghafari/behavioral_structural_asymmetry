@@ -165,7 +165,7 @@ def Figure3A(fpath):
         plt.legend(loc=2, title='PSE={} VA{} ({})'.format(round(PSE, 4), chr(176), Bias), title_fontsize='x-large',
                alignment='left', fontsize='large')
     else:
-        plt.legend(loc=2, title='PSE=-0.8{} VA{} ({})'.format(round(PSE, 4), chr(176), Bias), title_fontsize='x-large',
+        plt.legend(loc=2, title='PSE=-{} VA{} ({})'.format(round(PSE, 4), chr(176), Bias), title_fontsize='x-large',
               alignment='left', fontsize='large')
     # Goodness of Weibull fit statistics (R-squared):
     Table_r2 = Table.sort_values(by=['Bin_Mean'])
