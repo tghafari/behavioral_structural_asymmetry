@@ -8,7 +8,6 @@ Finally, it plots the PSE and bias direction of all subjects in Figure 3-B
 Author: S.M.H Ghafari
 Email: m8ghafari@gamil.com
 ==============================================  
-1. where are we using Data['Bin'] and ['Shift_Size']?
 """
 
 import os
@@ -24,7 +23,6 @@ from scipy.optimize import curve_fit
 # Obligate pandas to show entire data
 pd.set_option('display.max_rows', None, 'display.max_columns', None)
 
-
 platform = 'mac'
 
 # Define where to read and write the data
@@ -35,7 +33,7 @@ elif platform == 'mac':
 
 behavioural_bias_dir = 'Projects/subcortical-structures/SubStr-and-behavioral-bias'
 landmark_resutls_dir = op.join(jenseno_dir, behavioural_bias_dir, 'programming/MATLAB/main-study/landmark-task/Results')
-deriv_dir = op.join(jenseno_dir, behavioural_bias_dir, 'derivatives/landmark/figure3')
+deriv_dir = op.join(jenseno_dir, behavioural_bias_dir, 'derivatives/landmark/figure3-260424')
 
 subjects = np.arange(1,33) # number of subjects
 
@@ -48,11 +46,6 @@ def DataBinner(column):
         return temp_ret
     
     return round(math.log(column, 0.8))
-
-# figureB
-def DataFloorer(column):
-
-    
 
 # Define Weibull distrbituion parameters
 y_scale_guess = 1
@@ -170,12 +163,12 @@ def Figure3A(fpath):
     # Find the Best Location for Plot Guide Box:
     if PSE>0:
         PSE = Rightvaluesmax - PSE
-        plt.legend(loc=2, title='PSE=0.8^{} VA{} ({})'.format(round(PSE, 4), chr(176), Bias), title_fontsize='x-large',
+        plt.legend(loc=2, title='PSE=0.8**{} VA{} ({})'.format(round(PSE, 4), chr(176), Bias), title_fontsize='x-large',
                alignment='left', fontsize='large')
     else:
         PSE = Leftvaluesmax + PSE
-          plt.legend(loc=2, title='PSE=-0.8^{} VA{} ({})'.format(round(PSE, 4), chr(176), Bias), title_fontsize='x-large',
-               alignment='left', fontsize='large')
+        plt.legend(loc=2, title='PSE=-0.8**{} VA{} ({})'.format(round(PSE, 4), chr(176), Bias), title_fontsize='x-large',
+              alignment='left', fontsize='large')
     # Goodness of Weibull fit statistics (R-squared):
     Table_r2 = Table.sort_values(by=['Bin_Mean'])
     y_true_r2 = Table_r2['Proportion_Reported_Right'].tolist()
@@ -202,8 +195,8 @@ for sub in subjects:
     plt.savefig(savefig_path, dpi=300)
     plt.close()
 PSE_Data = pd.DataFrame()
-PSE_list = right_list + left_list + no_bias_list
-PSE_Data['PSE']=PSE_List
+PSE_list = right_bias_list + left_bias_list + no_bias_list
+PSE_Data['PSE'] = PSE_list
 
 # Calculate mean and standard deviation
 mean_PSE = np.mean(PSE_Data['PSE'])
