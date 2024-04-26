@@ -40,11 +40,6 @@ subjects = np.arange(1,33) # number of subjects
 
 # Define databinning function for figure A
 def DataBinner(column):
-    if column <= 0:
-        temp_col = column * -1
-        temp_ret = round(math.log(temp_col, 0.8)) * -1
-        return temp_ret
-    
     return round(math.log(column, 0.8))
 
 # Define Weibull distrbituion parameters
@@ -161,7 +156,7 @@ def Figure3A(fpath):
     plt.axvline(x=PSE, color='grey', lw=1, linestyle=':')
     plt.axhline(y=0.5, color='grey', lw=1, linestyle=':', label='PSE')
     # Find the Best Location for Plot Guide Box:
-    if PSE>0:
+    if PSE > 0:
         plt.legend(loc=2, title='PSE={} VA{} ({})'.format(round(PSE, 4), chr(176), Bias), title_fontsize='x-large',
                alignment='left', fontsize='large')
     else:
@@ -184,7 +179,7 @@ for sub in subjects:
     savefig_path = op.join(deriv_dir, sub_code + '_figure3A2.png')
     fpath = op.join(landmark_resutls_dir, sub_code, 'ses-01/beh', file_name)
     # plot figure 3A
-    PSE, r2, left_bias_list, right_bias_list, no_bias_list = Figure3A(fpath)
+    _, r2, left_bias_list, right_bias_list, no_bias_list = Figure3A(fpath)
     # Define plot(s) title:
     plt.title('Figure 3-A. Subject %s _ r2 = %s' % (sub_code, r2), pad=10, fontsize=10, fontweight=100, loc='left')
     # Full screnn plot:
@@ -223,12 +218,12 @@ for l in left_list:
     bias_list.append(left)
 bias_list = bias_list + no_bias_list
 Bias_Data = pd.DataFrame()
-Bias_Data['bias'] = bias_list
+Bias_Data['PSE_bin'] = bias_list
 
 # Plot figure 3-B:
 Bias_Table=pd.DataFrame()
-Bias_Table['Number_Subjets'] = Bias_Data.groupby(['PSE'])['PSE'].count()
-Bias_x = Bias_Table.index.get_level_values('PSE')
+Bias_Table['Number_Subjets'] = Bias_Data.groupby(['PSE_bin'])['PSE_bin'].count()
+Bias_x = Bias_Table.index.get_level_values('PSE_bin')
 Bias_y = Bias_Table['Number_Subjets']
 plt.figure(figsize=(8, 8))
 plt.bar(Bias_x, Bias_y, width=0.5, color='black')
