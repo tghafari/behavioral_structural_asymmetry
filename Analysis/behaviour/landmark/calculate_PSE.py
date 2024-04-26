@@ -147,17 +147,18 @@ def Figure3A(fpath):
                             scale_x, y_scale, y_bias)
     # Define direction of bias:
     PSE = weibull_min_ppf(0.5, shape_x, loc_x, scale_x, y_scale, y_bias)
-    if PSE < 0:
+    PSE_floored = math.floor(PSE)
+    if PSE_floored < 0:
         Bias = 'Lefward Bias'
-        PSE_x = Leftvaluesmax + PSE
-        Left_Bias_list.append(PSE_x)
-    elif PSE > 0:
+        PSE_floored = Leftvaluesmax + PSE_floored
+        Left_Bias_list.append(PSE_floored)
+    elif PSE_floored > 0:
         Bias = 'Righward Bias'
-        PSE_x = Rightvaluesmax - PSE + 1
-        Right_Bias_list.append(PSE_x)
+        PSE_floored = Rightvaluesmax - PSE_floored + 1
+        Right_Bias_list.append(PSE_floored)
     else:
         Bias = 'No Bias'
-        No_Bias_list.append(PSE_x)
+        No_Bias_list.append(PSE_floored)
     # Draw Weibull Curves:
     plt.plot(x_weibull, cdf_y, 'blue', lw=1.3, label='Weibull CDF')
     # Draw "veridical Midponit" line:
@@ -177,7 +178,7 @@ def Figure3A(fpath):
     plt.gca().spines['top'].set_visible(False)
     plt.gca().spines['right'].set_visible(False)
     
-    return PSE_x, r2, Left_Bias_list, Right_Bias_list, No_Bias_list
+    return PSE, r2, Left_Bias_list, Right_Bias_list, No_Bias_list
 
 # Plot figure 3-A for all subjects:
 PSE_list = [] # list of PSEs for figure B
@@ -188,8 +189,7 @@ for sub in subjects:
     savefig_path = op.join(deriv_dir, sub_code + '_figure3A2.png')
     fpath = op.join(landmark_resutls_dir, sub_code, 'ses-01/beh', file_name)
     # plot figure 3A
-    PSE_x, r2, left_bias_list, right_bias_list, no_bias_list = Figure3A(fpath)
-    PSE_list.append(PSE_x)
+    PSE, r2, left_bias_list, right_bias_list, no_bias_list = Figure3A(fpath)
     # Define plot(s) title:
     plt.title('Figure 3-A. Subject %s _ r2 = %s' % (sub_code, r2), pad=10, fontsize=10, fontweight=100, loc='left')
     # Full screnn plot:
