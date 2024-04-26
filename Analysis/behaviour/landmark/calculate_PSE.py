@@ -49,6 +49,10 @@ def DataBinner(column):
     
     return round(math.log(column, 0.8))
 
+# figureB
+def DataFloorer(column):
+
+    
 
 # Define Weibull distrbituion parameters
 y_scale_guess = 1
@@ -225,10 +229,10 @@ bias_list = bias_list + no_bias_list
 Bias_Data['bias'] = bias_list
 
 # Plot figure 3-B:
-Bias_Data['PSE_log'] = Bias_Data['PSE'].apply(DataBinner)
+#Bias_Data['PSE_log'] = Bias_Data['PSE'].apply(DataBinner)
 Bias_Table=pd.DataFrame()
-Bias_Table['Number_Subjets'] = Bias_Data.groupby(['PSE_log'])['PSE_log'].count()
-Bias_x = Bias_Table.index.get_level_values('PSE_log')
+Bias_Table['Number_Subjets'] = Bias_Data.groupby(['PSE'])['PSE'].count()
+Bias_x = Bias_Table.index.get_level_values('PSE')
 Bias_y = Bias_Table['Number_Subjets']
 plt.figure(figsize=(8, 8))
 plt.bar(Bias_x, Bias_y, width=0.5, color='black')
