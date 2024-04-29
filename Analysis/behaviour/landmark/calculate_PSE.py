@@ -33,7 +33,7 @@ elif platform == 'mac':
 
 behavioural_bias_dir = 'Projects/subcortical-structures/SubStr-and-behavioral-bias'
 landmark_resutls_dir = op.join(jenseno_dir, behavioural_bias_dir, 'programming/MATLAB/main-study/landmark-task/Results')
-deriv_dir = op.join(jenseno_dir, behavioural_bias_dir, 'derivatives/landmark/figure3-260424')
+deriv_dir = op.join(jenseno_dir, behavioural_bias_dir, 'derivatives/landmark/figure3-290424')
 
 subjects = np.arange(1,33) # number of subjects
 
@@ -153,7 +153,7 @@ def Figure3A(fpath):
     plt.axvline(x=0, color='black', linestyle='--', dashes=(5, 3),
                 lw=1.75, label='Veridical Midponit')
     # Draw PSE Vertical and Horizontal Lines:
-    plt.axvline(x=PSE_x, color='grey', lw=1, linestyle=':'))
+    plt.axvline(x=PSE, color='grey', lw=1, linestyle=':')
     plt.axhline(y=0.5, color='grey', lw=1, linestyle=':', label='PSE')
     # Find the Best Location for Plot Guide Box:
     if PSE > 0:
