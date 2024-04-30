@@ -27,7 +27,7 @@ elif platform == 'mac':
 
 # Define where to read and write the data
 volume_sheet_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/collated')
-lat_volume_csv = op.join(volume_sheet_dir, 'lateralisation_vol-PSE_1_31-no outlier.csv')
+lat_volume_csv = op.join(volume_sheet_dir, 'lateralisation_vol-PSE_1_31.csv')
 
 data = []
 with open(lat_volume_csv, 'r') as file:
@@ -37,10 +37,10 @@ with open(lat_volume_csv, 'r') as file:
     
 # Extract the columns of lateralisation volumes
 data = np.array(data)
-LV_columns = data[1:, 1:8].astype(float)
+LV_columns = data[1:-1, 1:8].astype(float)  # last row is removed becuase the values are still missing
 
 # what are you plotting? PSE_landmark or MS_target
-plotting = 'PSE_landmark'
+plotting = 'PSE_target'
 
 
 if plotting == 'PSE_landmark':
@@ -50,6 +50,10 @@ if plotting == 'PSE_landmark':
 elif plotting == 'MS_target':
     ms_column = data[1:, 9].astype(float) # these data should be added to the csv file manually before running this script
     y = ms_column
+
+elif plotting == 'PSE_target':
+    target_column = data[1:-1, 10].astype(float) # these data should be added to the csv file manually before running this script
+    y = target_column
 
 # Plot the data and calculate correlations
 correlations = []

@@ -276,7 +276,7 @@ for sub in subjects:
     contrast_Table = Finalysis(fpath)
     
     PSE_Right, r_square_Right, PSE_Left, r_square_Left = plot_fitted_data(contrast_Table, sub_code)
-    PSE_lateralisation_index = (abs(PSE_Right) - abs(PSE_Left)) / (PSE_Right + PSE_Left)
+    PSE_lateralisation_index = (abs(PSE_Right) - abs(PSE_Left)) / (abs(PSE_Right) + abs(PSE_Left))
     PSE_lateralisation_indices.append(PSE_lateralisation_index)
 
     plt.title(f"Subject {sub_code} Right PSE = {round(PSE_Right, 3)}, Right r2 = {round(r_square_Right, 3)}, "\
