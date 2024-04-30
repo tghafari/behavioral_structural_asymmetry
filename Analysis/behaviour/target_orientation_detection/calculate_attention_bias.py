@@ -154,7 +154,7 @@ def plot_fitted_data(contrast_Table, sub_code):
     # Fit Weibull distribution:
     shape_All, loc_All, scale_All = weibull_min.fit(x_log)
     fit, Temp = curve_fit(weibull_min_cdf, x_log, y, p0=[
-                          shape_All, loc_All, scale_All, y_scale_guess, y_bias_guess], maxfev=100000, check_finite=False)
+                          shape_All, loc_All, scale_All, y_scale_guess, y_bias_guess], maxfev=1000000, check_finite=False)
 
     shape_All = fit[0]
     loc_All = fit[1]
@@ -181,7 +181,7 @@ def plot_fitted_data(contrast_Table, sub_code):
     # Fit Weibull distribution:
     shape_Right, loc_Right, scale_Right = weibull_min.fit(x_log)
     fit, Temp = curve_fit(weibull_min_cdf, x_log, y_Right, p0=[
-                          shape_Right, loc_Right, scale_Right, y_scale_guess, y_bias_guess], maxfev=100000, check_finite=False)
+                          shape_Right, loc_Right, scale_Right, y_scale_guess, y_bias_guess], maxfev=1000000, check_finite=False)
 
     shape_Right = fit[0]
     loc_Right = fit[1]
@@ -260,11 +260,12 @@ def plot_fitted_data(contrast_Table, sub_code):
 
 # Define address of resuls and figures
 rds_dir = '/Volumes/jenseno-avtemporal-attention'
-behavioural_bias_dir = r'Projects/subcortical-structures/SubStr-and-behavioral-bias'
+behavioural_bias_dir = 'Projects/subcortical-structures/SubStr-and-behavioral-bias'
 target_resutls_dir = op.join(rds_dir, behavioural_bias_dir, 'programming/MATLAB/main-study/target-orientation-detection/Results')
-deriv_dir = op.join(rds_dir, behavioural_bias_dir, 'derivatives/target_orientation/figures-optimised')
+deriv_dir = op.join(rds_dir, behavioural_bias_dir, 'derivatives/target_orientation/figure-290424')
 
-subjects = np.arange(1,20) # number of subjects
+subjects = np.arange(1,33) # number of subjects
+PSE_lateralisation_indices = []  # PSE lateralisations for all participants
 
 for sub in subjects:
     sub_code = f"sub-S{sub+1000}"
@@ -275,6 +276,9 @@ for sub in subjects:
     contrast_Table = Finalysis(fpath)
     
     PSE_Right, r_square_Right, PSE_Left, r_square_Left = plot_fitted_data(contrast_Table, sub_code)
+    PSE_lateralisation_index = (abs(PSE_Right) - abs(PSE_Left)) / (PSE_Right + PSE_Left)
+    PSE_lateralisation_indices.append(PSE_lateralisation_index)
+
     plt.title(f"Subject {sub_code} Right PSE = {round(PSE_Right, 3)}, Right r2 = {round(r_square_Right, 3)}, "\
               f"Left PSE = {round(PSE_Left, 3)}, Left r2 = {round(r_square_Left, 3)}", pad=15, fontsize=10, fontweight=200, loc='left')
    
