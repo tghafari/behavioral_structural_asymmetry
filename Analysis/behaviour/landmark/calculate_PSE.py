@@ -6,7 +6,7 @@ subject using the Weibull distribution (Figure 3-A)
 Finally, it plots the PSE and bias direction of all subjects in Figure 3-B
 
 Author: S.M.H Ghafari
-Email: m8ghafari@gamil.com
+Email: m8ghafari@gmail.com
 ==============================================  
 """
 
