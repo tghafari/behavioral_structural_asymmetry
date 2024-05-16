@@ -296,11 +296,11 @@ behavioural_bias_dir = 'Projects/subcortical-structures/SubStr-and-behavioral-bi
 target_resutls_dir = op.join(rds_dir, behavioural_bias_dir,
                              'programming/MATLAB/main-study/target-orientation-detection/Results')
 deriv_dir = op.join(rds_dir, behavioural_bias_dir,
-                    'derivatives/target_orientation/figuresB')
-outliers_list_dir = op.join(rds_dir, behavioural_bias_dir, 
-                            'derivatives/target_orientation/outliers')
+                    'derivatives/target_orientation')
+outliers_list_dir = op.join(deriv_dir, 'outliers')
 
 subjects = np.arange(1, 33)  # number of subjects
+sub_ids = []
 PSE_lateralisation_indices = []  # PSE lateralisations for all participants
 outliers = []  # outlier participants list
 
@@ -308,7 +308,7 @@ for sub in subjects:
     sub_code = f"sub-S{sub+1000}"
     file_name = f"sub-S{sub+1000}_ses-01_task-Orientation_Detection_run-01_logfile.csv"
     fpath = op.join(target_resutls_dir, sub_code, 'ses-01/beh', file_name)
-    savefig_path = op.join(deriv_dir, sub_code +
+    savefig_path = op.join(deriv_dir, 'figuresB', sub_code +
                            '_contrast_psychometric_plot.png')
 
     contrast_Table = Finalysis(fpath)
@@ -319,7 +319,10 @@ for sub in subjects:
         contrast_Table, sub_code)
     PSE_lateralisation_index = (
         abs(PSE_Right) - abs(PSE_Left)) / (abs(PSE_Right) + abs(PSE_Left))
-    PSE_lateralisation_indices.append(PSE_lateralisation_index)
+    
+    if sub_code not in outliers:
+        PSE_lateralisation_indices.append(PSE_lateralisation_index)
+        sub_ids.append(sub_code)
 
     plt.title(f"Subject {sub_code} Right PSE = {round(PSE_Right, 3)}, Right r2 = {round(r_square_Right, 3)}, "
               f"Left PSE = {round(PSE_Left, 3)}, Left r2 = {round(r_square_Left, 3)}", pad=15, fontsize=10, fontweight=200, loc='left')
@@ -327,6 +330,9 @@ for sub in subjects:
     plt.tight_layout()   # full screnn plot
     plt.savefig(savefig_path, dpi=300)
 
+lateralisation_indices_df = pd.DataFrame(PSE_lateralisation_indices, columns=['PSE_lat_idx'], index=sub_ids)
+lateralisation_indices_df.to_csv(op.join(deriv_dir, 'lateralisation_indices',
+                                          'PSE_lateralisation_indices.csv'))
 outliers = pd.DataFrame(outliers, columns=['outlier_participants'])
 outliers.to_csv(op.join(outliers_list_dir,
                 'outlier_participants.csv'), index=False)
