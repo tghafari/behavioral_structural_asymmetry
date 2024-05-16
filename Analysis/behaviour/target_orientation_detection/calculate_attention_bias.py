@@ -35,8 +35,6 @@ y_bias_guess = 0.5
 ppf = 0.75
 
 # Define Weibull functions
-
-
 def weibull_min_cdf(x_log, shape, loc, scale, y_scale, y_bias):
 
     # leave the parameters to be optimized
@@ -287,9 +285,9 @@ behavioural_bias_dir = 'Projects/subcortical-structures/SubStr-and-behavioral-bi
 target_resutls_dir = op.join(rds_dir, behavioural_bias_dir,
                              'programming/MATLAB/main-study/target-orientation-detection/Results')
 deriv_dir = op.join(rds_dir, behavioural_bias_dir,
-                    'derivatives/target_orientation/figure-290424')
-outliers_list_dir = op.join(
-    rds_dir, behavioural_bias_dir, 'derivatives/target_orientation')
+                    'derivatives/target_orientation/figure-160524')
+outliers_list_dir = op.join(rds_dir, behavioural_bias_dir, 
+                            'derivatives/target_orientation/outliers')
 
 subjects = np.arange(1, 33)  # number of subjects
 PSE_lateralisation_indices = []  # PSE lateralisations for all participants
@@ -318,6 +316,6 @@ for sub in subjects:
     plt.tight_layout()   # full screnn plot
     plt.savefig(savefig_path, dpi=300)
 
-outliers = pd.DataFrame(outliers, columns=['Outlier_Participants'])
+outliers = pd.DataFrame(outliers, columns=['outlier_participants'])
 outliers.to_csv(op.join(outliers_list_dir,
-                'Outlier_Participants.csv'), index=False)
+                'outlier_participants.csv'), index=False)
