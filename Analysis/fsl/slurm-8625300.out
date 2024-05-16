@@ -1,7 +1,0 @@
-Lmod has detected the following error: These module(s) or extension(s) exist
-but cannot be loaded as requested: "FSL/6.0.7.9"
-   Try: "module spider FSL/6.0.7.9" to see how to load the module(s).
-
-
-
-/var/spool/slurmd/job8625300/slurm_script: line 13: /etc/fslconf/fsl.sh: No such file or directory
