@@ -122,13 +122,24 @@ def Finalysis(fpath):
     return contrast_Table
 
 
-def check_for_outlier(contrast_Table, sub_code):
+def check_for_outlier(contrast_Table, sub_code, outliers):
+    """this definition finds the outliers
+    outliers are those who have 
+    max performance below %75: poor performers
+    or min performance above %75: the staircase hasn't worked """
 
-    Max_Performance_Right = max(contrast_Table['Right_Correct_Percent'])
-    Max_Performance_Left = max(contrast_Table['Left_Correct_Percent'])
+    right_correct_percent = contrast_Table['Right_Correct_Percent']
+    left_correct_percent = contrast_Table['Left_Correct_Percent']
+    
+    # Use numpy to find the min and max values
+    max_performance_right = np.max(right_correct_percent)
+    min_performance_right = np.min(right_correct_percent)
+    max_performance_left = np.max(left_correct_percent)
+    min_performance_left = np.min(left_correct_percent)
 
-    if ((Max_Performance_Right < 0.75) or (Max_Performance_Left < 0.75)):
-
+    # Check the conditions and append to outliers if any condition is met
+    if (max_performance_right < 0.75 or max_performance_left < 0.75 or 
+        min_performance_right > 0.75 or min_performance_left > 0.75):
         outliers.append(sub_code)
 
 
@@ -285,7 +296,7 @@ behavioural_bias_dir = 'Projects/subcortical-structures/SubStr-and-behavioral-bi
 target_resutls_dir = op.join(rds_dir, behavioural_bias_dir,
                              'programming/MATLAB/main-study/target-orientation-detection/Results')
 deriv_dir = op.join(rds_dir, behavioural_bias_dir,
-                    'derivatives/target_orientation/figure-160524')
+                    'derivatives/target_orientation/figuresB')
 outliers_list_dir = op.join(rds_dir, behavioural_bias_dir, 
                             'derivatives/target_orientation/outliers')
 
@@ -302,7 +313,7 @@ for sub in subjects:
 
     contrast_Table = Finalysis(fpath)
 
-    check_for_outlier(contrast_Table, sub_code)
+    check_for_outlier(contrast_Table, sub_code, outliers)
 
     PSE_Right, r_square_Right, PSE_Left, r_square_Left = plot_fitted_data(
         contrast_Table, sub_code)
