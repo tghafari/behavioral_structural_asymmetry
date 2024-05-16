@@ -6,7 +6,7 @@ this code will read in the data from target
 orientation detection task and calculates
 each participants bias towards right and left
 
-written by Ebrahim Katebi (email?)
+written by Mohammad Ebrahim Katebi (mekatebi.2000@gmail.com)
 adapted by Tara Ghafari
 ==============================================  
 ToDos:
@@ -35,22 +35,27 @@ y_bias_guess = 0.5
 ppf = 0.75
 
 # Define Weibull functions
+
+
 def weibull_min_cdf(x_log, shape, loc, scale, y_scale, y_bias):
 
-    y = weibull_min.cdf(x_log, shape, loc, scale)  # leave the parameters to be optimized
+    # leave the parameters to be optimized
+    y = weibull_min.cdf(x_log, 6, loc, scale)
 
-    #y_scaled = (y * y_scale) + y_bias  # uses parameters from weibull
-    y_scaled = (y * y_scale_guess) + y_bias_guess  # uses fixed parameters - final decision
+    # y_scaled = (y * y_scale) + y_bias  # uses parameters from weibull
+    # uses fixed parameters - final decision
+    y_scaled = (y * y_scale_guess) + y_bias_guess
 
     return y_scaled
 
 
 def weibull_min_ppf(ppf, shape, loc, scale, y_scale, y_bias):
 
-    #ppf_unscaled = (ppf - y_bias) / y_scale  # uses parameters from weibull
-    ppf_unscaled = (ppf - y_bias_guess) / y_scale_guess  # uses fixed parameters - final decision
+    # ppf_unscaled = (ppf - y_bias) / y_scale  # uses parameters from weibull
+    # uses fixed parameters - final decision
+    ppf_unscaled = (ppf - y_bias_guess) / y_scale_guess
 
-    return weibull_min.ppf(ppf_unscaled, shape, loc, scale)
+    return weibull_min.ppf(ppf_unscaled, 6, loc, scale)
 
 
 def Finalysis(fpath):
@@ -58,7 +63,7 @@ def Finalysis(fpath):
     number of correct trials in right and left attention.
     Returns a table containing those values
     """
-    
+
     Data = pd.read_csv(fpath)  # address to csv file from PTB
 
     Data = Data[Data['State'] == 1]
@@ -113,10 +118,20 @@ def Finalysis(fpath):
                                  Contrast_Attention_Left_Correct_Count) / Contrast_Trials_All
 
     contrast_Table = pd.DataFrame(data=Results, columns=[
-                         "Contrast", "Right_Correct_Percent", "Left_Correct_Percent", "All_Correct_Percent"])
+        "Contrast", "Right_Correct_Percent", "Left_Correct_Percent", "All_Correct_Percent"])
     contrast_Table = contrast_Table.set_index(['Contrast'])
 
     return contrast_Table
+
+
+def check_for_outlier(contrast_Table, sub_code):
+
+    Max_Performance_Right = max(contrast_Table['Right_Correct_Percent'])
+    Max_Performance_Left = max(contrast_Table['Left_Correct_Percent'])
+
+    if ((Max_Performance_Right < 0.75) or (Max_Performance_Left < 0.75)):
+
+        outliers.append(sub_code)
 
 
 def plot_fitted_data(contrast_Table, sub_code):
@@ -146,7 +161,7 @@ def plot_fitted_data(contrast_Table, sub_code):
     # plt.xticks(np.linspace(-10, 5, 16))
     plt.yticks([0.25, 0.5, 0.75, 1])
     # plt.show()
-    
+
     cdf_Plot_x = np.linspace(x_log[0]-1, x_log[-1]+1, 1000)
 
     # All  ///////////////////////////////////////////////////////////////
@@ -246,41 +261,63 @@ def plot_fitted_data(contrast_Table, sub_code):
     ss_tot_Left = np.sum((y_Left-np.mean(y_Left))**2)
     r_square_Left = 1-(ss_res_Left/ss_tot_Left)
 
+    legend_title = 'Bias= {} Log Contrast'.format(
+        round(PSE_Right - PSE_Left, 3))
+
+    if sub_code in outliers:
+
+        legend_title = 'Outlier\n' + legend_title
+
     # Plot Guide Box:
-    plt.legend(loc=5, title='Bias= {} Log Contrast'.format(round(PSE_Right - PSE_Left, 3)),
-               title_fontsize='x-large', alignment='left', fontsize='medium', edgecolor='pink')
+    plt.legend(loc=5, title=legend_title, title_fontsize='x-large',
+               alignment='left', fontsize='medium', edgecolor='pink')
 
     # Remove top and left frames:
     plt.gca().spines['top'].set_visible(False)
-    plt.gca().spines['right'].set_visible(False)   
-    
+    plt.gca().spines['right'].set_visible(False)
+
     return PSE_Right, r_square_Right, PSE_Left, r_square_Left
 
-#====================================== main body of code ==================================#
+# ====================================== main body of code ==================================#
+
 
 # Define address of resuls and figures
 rds_dir = '/Volumes/jenseno-avtemporal-attention'
 behavioural_bias_dir = 'Projects/subcortical-structures/SubStr-and-behavioral-bias'
-target_resutls_dir = op.join(rds_dir, behavioural_bias_dir, 'programming/MATLAB/main-study/target-orientation-detection/Results')
-deriv_dir = op.join(rds_dir, behavioural_bias_dir, 'derivatives/target_orientation/figure-290424')
+target_resutls_dir = op.join(rds_dir, behavioural_bias_dir,
+                             'programming/MATLAB/main-study/target-orientation-detection/Results')
+deriv_dir = op.join(rds_dir, behavioural_bias_dir,
+                    'derivatives/target_orientation/figure-290424')
+outliers_list_dir = op.join(
+    rds_dir, behavioural_bias_dir, 'derivatives/target_orientation')
 
-subjects = np.arange(1,33) # number of subjects
+subjects = np.arange(1, 33)  # number of subjects
 PSE_lateralisation_indices = []  # PSE lateralisations for all participants
+outliers = []  # outlier participants list
 
 for sub in subjects:
     sub_code = f"sub-S{sub+1000}"
     file_name = f"sub-S{sub+1000}_ses-01_task-Orientation_Detection_run-01_logfile.csv"
     fpath = op.join(target_resutls_dir, sub_code, 'ses-01/beh', file_name)
-    savefig_path = op.join(deriv_dir, sub_code + '_contrast_psychometric_plot.png')
-    
+    savefig_path = op.join(deriv_dir, sub_code +
+                           '_contrast_psychometric_plot.png')
+
     contrast_Table = Finalysis(fpath)
-    
-    PSE_Right, r_square_Right, PSE_Left, r_square_Left = plot_fitted_data(contrast_Table, sub_code)
-    PSE_lateralisation_index = (abs(PSE_Right) - abs(PSE_Left)) / (abs(PSE_Right) + abs(PSE_Left))
+
+    check_for_outlier(contrast_Table, sub_code)
+
+    PSE_Right, r_square_Right, PSE_Left, r_square_Left = plot_fitted_data(
+        contrast_Table, sub_code)
+    PSE_lateralisation_index = (
+        abs(PSE_Right) - abs(PSE_Left)) / (abs(PSE_Right) + abs(PSE_Left))
     PSE_lateralisation_indices.append(PSE_lateralisation_index)
 
-    plt.title(f"Subject {sub_code} Right PSE = {round(PSE_Right, 3)}, Right r2 = {round(r_square_Right, 3)}, "\
+    plt.title(f"Subject {sub_code} Right PSE = {round(PSE_Right, 3)}, Right r2 = {round(r_square_Right, 3)}, "
               f"Left PSE = {round(PSE_Left, 3)}, Left r2 = {round(r_square_Left, 3)}", pad=15, fontsize=10, fontweight=200, loc='left')
-   
+
     plt.tight_layout()   # full screnn plot
     plt.savefig(savefig_path, dpi=300)
+
+outliers = pd.DataFrame(outliers, columns=['Outlier_Participants'])
+outliers.to_csv(op.join(outliers_list_dir,
+                'Outlier_Participants.csv'), index=False)
