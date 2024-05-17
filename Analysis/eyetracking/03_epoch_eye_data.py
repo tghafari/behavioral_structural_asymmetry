@@ -122,9 +122,9 @@ elif platform == 'mac':
 deriv_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives')
 
 # load in eyeData and params
-for sub_code in range(1,7):
+for sub_code in range(7,33):
     output_fpath = op.join(deriv_dir, 'target_orientation', 'eyetracking')
-    output_dir = op.join(output_fpath,'sub-S100' + str(sub_code))
+    output_dir = op.join(output_fpath,'sub-S' + str(1000+sub_code))
     with open(op.join(output_dir, 'EL_eyeData.json'), 'rb') as f:
         eyeData = pickle.load(f)
         

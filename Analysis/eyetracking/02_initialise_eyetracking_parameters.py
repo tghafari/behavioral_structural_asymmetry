@@ -88,16 +88,16 @@ deriv_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-beha
 
 
 # load in eyeData
-for sub_code in range(2,7):
+for sub_code in range(10,33):
     output_fpath = op.join(deriv_dir, 'target_orientation', 'eyetracking')
-    output_dir = op.join(output_fpath,'sub-S100' + str(sub_code))
+    output_dir = op.join(output_fpath,'sub-S' + str(1000+sub_code))
     with open(op.join(output_dir, 'EL_eyeData.json'), 'rb') as f:
         eyeData = pickle.load(f)
     
     fs = 500  # sampling frequency
     eye = 'B'
     
-    params = InitParams(eyeData, 'S100'+ str(sub_code), fs, eye)
+    params = InitParams(eyeData, 'S'+ str(1000+sub_code), fs, eye)
     
     # save params as json file
     with open(op.join(output_dir, 'EL_params.json'), 'wb') as f:
