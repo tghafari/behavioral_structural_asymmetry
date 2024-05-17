@@ -157,21 +157,28 @@ def ParseEyeLinkAsc(eyetracking_asc_file):
     # Return new compilation dataframe
     return dfRec, dfMsg, dfFix, dfSacc, dfBlink, dfSamples
        
+platform= 'mac'
+
+if platform == 'bluebear':
+    jenseno_dir = '/rds/projects/j/jenseno-avtemporal-attention'
+elif platform == 'mac':
+    jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
+
+# Define where to read and write the data
+deriv_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives')
 
 # Define file names
 for sub_code in range(2,7):
-    base_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias'
-    task_dir = r'programming\MATLAB\main-study\target-orientation-detection\Results'
-    sub_dir = op.join('sub-S100' + str(sub_code), r'ses-01\beh')
-    eyetracking_fpath = op.join(base_dir, task_dir, sub_dir, 'e01S100' + str(sub_code)) 
+    sub_dir = op.join('sub-S' + str(1000+sub_code), 'ses-01', 'beh')
+    eyetracking_fpath = op.join(deriv_dir, sub_dir, 'e01S' + str(1000+sub_code)) 
     eyetracking_asc_file = eyetracking_fpath + '.asc'
     
         
     eyeData = ParseEyeLinkAsc(eyetracking_asc_file)
     
     # save eyeData as json file
-    output_fpath = op.join(base_dir, 'results', 'target_orientation', 'eyetracking')
-    output_dir = op.join(output_fpath,'sub-S100' + str(sub_code))
+    output_fpath = op.join(deriv_dir, 'target_orientation', 'eyetracking')
+    output_dir = op.join(output_fpath,'sub-S' + str(1000+sub_code))
     if not op.exists(output_dir):
        os.makedirs(output_dir)
                    

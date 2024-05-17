@@ -31,12 +31,20 @@ def read_ms_direction(saccadeinfo):
             attention_ms_direction.extend(direction)
     return attention_ms_direction
     
+platform= 'mac'
+
+if platform == 'bluebear':
+    jenseno_dir = '/rds/projects/j/jenseno-avtemporal-attention'
+elif platform == 'mac':
+    jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
+
+# Define where to read and write the data
+deriv_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives')
 
 ms_lateralisation_table =[]
 # Load microsaccade info lists
 for sub_code in range(1,7):
-    base_dir = r'Z:\Projects\subcortical-structures\SubStr-and-behavioral-bias'
-    output_fpath = op.join(base_dir, 'results', 'target_orientation', 'eyetracking')
+    output_fpath = op.join(deriv_dir, 'target_orientation', 'eyetracking')
     output_dir = op.join(output_fpath,'sub-S100' + str(sub_code))
 
     with open(op.join(output_dir, 'EL_saccadeinfo_right.json'), 'rb') as f:

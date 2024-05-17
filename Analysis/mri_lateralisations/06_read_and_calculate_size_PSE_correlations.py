@@ -38,11 +38,11 @@ with open(lat_volume_csv, 'r') as file:
 data = np.array(data)
 
 # what are you plotting? 
-plotting = 'PSE_target' # lateralised performance in 'PSE_landmark' or 'MS_target' or 'PSE_target'
+plotting = 'PSE_landmark' # lateralised performance in 'PSE_landmark' or 'MS_target' or 'PSE_target'
 LV = 'thomas'  # lateralisation volume os 'substr' or 'thomas'?
 
 if plotting == 'PSE_landmark':
-    PSE_column = data[1:, 8].astype(float)  # these data should be added to the csv file manually before running this script
+    PSE_column = data[1:-1, 8].astype(float)  # these data should be added to the csv file manually before running this script
     outlier_idx = [15, 27] # remove outliers from PSE_landmark: 1016,1028
     y = np.delete(PSE_column, outlier_idx)
 
