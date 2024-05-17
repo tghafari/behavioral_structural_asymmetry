@@ -43,7 +43,7 @@ deriv_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-beha
 
 ms_lateralisation_table =[]
 # Load microsaccade info lists
-for sub_code in range(7,33):
+for sub_code in range(1,33):
     output_fpath = op.join(deriv_dir, 'target_orientation', 'eyetracking')
     output_dir = op.join(output_fpath,'sub-S' + str(1000+sub_code))
 
@@ -66,7 +66,7 @@ for sub_code in range(7,33):
     ms_lateralisation_table.append(microsaccade_lateralisation_idx)
 
 # first convert table to df then save as .csv
-all_subs_fpath = op.join(output_fpath,'all-subs', 'ms_lateralisation_6subs.csv')
+all_subs_fpath = op.join(output_fpath,'all-subs', 'ms_lateralisation_32subs.csv')
 ms_lateralisation_df = pd.DataFrame(ms_lateralisation_table)     
 ms_lateralisation_df.to_csv(all_subs_fpath,index=True)      
                                       
