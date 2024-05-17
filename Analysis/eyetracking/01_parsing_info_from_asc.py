@@ -165,12 +165,13 @@ elif platform == 'mac':
     jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
 
 # Define where to read and write the data
+data_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/programming/MATLAB/main-study/target-orientation-detection/Results')
 deriv_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives')
 
 # Define file names
-for sub_code in range(2,7):
+for sub_code in range(7,32):
     sub_dir = op.join('sub-S' + str(1000+sub_code), 'ses-01', 'beh')
-    eyetracking_fpath = op.join(deriv_dir, sub_dir, 'e01S' + str(1000+sub_code)) 
+    eyetracking_fpath = op.join(data_dir, sub_dir, 'e01S' + str(1000+sub_code)) 
     eyetracking_asc_file = eyetracking_fpath + '.asc'
     
         
