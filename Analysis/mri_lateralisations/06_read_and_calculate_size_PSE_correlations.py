@@ -88,7 +88,11 @@ for i in range(9):  # calculating correlations for substrs (range(7)) or thomas 
     p_values.append(p_value)
 
     axs[i].set_title(f"Spearman Correlation: {correlation:.4f}\n p-value: {p_value:.4f}")
-    
+
+# Hide any unused subplots
+for i in range(9, len(axs)):
+    fig.delaxes(axs[i])
+
 plt.tight_layout()
 plt.show()
 
