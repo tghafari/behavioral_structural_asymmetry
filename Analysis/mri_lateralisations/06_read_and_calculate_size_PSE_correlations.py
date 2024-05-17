@@ -34,38 +34,53 @@ with open(lat_volume_csv, 'r') as file:
     reader = csv.reader(file)
     for row in reader:
         data.append(row)
-    
-# Extract the columns of lateralisation volumes
+
 data = np.array(data)
-LV_columns = data[1:-1, 1:8].astype(float)  # last row is removed becuase the values are still missing
 
-# what are you plotting? PSE_landmark or MS_target
-plotting = 'PSE_target'
-
+# what are you plotting? 
+plotting = 'PSE_target' # lateralised performance in 'PSE_landmark' or 'MS_target' or 'PSE_target'
+LV = 'thomas'  # lateralisation volume os 'substr' or 'thomas'?
 
 if plotting == 'PSE_landmark':
     PSE_column = data[1:, 8].astype(float)  # these data should be added to the csv file manually before running this script
-    y = PSE_column
-    
+    outlier_idx = [15, 27] # remove outliers from PSE_landmark: 1016,1028
+    y = np.delete(PSE_column, outlier_idx)
+
+
 elif plotting == 'MS_target':
-    ms_column = data[1:, 9].astype(float) # these data should be added to the csv file manually before running this script
-    y = ms_column
+    ms_column = data[1:-1, 9].astype(float) # these data should be added to the csv file manually before running this script
+    outlier_idx = [] # remove outliers from MS_target: 
+    y = np.delete(ms_column, outlier_idx)
+                       
 
 elif plotting == 'PSE_target':
     target_column = data[1:-1, 10].astype(float) # these data should be added to the csv file manually before running this script
-    y = target_column
+    outlier_idx = [2, 3, 6, 7, 15, 16, 17,  # 0-based index
+                24, 26, 27, 30] # remove outliers from PSE_target: 1003,1004,1007,1008,1016,1017,1018,1025,1027,1028,1031,1032
+    y = np.delete(target_column, outlier_idx)
+
+# Extract the columns of lateralisation volumes and remove outliers
+LV_columns_outlier = data[1:-1, 1:8].astype(float)  # last row is removed becuase the values are still missing
+LV_columns = np.delete(LV_columns_outlier, outlier_idx, axis=0)
+
+thomas_columns_outlier = data[1:-1, 11:20].astype(float)
+thomas_columns = np.delete(thomas_columns_outlier, outlier_idx, axis=0)
+
 
 # Plot the data and calculate correlations
 correlations = []
 p_values = []
-fig, axs = plt.subplots(2, 4, figsize=(12, 6))
+fig, axs = plt.subplots(3, 4, figsize=(24, 12))
 axs = axs.flatten()
 
-for i in range(7):
-    x = LV_columns[:, i]
+for i in range(9):  # calculating correlations for substrs (range(7)) or thomas (range(9))
+    if LV == 'substr':
+        x = LV_columns[:, i]
+    else:
+        x = thomas_columns[:, i]
 
     axs[i].scatter(x, y)
-    axs[i].set_xlabel(f"LV_{data[0,i+1]}")
+    axs[i].set_xlabel(f"LV_{data[0,i+11]}")  # for substr data[0,i+1] for thomas data[0,i+11]
     axs[i].set_ylabel(plotting)
 
     correlation, p_value = spearmanr(x, y)  # or pearsonr
@@ -80,8 +95,4 @@ plt.show()
 
 # Print the correlations and p-values
 for i, (correlation, p_value) in enumerate(zip(correlations, p_values)):
-    print(f"Correlation between {data[0, i+1]} and PSE:: {correlation:.4f} (p-value: {p_value:.4f})")    
-    
-    
-    
-    
+    print(f"Correlation between {data[0, i+11]} and PSE:: {correlation:.4f} (p-value: {p_value:.4f})")    

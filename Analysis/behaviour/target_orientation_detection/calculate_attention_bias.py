@@ -305,7 +305,7 @@ PSE_lateralisation_indices = []  # PSE lateralisations for all participants
 outliers = []  # outlier participants list
 
 for sub in subjects:
-    sub_code = f"sub-S{sub+1000}"
+    sub_code = f"sub-S{sub+1000}"  # next time used S{sub+1000} (without sub-)
     file_name = f"sub-S{sub+1000}_ses-01_task-Orientation_Detection_run-01_logfile.csv"
     fpath = op.join(target_resutls_dir, sub_code, 'ses-01/beh', file_name)
     savefig_path = op.join(deriv_dir, 'figuresB', sub_code +
