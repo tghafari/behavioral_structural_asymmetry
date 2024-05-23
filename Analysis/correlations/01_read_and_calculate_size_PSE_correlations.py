@@ -2,7 +2,7 @@
 """
 ===============================================
 
-06_read_and_calculate_size_PSE_correlations
+01_read_and_calculate_size_PSE_correlations
 
 This code reads lateralisation indices from 
 a csv file and correlates them with each subject's
@@ -38,21 +38,19 @@ with open(lat_volume_csv, 'r') as file:
 data = np.array(data)
 
 # what are you plotting? 
-plotting = 'PSE_landmark' # lateralised performance in 'PSE_landmark' or 'MS_target' or 'PSE_target'
-LV = 'thomas'  # lateralisation volume os 'substr' or 'thomas'?
+plotting = 'MS_target' # lateralised performance in 'PSE_landmark' or 'MS_target' or 'PSE_target'
+LV = 'substr'  # lateralisation volume os 'substr' or 'thomas'?
 
 if plotting == 'PSE_landmark':
     PSE_column = data[1:-1, 8].astype(float)  # these data should be added to the csv file manually before running this script
     outlier_idx = [15, 27] # remove outliers from PSE_landmark: 1016,1028
     y = np.delete(PSE_column, outlier_idx)
 
-
 elif plotting == 'MS_target':
     ms_column = data[1:-1, 9].astype(float) # these data should be added to the csv file manually before running this script
     outlier_idx = [] # remove outliers from MS_target: 
     y = np.delete(ms_column, outlier_idx)
                        
-
 elif plotting == 'PSE_target':
     target_column = data[1:-1, 10].astype(float) # these data should be added to the csv file manually before running this script
     outlier_idx = [2, 3, 6, 7, 15, 16, 17,  # 0-based index
@@ -73,7 +71,7 @@ p_values = []
 fig, axs = plt.subplots(3, 4, figsize=(24, 12))
 axs = axs.flatten()
 
-for i in range(9):  # calculating correlations for substrs (range(7)) or thomas (range(9))
+for i in range(7):  # calculating correlations for substrs (range(7)) or thomas (range(9))
     if LV == 'substr':
         x = LV_columns[:, i]
     else:
@@ -90,7 +88,7 @@ for i in range(9):  # calculating correlations for substrs (range(7)) or thomas 
     axs[i].set_title(f"Spearman Correlation: {correlation:.4f}\n p-value: {p_value:.4f}")
 
 # Hide any unused subplots
-for i in range(9, len(axs)):
+for i in range(7, len(axs)):
     fig.delaxes(axs[i])
 
 plt.tight_layout()
