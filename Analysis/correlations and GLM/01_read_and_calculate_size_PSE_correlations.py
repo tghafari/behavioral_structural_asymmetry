@@ -39,7 +39,7 @@ data = np.array(data)
 
 # what are you plotting? 
 plotting = 'MS_target' # lateralised performance in 'PSE_landmark' or 'MS_target' or 'PSE_target'
-LV = 'substr'  # lateralisation volume os 'substr' or 'thomas'?
+LV = 'thomas'  # lateralisation volume os 'substr' or 'thomas'?
 
 if plotting == 'PSE_landmark':
     PSE_column = data[1:-1, 8].astype(float)  # these data should be added to the csv file manually before running this script
@@ -64,21 +64,26 @@ LV_columns = np.delete(LV_columns_outlier, outlier_idx, axis=0)
 thomas_columns_outlier = data[1:-1, 11:20].astype(float)
 thomas_columns = np.delete(thomas_columns_outlier, outlier_idx, axis=0)
 
-
 # Plot the data and calculate correlations
 correlations = []
 p_values = []
-fig, axs = plt.subplots(3, 4, figsize=(24, 12))
+if LV == 'substr':
+    fig, axs = plt.subplots(2, 4, figsize=(12, 6))  
+else:
+    fig, axs = plt.subplots(3, 4, figsize=(24, 12))  
 axs = axs.flatten()
 
-for i in range(7):  # calculating correlations for substrs (range(7)) or thomas (range(9))
+for i in range(9):  # calculating correlations for substrs (range(7)) or thomas (range(9))
     if LV == 'substr':
         x = LV_columns[:, i]
+        axs[i].scatter(x, y)
+        axs[i].set_xlabel(f"LV_{data[0,i+1]}")  
+
     else:
         x = thomas_columns[:, i]
+        axs[i].scatter(x, y)
+        axs[i].set_xlabel(f"LV_{data[0,i+11]}") 
 
-    axs[i].scatter(x, y)
-    axs[i].set_xlabel(f"LV_{data[0,i+11]}")  # for substr data[0,i+1] for thomas data[0,i+11]
     axs[i].set_ylabel(plotting)
 
     correlation, p_value = spearmanr(x, y)  # or pearsonr
@@ -88,7 +93,7 @@ for i in range(7):  # calculating correlations for substrs (range(7)) or thomas 
     axs[i].set_title(f"Spearman Correlation: {correlation:.4f}\n p-value: {p_value:.4f}")
 
 # Hide any unused subplots
-for i in range(7, len(axs)):
+for i in range(9, len(axs)):
     fig.delaxes(axs[i])
 
 plt.tight_layout()
