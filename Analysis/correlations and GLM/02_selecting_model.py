@@ -36,7 +36,7 @@ lat_index_csv = op.join(volume_sheet_dir, 'lateralisation_vol-PSE_1_31.csv')
 
 # What are you plotting? 
 dependent = 'PSE_landmark'  # lateralised performance in 'PSE_landmark' or 'MS_target' or 'PSE_target'
-independent = 'substr'  # lateralisation volume of 'substr' or 'thomas'?
+independent = 'thomas'  # lateralisation volume of 'substr' or 'thomas'?
 
 def E2_ModelSelection(lat_index_csv, dependent, independent):
 
