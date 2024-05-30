@@ -20,6 +20,8 @@ import numpy as np
 import os.path as op
 import itertools
 import statsmodels.formula.api as smf
+import matplotlib.pyplot as plt
+
 
 platform = 'mac'
 
@@ -99,8 +101,11 @@ def E2_ModelSelection(lat_index_csv, dependent, independent):
 
     best_AIC = np.nanargmin(best_AICs[:, 0])
     AIC_best_lbl = AICs_best_lbl[best_AIC]
+    AIC_best_lbl = [label for label in AIC_best_lbl if label is not None]  # Remove 'None' values
+
     best_BIC = np.nanargmin(best_BICs[:, 0])
     BIC_best_lbl = BICs_best_lbl[best_BIC]
+    BIC_best_lbl = [label for label in BIC_best_lbl if label is not None]  # Remove 'None' values
 
     avg_AICs_BICs = np.nanmean([best_AICs[:, 0], best_BICs[:, 0]], axis=0)
     AB_best_n_reg = np.array([  # best number of regressors based on min avg (AIC,BIC)
@@ -109,9 +114,8 @@ def E2_ModelSelection(lat_index_csv, dependent, independent):
         np.nanargmin(avg_AICs_BICs) + 1  # I don't think we need an average
     ])
     # Find the summary of the best model based on AIC and BIC
-    AIC_best_model_summary = LME[best_AIC][int(best_AICs[best_AIC, 1])].summary()
-    BIC_best_model_summary = LME[best_BIC][int(best_BICs[best_BIC, 1])].summary()
-
+    AIC_best_model = LME[best_AIC][int(best_AICs[best_AIC, 1])]
+    BIC_best_model = LME[best_BIC][int(best_BICs[best_BIC, 1])]
 
     # Find best models based on log-likelihood and R-squared
     def get_best_metrics_max(metric):
@@ -128,8 +132,11 @@ def E2_ModelSelection(lat_index_csv, dependent, independent):
 
     best_LL = np.nanargmax(best_LLs[:, 0])
     LL_best_lbl = LLs_best_lbl[best_LL]
+    LL_best_lbl = [label for label in LL_best_lbl if label is not None]  # Remove 'None' values
     best_Rsqrd = np.nanargmax(best_Rsqrds[:, 0])
-    Rsqrd_best_lbl = Rsqrds_best_lbl[best_LL]
+
+    Rsqrd_best_lbl = Rsqrds_best_lbl[best_Rsqrd]
+    Rsqrd_best_lbl = [label for label in Rsqrd_best_lbl if label is not None]  # Remove 'None' values
 
     avg_LLs_Rsqrds = np.nanmean([best_LLs[:, 0], best_Rsqrds[:, 0]], axis=0)
     LR_best_n_reg = np.array([    # best number of regressors based on max avg (LL,Rsqrd)
@@ -138,27 +145,64 @@ def E2_ModelSelection(lat_index_csv, dependent, independent):
         np.nanargmax(avg_LLs_Rsqrds) + 1  # I don't think we need an average
     ])
 
-    # Find the summary of the best model based on AIC and BIC
-    LL_best_model_summary = LME[best_LL][int(best_LLs[best_LL, 1])].summary()
-    Rsqrd_best_model_summary = LME[best_Rsqrd][int(best_Rsqrds[best_Rsqrd, 1])].summary()
+    # Find the summary of the best model based on log-likelihood and R-squared
+    LL_best_model = LME[best_LL][int(best_LLs[best_LL, 1])]
+    Rsqrd_best_model = LME[best_Rsqrd][int(best_Rsqrds[best_Rsqrd, 1])]
 
     return {
-        'best_AICs': best_AICs,
-        'best_BICs': best_BICs,
-        'AIC_best_lbl': AIC_best_lbl,
-        'BIC_best_lbl': BIC_best_lbl,
-        'AB_best_n_reg': AB_best_n_reg,
-        'AB_best_models': {AIC_best_model_summary, BIC_best_model_summary},
-        'best_LLs': best_LLs,
-        'best_Rsqrds': best_Rsqrds,
-        'LL_best_lbl': LL_best_lbl,
-        'Rsqrd_best_lbl': Rsqrd_best_lbl,
-        'LR_best_n_reg': LR_best_n_reg,
-        'LR_best_models': {LL_best_model_summary, Rsqrd_best_model_summary}
+            'best_AIC': best_AIC,
+            'AIC_best_lbl': AIC_best_lbl,
+            'AIC_best_model': AIC_best_model, 
+
+            'best_BIC': best_BIC,
+            'BIC_best_lbl': BIC_best_lbl,
+            'BIC_best_model': BIC_best_model,
+            'AB_best_n_reg': AB_best_n_reg,
+
+            'best_LL': best_LL,
+            'LL_best_lbl': LL_best_lbl,
+            'LL_best_model': LL_best_model,
+
+            'best_Rsqrd': best_Rsqrd,
+            'Rsqrd_best_lbl': Rsqrd_best_lbl,
+            'Rsqrd_best_model': Rsqrd_best_model,
+            'LR_best_n_reg': LR_best_n_reg
     }
+
+def plot_model_summary(model, title, labels):
+    params = model.params.values[1:]  # exclude the intercept
+    errors = model.bse.values[1:]  # exclude the intercept
+    pvalues = model.pvalues.values[1:]  # exclude the intercept
+
+    color = ['darkkhaki', 'olive', 'rosybrown', 'indianred', 'darkred', 'firebrick', 'maroon']
+
+    x = range(len(params))
+    plt.figure(figsize=(10, 6))
+    plt.bar(x, params, yerr=errors, capsize=5, color=color[:len(x)])
+    plt.axhline(0, color='black', linewidth=1)
+    plt.xticks(x, labels, rotation=45, ha='right')
+    
+    for i, (param, error, pvalue) in enumerate(zip(params, errors, pvalues)):
+        if pvalue < 0.05:
+            if param > 0:
+                plt.text(i, param + error + 0.2, '*', ha='center', va='bottom', fontsize=14, color='black')
+            else:
+                plt.text(i, param - error - 0.2, '*', ha='center', va='top', fontsize=14, color='black')
+
+    fstat_pvalue = model.f_pvalue
+    plt.title(f'{title} (F-stat p-value: {fstat_pvalue:.3f})')
+    plt.ylabel('Coefficient Value')
+    plt.tight_layout()
+    plt.show()
 
 # Example usage
 results = E2_ModelSelection(lat_index_csv, dependent, independent)
-print(results)
+
+# Plot the summaries of the best models
+plot_model_summary(results['AIC_best_model'], 'AIC Best Model Parameters', results['AIC_best_lbl'])
+plot_model_summary(results['BIC_best_model'], 'BIC Best Model Parameters', results['BIC_best_lbl'])
+plot_model_summary(results['Rsqrd_best_model'], 'R-squared Adjusted Best Model Parameters', results['Rsqrd_best_lbl'])
+plot_model_summary(results['LL_best_model'], 'Log-likelihood Best Model Parameters', results['LL_best_lbl'])
+
 
 
