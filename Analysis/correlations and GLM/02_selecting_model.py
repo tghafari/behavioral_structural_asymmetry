@@ -94,35 +94,53 @@ def E2_ModelSelection(lat_index_csv, dependent, independent):
             best_labels[n_regr][:n_regr+1] = str_lbl[n_regr][int(best_metrics[n_regr, 1])]
         return best_metrics, best_labels
 
-    best_AICs, AIC_best_lbl = get_best_metrics(AIC)
-    best_BICs, BIC_best_lbl = get_best_metrics(BIC)
+    best_AICs, AICs_best_lbl = get_best_metrics(AIC)
+    best_BICs, BICs_best_lbl = get_best_metrics(BIC)
+
+    best_AIC = np.nanargmin(best_AICs[:, 0])
+    AIC_best_lbl = AICs_best_lbl[best_AIC]
+    best_BIC = np.nanargmin(best_BICs[:, 0])
+    BIC_best_lbl = BICs_best_lbl[best_BIC]
 
     avg_AICs_BICs = np.nanmean([best_AICs[:, 0], best_BICs[:, 0]], axis=0)
     AB_best_n_reg = np.array([  # best number of regressors based on min avg (AIC,BIC)
-        np.nanargmin(best_AICs[:, 0]) + 1,  
-        np.nanargmin(best_BICs[:, 0]) + 1,
-        np.nanargmin(avg_AICs_BICs) + 1
+        best_AIC + 1,  
+        best_BIC + 1,
+        np.nanargmin(avg_AICs_BICs) + 1  # I don't think we need an average
     ])
+    # Find the summary of the best model based on AIC and BIC
+    AIC_best_model_summary = LME[best_AIC][int(best_AICs[best_AIC, 1])].summary()
+    BIC_best_model_summary = LME[best_BIC][int(best_BICs[best_BIC, 1])].summary()
+
 
     # Find best models based on log-likelihood and R-squared
     def get_best_metrics_max(metric):
         best_metrics = np.zeros((7, 2))
         best_labels = [[None] * 7 for _ in range(7)]
-        for n_regr in range(1, 8):
-            best_metrics[n_regr-1, 0] = np.nanmax(metric[n_regr-1])
-            best_metrics[n_regr-1, 1] = np.nanargmax(metric[n_regr-1])
-            best_labels[n_regr-1][:n_regr] = str_lbl[n_regr-1][int(best_metrics[n_regr-1, 1])]
+        for n_regr in range(7):
+            best_metrics[n_regr, 0] = np.nanmax(metric[n_regr])
+            best_metrics[n_regr, 1] = np.nanargmax(metric[n_regr])
+            best_labels[n_regr][:n_regr+1] = str_lbl[n_regr][int(best_metrics[n_regr, 1])]
         return best_metrics, best_labels
 
-    best_LLs, LL_best_lbl = get_best_metrics_max(logLikelihood)
-    best_Rsqrds, Rsqrd_best_lbl = get_best_metrics_max(Rsqrd_adjst)
+    best_LLs, LLs_best_lbl = get_best_metrics_max(logLikelihood)
+    best_Rsqrds, Rsqrds_best_lbl = get_best_metrics_max(Rsqrd_adjst)
+
+    best_LL = np.nanargmax(best_LLs[:, 0])
+    LL_best_lbl = LLs_best_lbl[best_LL]
+    best_Rsqrd = np.nanargmax(best_Rsqrds[:, 0])
+    Rsqrd_best_lbl = Rsqrds_best_lbl[best_LL]
 
     avg_LLs_Rsqrds = np.nanmean([best_LLs[:, 0], best_Rsqrds[:, 0]], axis=0)
-    LR_best_n_reg = np.array([
-        np.nanargmax(best_LLs[:, 0]) + 1,
-        np.nanargmax(best_Rsqrds[:, 0]) + 1,
-        np.nanargmax(avg_LLs_Rsqrds) + 1
+    LR_best_n_reg = np.array([    # best number of regressors based on max avg (LL,Rsqrd)
+        best_LL + 1,
+        best_Rsqrd + 1,
+        np.nanargmax(avg_LLs_Rsqrds) + 1  # I don't think we need an average
     ])
+
+    # Find the summary of the best model based on AIC and BIC
+    LL_best_model_summary = LME[best_LL][int(best_LLs[best_LL, 1])].summary()
+    Rsqrd_best_model_summary = LME[best_Rsqrd][int(best_Rsqrds[best_Rsqrd, 1])].summary()
 
     return {
         'best_AICs': best_AICs,
@@ -130,11 +148,13 @@ def E2_ModelSelection(lat_index_csv, dependent, independent):
         'AIC_best_lbl': AIC_best_lbl,
         'BIC_best_lbl': BIC_best_lbl,
         'AB_best_n_reg': AB_best_n_reg,
+        'AB_best_models': {AIC_best_model_summary, BIC_best_model_summary},
         'best_LLs': best_LLs,
         'best_Rsqrds': best_Rsqrds,
         'LL_best_lbl': LL_best_lbl,
         'Rsqrd_best_lbl': Rsqrd_best_lbl,
-        'LR_best_n_reg': LR_best_n_reg
+        'LR_best_n_reg': LR_best_n_reg,
+        'LR_best_models': {LL_best_model_summary, Rsqrd_best_model_summary}
     }
 
 # Example usage
