@@ -20,11 +20,16 @@ source ${FSLDIR}/etc/fslconf/fsl.sh  # set environment variables
 export base_dir="/rds/projects/j/jenseno-avtemporal-attention/Projects/subcortical-structures/SubStr-and-behavioral-bias"
 output_dir="${base_dir}/derivatives/MRI_lateralisations/substr_segmented"
 
-t1_fnames=('S1027_20240229#C472_nifti' 'S1030_20220308#C3A1_nifti')
-#('S1021_20220923#C47E_nifti' 'S1022_20221102#C5F2_nifti' 'S1023_20240208#C3FA_nifti'
-#            'S1024_20230426#C399_nifti' 'S1025_20211029#C3B4_nifti' 'S1026_20240313#C469_nifti'
-#            'S1027_20240229#C472_nifti' 'S1028_20221202#C47B_nifti' 'S1029_20240229#C515_nifti' 
-#            'S1030_20220308#C3A1_nifti' 'S1031_20240215#C416_nifti' 'S1032_20240229#C472_nifti')
+t1_fnames='S1041_20240422#C57E_nifti'
+#('S1038_20240507#C5F7_nifti' 'S1041_20240422#C57E_nifti' 'S1039_20240621#C533_nifti'
+# 'S1042_20240522#C64D_nifti' 'S1040_20240605#C546_nifti' 
+# 'S1037_20230525#C4D0_nifti' 'S1036_20240503#C416_nifti' 
+# 'S1035_20240411#C453_nifti' 'S1034_20240502#C423_nifti'
+# 'S1033_20240503#C389_nifti''S1021_20220923#C47E_nifti' 
+# 'S1022_20221102#C5F2_nifti' 'S1023_20240208#C3FA_nifti'
+# 'S1024_20230426#C399_nifti' 'S1025_20211029#C3B4_nifti' 'S1026_20240313#C469_nifti'
+# 'S1027_20240229#C472_nifti' 'S1028_20221202#C47B_nifti' 'S1029_20240229#C515_nifti' 
+#  'S1030_20220308#C3A1_nifti' 'S1031_20240215#C416_nifti' 'S1032_20240229#C472_nifti')
 
 # Get the subject name for each array task
 t1_fname="${t1_fnames[$SLURM_ARRAY_TASK_ID]}"  # if wanting to run on one subject, put the name of subject in t1_fname

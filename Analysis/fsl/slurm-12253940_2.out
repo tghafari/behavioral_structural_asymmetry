@@ -1,0 +1,7 @@
+To start using FSL, first run 'source $FSLDIR/etc/fslconf/fsl.sh'
+
+FSL/6.0.7.9
+Image Exception : #63 :: No image files match: /rds/projects/j/jenseno-avtemporal-attention/Projects/subcortical-structures/SubStr-and-behavioral-bias/T1-scans//T1_vol_v1_5
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  No image files match: /rds/projects/j/jenseno-avtemporal-attention/Projects/subcortical-structures/SubStr-and-behavioral-bias/T1-scans//T1_vol_v1_5
+/rds/bear-apps/2022b/EL8-ice/software/FSL/6.0.7.9/bin/fsl_anat: line 384: 630035 Aborted                 (core dumped) $FSLDIR/bin/fslmaths ${inputimage} ${outputname}.anat/${T1}

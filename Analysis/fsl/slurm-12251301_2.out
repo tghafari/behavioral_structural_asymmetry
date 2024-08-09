@@ -1,0 +1,4 @@
+To start using FSL, first run 'source $FSLDIR/etc/fslconf/fsl.sh'
+
+FSL/6.0.7.9
+mkdir: cannot create directory '/rds/projects/j/jenseno-avtemporal-attention/Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/MRI_lateralisations/substr_segmented/.anat': File exists

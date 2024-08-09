@@ -27,7 +27,7 @@ elif platform == 'mac':
 mri_deriv_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/MRI_lateralisations')
 subStr_segmented_dir = op.join(mri_deriv_dir, 'substr_segmented')
 output_dir = op.join(mri_deriv_dir, 'lateralisation_indices')
-output_fname = op.join(output_dir, 'all_subs_substr_volumes_1_32.csv')
+output_fname = op.join(output_dir, 'all_subs_substr_volumes_1_42.csv')
 
 # list of subjects folders
 num_sub_list = range(1001,1032)

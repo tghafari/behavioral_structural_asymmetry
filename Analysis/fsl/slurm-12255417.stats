@@ -1,0 +1,16 @@
++--------------------------------------------------------------------------+
+| Job on the BlueBEAR cluster:
+| Starting at Fri Aug  9 17:06:19 2024 for ghafarit(667799)
+| Identity jobid 12255417 jobname fslstats.sh
+| Running against project jenseno-avtemporal-attention and in partition sapphire-shared
+| Requested cpu=5,mem=20G,node=1,billing=5 - 02:30:00 walltime
+| Assigned to nodes bear-pg0210u15a
+| Command /rds/projects/j/jenseno-avtemporal-attention/Projects/subcortical-structures/SubStr-and-behavioral-bias/programming/github/behavioral_structural_asymmetry/Analysis/fsl/fslstats.sh
+| WorkDir /rds/projects/j/jenseno-avtemporal-attention/Projects/subcortical-structures/SubStr-and-behavioral-bias/programming/github/behavioral_structural_asymmetry/Analysis/fsl
++--------------------------------------------------------------------------+
++--------------------------------------------------------------------------+
+| Finished at Fri Aug  9 17:07:18 2024 for ghafarit(667799) on the BlueBEAR Cluster
+| Required (00:50.637 cputime, 13812K memory used) - 00:01:00 walltime
+| JobState COMPLETING - Reason None
+| Exitcode 0:0
++--------------------------------------------------------------------------+
