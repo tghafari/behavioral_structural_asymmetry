@@ -26,7 +26,7 @@ structures=("L-Thal" "L-Caud" "L-Puta" "L-Pall" "BrStem /4th Ventricle" \
     "R-Pall" "R-Hipp" "R-Amyg" "R-Accu")
 
 # Read segmented MRIs - for non sequences 1033 1034 1035 1036 1037 1040 1042;
-for subject_name in $(seq -w 1033 1042); do
+for subject_name in $(seq -w 1043 1045); do
     subject_mri_dir="${mri_deriv_dir}/S${subject_name}.anat/first_results"
 
     # Read segmented MRIs

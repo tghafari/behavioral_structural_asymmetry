@@ -4,7 +4,7 @@
 #SBATCH --time 150
 #SBATCH --nodes 1 # ensure the job runs on a single node
 #SBATCH --ntasks 5 # this will give you circa 40G RAM 
-#SBATCH --array=0-2  # Run one task for each subject name
+#SBATCH --array=0-3  # Run one task for each subject name
 
 
 module purge
@@ -20,9 +20,9 @@ source ${FSLDIR}/etc/fslconf/fsl.sh  # set environment variables
 export base_dir="/rds/projects/j/jenseno-avtemporal-attention/Projects/subcortical-structures/SubStr-and-behavioral-bias"
 output_dir="${base_dir}/derivatives/MRI_lateralisations/substr_segmented"
 
-t1_fnames='S1041_20240422#C57E_nifti'
+t1_fnames=('S1045_20240618#C40C_nifti' 'S1044_20240624#C537_nifti' 'S1043_20240729#C388_nifti')
 #('S1038_20240507#C5F7_nifti' 'S1041_20240422#C57E_nifti' 'S1039_20240621#C533_nifti'
-# 'S1042_20240522#C64D_nifti' 'S1040_20240605#C546_nifti' 
+# 'S1042_20240522#C64D_nifti' 'S1040_20240605#C546_nifti' 'S1041_20240422#C57E_nifti'
 # 'S1037_20230525#C4D0_nifti' 'S1036_20240503#C416_nifti' 
 # 'S1035_20240411#C453_nifti' 'S1034_20240502#C423_nifti'
 # 'S1033_20240503#C389_nifti''S1021_20220923#C47E_nifti' 

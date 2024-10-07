@@ -15,7 +15,7 @@ import numpy as np
 import os.path as op
 import pandas as pd
 
-platform = 'mac'
+platform = 'bluebear'
 
 # Define where to read and write the data
 if platform == 'bluebear':
@@ -27,10 +27,10 @@ elif platform == 'mac':
 mri_deriv_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/MRI_lateralisations')
 subStr_segmented_dir = op.join(mri_deriv_dir, 'substr_segmented')
 output_dir = op.join(mri_deriv_dir, 'lateralisation_indices')
-output_fname = op.join(output_dir, 'all_subs_substr_volumes_1_42.csv')
+output_fname = op.join(output_dir, 'all_subs_substr_volumes_1_45.csv')
 
 # list of subjects folders
-num_sub_list = range(1001,1032)
+num_sub_list = range(1001,1046)
 
 # Specify labels assigned to structures thatwere segmented by FSL
 labels = [10, 11, 12, 13, 16, 17, 18, 26, 49, 50, 51, 52, 53, 54, 58]
@@ -38,7 +38,7 @@ structures = ['L-Thal', 'L-Caud', 'L-Puta', 'L-Pall', 'BrStem /4th Ventricle',
               'L-Hipp', 'L-Amyg', 'L-Accu', 'R-Thal', 'R-Caud', 'R-Puta',
               'R-Pall', 'R-Hipp', 'R-Amyg', 'R-Accu']
 
-all_subject_substr_volume_table = np.full((31, 15), np.nan)
+all_subject_substr_volume_table = np.full((45, 15), np.nan)
 sub_IDs =[]
 
 # Read good subjects 
@@ -49,7 +49,7 @@ for i, num_sub in enumerate(num_sub_list):
             volume_label = 'volume' + str(label) + '.txt'
             substr_vol_fname = op.join(substr_dir, volume_label)
             if op.exists(substr_vol_fname):
-                print(f"reading structure {structures[idx]} in subject #S100 {str(num_sub)}")
+                print(f"reading structure {structures[idx]} in subject #S{str(num_sub)}")
                 # Read the text file
                 with open(substr_vol_fname, "r") as file:
                     line = file.readline()
