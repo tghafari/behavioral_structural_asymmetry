@@ -1,189 +1,196 @@
-# -*- coding: utf-8 -*-
 """
 ===============================================
 01_parsing_info_from_asc
 
-this code gets the asc file from the eyetracker 
+This code gets the ASC file from the eyetracker
 and detects microsaccades.
-edf files (out put of eyelink) should be
+EDF files (output of EyeLink) should be
 converted to .asc using 'visualEDF2ASC' app
 
-written by Tara Ghafari 
-adapted from:
+Written by Tara Ghafari
+Adapted from:
 https://github.com/Cogitate-consortium/Eye-Tracking-Code/blob/master/Experiment%201/Python/DataParser.py#L26
-==============================================
+===============================================
 ToDos:
 """
 
-import pandas as pd
-import numpy as np
 import os
 import os.path as op
 import time
 import pickle
+import numpy as np
+import pandas as pd
 
-def ParseEyeLinkAsc(eyetracking_asc_file):
-    # dfRec,dfMsg,dfFix,dfSacc,dfBlink,dfSamples = ParseEyeLinkAsc(elFilename)
-    # -Reads in data files from EyeLink .asc file and produces readable dataframes for further analysis.
-    #
-    # INPUTS:
-    # -elFilename is a string indicating an EyeLink data file 
-    #
-    # OUTPUTS:
-    # -dfRec contains information about recording periods (often trials)
-    # -dfMsg contains information about messages (usually sent from stimulus software)
-    # -dfFix contains information about fixations
-    # -dfSacc contains information about saccades
-    # -dfBlink contains information about blinks
-    # -dfSamples contains information about individual samples
+
+def parse_eyelink_asc(eyetracking_asc_file):
+    """
+    Reads in data files from EyeLink .asc file and produces readable dataframes for further analysis.
+
+    Args:
+    eyetracking_asc_file (str): Path to the EyeLink data file
+
+    Returns:
+    tuple: (dfRec, dfMsg, dfFix, dfSacc, dfBlink, dfSamples)
+        dfRec: DataFrame containing information about recording periods (often trials)
+        dfMsg: DataFrame containing information about messages (usually sent from stimulus software)
+        dfFix: DataFrame containing information about fixations
+        dfSacc: DataFrame containing information about saccades
+        dfBlink: DataFrame containing information about blinks
+        dfSamples: DataFrame containing information about individual samples
+    """
 
     # Read in EyeLink file
     t = time.time()
-    f = open(eyetracking_asc_file, 'r')
-    fileTxt0 = f.read().splitlines(True)  # split into lines
-    fileTxt0 = list(filter(None, fileTxt0))  # remove emptys
-    fileTxt0 = np.array(fileTxt0)  # concert to np array for simpler indexing
-    f.close()
-    print('Done! Took %f seconds.' % (time.time() - t))
-    
+    with open(eyetracking_asc_file, 'r') as f:
+        file_txt = f.read().splitlines(True)
+    file_txt = list(filter(None, file_txt))  # remove empty lines
+    file_txt = np.array(file_txt)  # convert to np array for simpler indexing
+    print(f'Done! Took {time.time() - t:.2f} seconds.')
+
     # Separate lines into samples and messages
     print('Sorting lines...')
-    nLines = len(fileTxt0)
-    lineType = np.array(['OTHER'] * nLines, dtype='object')
-    iStartRec = list([])
+    n_lines = len(file_txt)
+    line_type = np.array(['OTHER'] * n_lines, dtype='object')
+    i_start_rec = []
     t = time.time()
-    for iLine in range(nLines):
-        if fileTxt0[iLine] == "**\n" or fileTxt0[iLine] == "\n":
-            lineType[iLine] = 'EMPTY'
-        elif fileTxt0[iLine].startswith('*') or fileTxt0[iLine].startswith('>>>>>'):
-            lineType[iLine] = 'COMMENT'
-        elif bool(len(fileTxt0[iLine][0])) and fileTxt0[iLine][0].isdigit():
-            fileTxt0[iLine] = fileTxt0[iLine].replace('.\t', 'NaN\t')  # fileTxt0[iLine] = fileTxt0[iLine].replace(' . ', ' NaN ')
-            lineType[iLine] = 'SAMPLE'
+    for i_line, line in enumerate(file_txt):
+        if line in ("**\n", "\n"):
+            line_type[i_line] = 'EMPTY'
+        elif line.startswith('*') or line.startswith('>>>>>'):
+            line_type[i_line] = 'COMMENT'
+        elif line[0].isdigit():
+            file_txt[i_line] = line.replace('.\t', 'NaN\t')
+            line_type[i_line] = 'SAMPLE'
         else:
-            lineType[iLine] = fileTxt0[iLine].split()[0]
-        if '!MODE RECORD' in fileTxt0[iLine]:  
-            iStartRec.append(iLine + 1)    
-    
-    iStartRec = iStartRec[0]
-    print('Done! Took %f seconds.' % (time.time() - t))
-    
-    # ===== PARSE EYELINK FILE ===== #
+            line_type[i_line] = line.split()[0]
+        if '!MODE RECORD' in line:
+            i_start_rec.append(i_line + 1)
+
+    i_start_rec = i_start_rec[0]
+    print(f'Done! Took {time.time() - t:.2f} seconds.')
+
+    # Parse EyeLink file
     t = time.time()
     # Trials
     print('Parsing recording markers...')
-    iNotStart = np.nonzero(lineType != 'START')[0]
-    dfRecStart = pd.read_csv(eyetracking_asc_file, skiprows=iNotStart, header=None, delim_whitespace=True, usecols=[1])
-    dfRecStart.columns = ['tStart']
-    iNotEnd = np.nonzero(lineType != 'END')[0]
-    dfRecEnd = pd.read_csv(eyetracking_asc_file, skiprows=iNotEnd, header=None, delim_whitespace=True, usecols=[1, 5, 6])
-    dfRecEnd.columns = ['tEnd', 'xRes', 'yRes']
+    i_not_start = np.nonzero(line_type != 'START')[0]
+    df_rec_start = pd.read_csv(eyetracking_asc_file, skiprows=i_not_start,
+                               header=None, delim_whitespace=True, usecols=[1])
+    df_rec_start.columns = ['tStart']
+    i_not_end = np.nonzero(line_type != 'END')[0]
+    df_rec_end = pd.read_csv(eyetracking_asc_file, skiprows=i_not_end,
+                             header=None, delim_whitespace=True, usecols=[1, 5, 6])
+    df_rec_end.columns = ['tEnd', 'xRes', 'yRes']
     # combine trial info
-    dfRec = pd.concat([dfRecStart, dfRecEnd], axis=1)
-    nRec = dfRec.shape[0]
-    print('%d recording periods found.' % nRec)
-    
+    df_rec = pd.concat([df_rec_start, df_rec_end], axis=1)
+    n_rec = df_rec.shape[0]
+    print(f'{n_rec} recording periods found.')
+
     # Import Messages
     print('Parsing stimulus messages...')
     t = time.time()
-    iMsg = np.nonzero(lineType == 'MSG')[0]
-    # set up
-    tMsg = []
-    txtMsg = []
-    t = time.time()
-    for i in range(len(iMsg)):
-        # separate MSG prefix and timestamp from rest of message
-        info = fileTxt0[iMsg[i]].split()
-        # extract info
-        tMsg.append(int(info[1]))
-        txtMsg.append(' '.join(info[2:]))
-    # Convert dict to dataframe
-    dfMsg = pd.DataFrame({'time': tMsg, 'text': txtMsg})
-    print('Done! Took %f seconds.' % (time.time() - t))
-    
+    i_msg = np.nonzero(line_type == 'MSG')[0]
+    t_msg = []
+    txt_msg = []
+    for i in range(len(i_msg)):
+        info = file_txt[i_msg[i]].split()
+        t_msg.append(int(info[1]))
+        txt_msg.append(' '.join(info[2:]))
+    df_msg = pd.DataFrame({'time': t_msg, 'text': txt_msg})
+    print(f'Done! Took {time.time() - t:.2f} seconds.')
+
     # Import Fixations
     print('Parsing fixations...')
     t = time.time()
-    iNotEfix = np.nonzero(lineType != 'EFIX')[0]
-    dfFix = pd.read_csv(eyetracking_asc_file, skiprows=iNotEfix, header=None, delim_whitespace=True, usecols=range(1, 8))
-    dfFix.columns = ['eye', 'tStart', 'tEnd', 'duration', 'xAvg', 'yAvg', 'pupilAvg']
-    nFix = dfFix.shape[0]
-    print('Done! Took %f seconds.' % (time.time() - t))
-    
+    i_not_efix = np.nonzero(line_type != 'EFIX')[0]
+    df_fix = pd.read_csv(eyetracking_asc_file, skiprows=i_not_efix,
+                         header=None, delim_whitespace=True, usecols=range(1, 8))
+    df_fix.columns = ['eye', 'tStart', 'tEnd',
+                      'duration', 'xAvg', 'yAvg', 'pupilAvg']
+    print(f'Done! Took {time.time() - t:.2f} seconds.')
+
     # Saccades
     print('Parsing saccades...')
     t = time.time()
-    iNotEsacc = np.nonzero(lineType != 'ESACC')[0]
-    dfSacc = pd.read_csv(eyetracking_asc_file, skiprows=iNotEsacc, header=None, delim_whitespace=True, usecols=range(1, 11))
-    dfSacc.columns = ['eye', 'tStart', 'tEnd', 'duration', 'xStart', 'yStart', 'xEnd', 'yEnd', 'ampDeg', 'vPeak']
-    print('Done! Took %f seconds.' % (time.time() - t))
-    
+    i_not_esacc = np.nonzero(line_type != 'ESACC')[0]
+    df_sacc = pd.read_csv(eyetracking_asc_file, skiprows=i_not_esacc,
+                          header=None, delim_whitespace=True, usecols=range(1, 11))
+    df_sacc.columns = ['eye', 'tStart', 'tEnd', 'duration',
+                       'xStart', 'yStart', 'xEnd', 'yEnd', 'ampDeg', 'vPeak']
+    print(f'Done! Took {time.time() - t:.2f} seconds.')
+
     # Blinks
     print('Parsing blinks...')
-    iNotEblink = np.nonzero(lineType != 'EBLINK')[0]
-    dfBlink = pd.read_csv(eyetracking_asc_file, skiprows=iNotEblink, header=None, delim_whitespace=True, usecols=range(1, 5))
-    dfBlink.columns = ['eye', 'tStart', 'tEnd', 'duration']
-    print('Done! Took %f seconds.' % (time.time() - t))
- 
-    # determine sample columns based on eyes recorded in file
-    eyesInFile = np.unique(dfFix.eye)
-    if eyesInFile.size == 2:
-        print('binocular data detected.')
+    i_not_eblink = np.nonzero(line_type != 'EBLINK')[0]
+    df_blink = pd.read_csv(eyetracking_asc_file, skiprows=i_not_eblink,
+                           header=None, delim_whitespace=True, usecols=range(1, 5))
+    df_blink.columns = ['eye', 'tStart', 'tEnd', 'duration']
+    print(f'Done! Took {time.time() - t:.2f} seconds.')
+
+    # Determine sample columns based on eyes recorded in file
+    eyes_in_file = np.unique(df_fix.eye)
+    if eyes_in_file.size == 2:
+        print('Binocular data detected.')
         cols = ['tSample', 'LX', 'LY', 'LPupil', 'RX', 'RY', 'RPupil']
     else:
-        eye = eyesInFile[0]
-        print('monocular data detected (%c eye).' % eye)
-        cols = ['tSample', '%cX' % eye, '%cY' % eye, '%cPupil' % eye]
+        eye = eyes_in_file[0]
+        print(f'Monocular data detected ({eye} eye).')
+        cols = ['tSample', f'{eye}X', f'{eye}Y', f'{eye}Pupil']
+
     # Import samples
     print('Parsing samples...')
     t = time.time()
-    iNotSample = np.nonzero(np.logical_or(lineType != 'SAMPLE', np.arange(nLines) < iStartRec))[0]
-    dfSamples = pd.read_csv(eyetracking_asc_file, skiprows=iNotSample, header=None, delim_whitespace=True,
-                            usecols=range(0, len(cols)))
-    dfSamples.columns = cols
+    i_not_sample = np.nonzero(np.logical_or(
+        line_type != 'SAMPLE', np.arange(n_lines) < i_start_rec))[0]
+    df_samples = pd.read_csv(eyetracking_asc_file, skiprows=i_not_sample, header=None, delim_whitespace=True,
+                             usecols=range(0, len(cols)))
+    df_samples.columns = cols
+
     # Convert values to numbers
     for eye in ['L', 'R']:
-        if eye in eyesInFile:
-            dfSamples['%cX' % eye] = pd.to_numeric(dfSamples['%cX' % eye], errors='coerce')
-            dfSamples['%cY' % eye] = pd.to_numeric(dfSamples['%cY' % eye], errors='coerce')
-            dfSamples['%cPupil' % eye] = pd.to_numeric(dfSamples['%cPupil' % eye], errors='coerce')
+        if eye in eyes_in_file:
+            for col in [f'{eye}X', f'{eye}Y', f'{eye}Pupil']:
+                df_samples[col] = pd.to_numeric(
+                    df_samples[col], errors='coerce')
         else:
-            dfSamples['%cX' % eye] = np.nan
-            dfSamples['%cY' % eye] = np.nan
-            dfSamples['%cPupil' % eye] = np.nan
+            for col in [f'{eye}X', f'{eye}Y', f'{eye}Pupil']:
+                df_samples[col] = np.nan
 
-    print('Done! Took %.1f seconds.' % (time.time() - t))
+    print(f'Done! Took {time.time() - t:.2f} seconds.')
 
-    # Return new compilation dataframe
-    return dfRec, dfMsg, dfFix, dfSacc, dfBlink, dfSamples
-       
-platform= 'mac'
+    return df_rec, df_msg, df_fix, df_sacc, df_blink, df_samples
 
-if platform == 'bluebear':
-    jenseno_dir = '/rds/projects/j/jenseno-avtemporal-attention'
-elif platform == 'mac':
-    jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
 
-# Define where to read and write the data
-data_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/programming/MATLAB/main-study/target-orientation-detection/Results')
-deriv_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives')
+def main():
+    data_dir = r"../../Landmark_Data"
+    output_folder_path = r"../../Results/EyeTracking"
 
-# Define file names
-for sub_code in range(7,32):
-    sub_dir = op.join('sub-S' + str(1000+sub_code), 'ses-01', 'beh')
-    eyetracking_fpath = op.join(data_dir, sub_dir, 'e01S' + str(1000+sub_code)) 
-    eyetracking_asc_file = eyetracking_fpath + '.asc'
-    
-        
-    eyeData = ParseEyeLinkAsc(eyetracking_asc_file)
-    
-    # save eyeData as json file
-    output_fpath = op.join(deriv_dir, 'target_orientation', 'eyetracking')
-    output_dir = op.join(output_fpath,'sub-S' + str(1000+sub_code))
-    if not op.exists(output_dir):
-       os.makedirs(output_dir)
-                   
-    with open(op.join(output_dir, 'EL_eyeData.json'), 'wb') as f:
-        pickle.dump(eyeData, f)
-    
-    
+    os.makedirs(output_folder_path, exist_ok=True)
+
+    for item in os.listdir(data_dir):
+        if item.startswith("sub-"):
+            sub_dir = os.path.join(data_dir, item)
+            for session in os.listdir(sub_dir):
+                if session.startswith("ses-"):
+                    ses_dir = os.path.join(sub_dir, session)
+                    beh_dir = os.path.join(ses_dir, "beh")
+                    if os.path.isdir(beh_dir):
+                        for file in os.listdir(beh_dir):
+                            if file.endswith(".asc"):
+                                print(f"\nProcessing File: {file}")
+                                eye_data = parse_eyelink_asc(
+                                    os.path.join(beh_dir, file))
+
+                                output_dir = op.join(output_folder_path, item)
+                                os.makedirs(output_dir, exist_ok=True)
+
+                                output_file_name = f"{file[:-4]}_EL_eyeData.pkl"
+                                output_file_path = os.path.join(
+                                    output_dir, output_file_name)
+
+                                with open(output_file_path, 'wb') as f:
+                                    pickle.dump(eye_data, f)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,33 +1,35 @@
-# -*- coding: utf-8 -*-
 """
 ===============================================
 05_extract_saccades
 
-this code gets the output of 04_remove_blinks
-and removes the blinks from it.
+this code gets the output of 04_remove_blinks.
 
 written by Tara Ghafari 
+Modified by Mohammad Ebrahim Katebi
+
 adapted from:
 https://github.com/Cogitate-consortium/Eye-Tracking-Code/blob/master/Experiment%201/Python/DataParser.py#L26
 ==============================================
 ToDos:
     
 """
+
 import numpy as np
 import pandas as pd
 import os.path as op
 from scipy import stats
 import pickle
+import os
 
 
 class Error(Exception):
     pass
 
+
 class RepresentationError(Error):
     def __init__(self, msg):
         self.message = msg
-        
-        
+
 
 def ExtractSaccades(gazeData, params, getBinocular=True):
     """
@@ -45,6 +47,7 @@ def ExtractSaccades(gazeData, params, getBinocular=True):
             - 'Saccades': left, right, both
             - 'Threshold': in x and y, the treshold used for classifiying saccades
     """
+
     # get the parameters relevant for saccade detection
     saccParams = params['SaccadeDetection']
 
@@ -57,15 +60,20 @@ def ExtractSaccades(gazeData, params, getBinocular=True):
                     'Microsaccades': {'left': None, 'right': None, 'both': None},
                     'Saccades': {'left': None, 'right': None, 'both': None},
                     'Threshold': None}
+
         # get the trials gaze data and convert it to degrees relative to screen center
         epochGaze = np.array(gazeData[epoch])
         # convert zeros to nans
         epochGaze[epochGaze == 0] = np.nan
         # make it relative to screen center
-        epochGaze[:, [0, 2]] = epochGaze[:, [0, 2]] - (params['ScreenResolution'][0] / 2)
-        epochGaze[:, [1, 3]] = -(epochGaze[:, [1, 3]]) - (params['ScreenResolution'][1] / 2)  # y data is inverted
+        epochGaze[:, [0, 2]] = epochGaze[:, [0, 2]] - \
+            (params['ScreenResolution'][0] / 2)
+        # y data is inverted
+        epochGaze[:, [1, 3]] = - \
+            (epochGaze[:, [1, 3]] - (params['ScreenResolution'][1] / 2))
         epochGaze = epochGaze * params['cmPerPixel'][0]  # convert to cm
-        epochGaze = np.degrees(np.arctan(epochGaze / params['ViewDistance']))  # convert to degrees
+        # convert to degrees
+        epochGaze = np.degrees(np.arctan(epochGaze / params['ViewDistance']))
 
         # if we are not getting binocular microsaccades, get the gaze for the specified eye in parameters
         if not getBinocular:
@@ -86,7 +94,8 @@ def ExtractSaccades(gazeData, params, getBinocular=True):
             # get velocity
             velocity, speed = GetVelocity(eyeGaze, params['SamplingFrequency'])
             # get the saccades
-            trialsacc, radius = ExtractMonocularMS(eyeGaze, velocity, params)[0:2]
+            trialsacc, radius = ExtractMonocularMS(
+                eyeGaze, velocity, params)[0:2]
 
             # fill out the saccadeinfo list
             saccDict['Threshold'] = radius
@@ -96,7 +105,8 @@ def ExtractSaccades(gazeData, params, getBinocular=True):
             # get the indices of the microsaccades (saccades less than threshold in amplitude)
             if trialsacc is not None:
                 indMS = trialsacc['total_amplitude'] < saccParams['threshold']
-                saccDict['Microsaccades'][eyes[eye]] = trialsacc.loc[indMS, :].reset_index()
+                saccDict['Microsaccades'][eyes[eye]
+                                          ] = trialsacc.loc[indMS, :].reset_index()
 
         # get binocular saccades
         saccLeft = saccDict['Saccades']['left']
@@ -153,6 +163,7 @@ def GetVelocity(eyeGaze, fs):
     :param fs:
     :return:
     """
+
     # initialize outputs
     velocity = np.zeros(eyeGaze.shape)
     speed = np.zeros((velocity.shape[0], 1))
@@ -160,10 +171,12 @@ def GetVelocity(eyeGaze, fs):
     # loop through the data points and calculate a moving average of velocities over 5
     # data samples
     for n in range(2, eyeGaze.shape[0] - 2):
-        velocity[n, :] = (eyeGaze[n + 1, :] + eyeGaze[n + 2, :] - eyeGaze[n - 1, :] - eyeGaze[n - 2, :]) * (fs / 6)
+        velocity[n, :] = (eyeGaze[n + 1, :] + eyeGaze[n + 2, :] -
+                          eyeGaze[n - 1, :] - eyeGaze[n - 2, :]) * (fs / 6)
 
     # calculate speed
-    speed[:, 0] = np.sqrt(np.power(velocity[:, 0], 2) + np.power(velocity[:, 1], 2))
+    speed[:, 0] = np.sqrt(np.power(velocity[:, 0], 2) +
+                          np.power(velocity[:, 1], 2))
 
     return velocity, speed
 
@@ -216,15 +229,16 @@ def ExtractMonocularMS(eyeGaze, velocity, params, refLoc=None, msdx=None, msdy=N
     radius = np.array([radiusx, radiusy])
 
     # compute test criterion: ellipse equation
-    test = np.power((velocity[:, 0] / radiusx), 2) + np.power((velocity[:, 1] / radiusy), 2)
+    test = np.power((velocity[:, 0] / radiusx), 2) + \
+        np.power((velocity[:, 1] / radiusy), 2)
     indx = np.argwhere(test > 1)
 
     # determine saccades
     N = len(indx)
     if refLoc is None:
-        sac = np.zeros((1, 10))
+        sac = np.zeros((1, 14))
     else:
-        sac = np.zeros((1, 11))
+        sac = np.zeros((1, 15))
     nsac = 0
     dur = 1
     a = 0
@@ -241,9 +255,11 @@ def ExtractMonocularMS(eyeGaze, velocity, params, refLoc=None, msdx=None, msdy=N
                     sac[0][1] = indx[b]
                 else:
                     if refLoc is None:
-                        sac = np.vstack((sac, np.array([indx[a][0], indx[b][0], 0, 0, 0, 0, 0, 0, 0, 0])))
+                        sac = np.vstack(
+                            (sac, np.array([indx[a][0], indx[b][0], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])))
                     else:
-                        sac = np.vstack((sac, np.array([indx[a][0], indx[b][0], 0, 0, 0, 0, 0, 0, 0, 0, 0])))
+                        sac = np.vstack(
+                            (sac, np.array([indx[a][0], indx[b][0], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])))
             a = k + 1
             dur = 1
         k = k + 1
@@ -257,9 +273,11 @@ def ExtractMonocularMS(eyeGaze, velocity, params, refLoc=None, msdx=None, msdy=N
             sac[0][1] = indx[b]
         else:
             if refLoc is None:
-                sac = np.vstack((sac, np.array([indx[a][0], indx[b][0], 0, 0, 0, 0, 0, 0, 0, 0])))
+                sac = np.vstack(
+                    (sac, np.array([indx[a][0], indx[b][0], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])))
             else:
-                sac = np.vstack((sac, np.array([indx[a][0], indx[b][0], 0, 0, 0, 0, 0, 0, 0, 0, 0])))
+                sac = np.vstack(
+                    (sac, np.array([indx[a][0], indx[b][0], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])))
 
     # compute peak velocity, horizontal and vertical components, amplitude, and gaze direction
     if nsac > 0:
@@ -270,7 +288,8 @@ def ExtractMonocularMS(eyeGaze, velocity, params, refLoc=None, msdx=None, msdy=N
             idx = range(a, b)
 
             # peak velocity
-            peakvel = max(np.sqrt(velocity[idx, 0] ** 2 + velocity[idx, 1] ** 2))
+            peakvel = max(
+                np.sqrt(velocity[idx, 0] ** 2 + velocity[idx, 1] ** 2))
             sac[s][2] = peakvel
 
             # horz and vert components
@@ -297,16 +316,19 @@ def ExtractMonocularMS(eyeGaze, velocity, params, refLoc=None, msdx=None, msdy=N
             sac[s][7] = np.sqrt(dX ** 2 + dY ** 2)
 
             # saccade distance to fixation (screen center)
+
             gazeOnset = eyeGaze[a, :]
             gazeOffset = eyeGaze[b, :]
             deg2pix = params['DegreesPerPixel']
+
             # distance to center
-            distToFixOnset = np.sqrt((gazeOnset[0] - params['ScreenCenter'][0] * deg2pix) ** 2 +
-                                     (gazeOnset[1] - params['ScreenCenter'][1] * deg2pix) ** 2)
-            distToFixOffset = np.sqrt((gazeOffset[0] - params['ScreenCenter'][0] * deg2pix) ** 2 +
-                                      (gazeOffset[1] - params['ScreenCenter'][1] * deg2pix) ** 2)
+            distToFixOnset = np.sqrt((gazeOnset[0]) ** 2 +
+                                     (gazeOnset[1]) ** 2)
+            distToFixOffset = np.sqrt((gazeOffset[0]) ** 2 +
+                                      (gazeOffset[1]) ** 2)
             distToFix = (distToFixOffset - distToFixOnset)
             sac[s][8] = distToFix
+
             # saccade direction
             rad = np.arccos((gazeOffset[0] - gazeOnset[0]) / np.sqrt((gazeOffset[0] - gazeOnset[0]) ** 2 +
                                                                      (gazeOffset[1] - gazeOnset[1]) ** 2))
@@ -315,6 +337,7 @@ def ExtractMonocularMS(eyeGaze, velocity, params, refLoc=None, msdx=None, msdy=N
                 sac[s][9] = angle
             else:
                 sac[s][9] = 360 - angle
+
             # distance to reference
             if refLoc is not None:
                 distToRefOnset = np.sqrt((gazeOnset[0] - refCoords[0] * deg2pixRef) ** 2 +
@@ -324,15 +347,25 @@ def ExtractMonocularMS(eyeGaze, velocity, params, refLoc=None, msdx=None, msdy=N
                 distToRef = (distToRefOffset - distToRefOnset)
                 sac[s][10] = distToRef
 
+                sac[s][11] = gazeOnset[0]
+                sac[s][12] = gazeOnset[1]
+                sac[s][13] = gazeOffset[0]
+                sac[s][14] = gazeOffset[1]
+
                 # convert to a dataframe
                 sacdf = pd.DataFrame(data=sac,
                                      columns=['start', 'end', 'peak_velocity', 'dx', 'dy', 'x_amplitude', 'y_amplitude',
                                               'total_amplitude', 'distance_to_fixation', 'direction',
-                                              'distance_to_reference'])
+                                              'distance_to_reference', 'gazeOnset_x', 'gazeOnset_y', 'gazeOffset_x', 'gazeOffset_y'])
             else:
+                sac[s][10] = gazeOnset[0]
+                sac[s][11] = gazeOnset[1]
+                sac[s][12] = gazeOffset[0]
+                sac[s][13] = gazeOffset[1]
+
                 sacdf = pd.DataFrame(data=sac,
                                      columns=['start', 'end', 'peak_velocity', 'dx', 'dy', 'x_amplitude', 'y_amplitude',
-                                              'total_amplitude', 'distance_to_fixation', 'direction'])
+                                              'total_amplitude', 'distance_to_fixation', 'direction', 'gazeOnset_x', 'gazeOnset_y', 'gazeOffset_x', 'gazeOffset_y'])
 
         sacdf['start'] = sacdf['start'].apply(int)
         sacdf['end'] = sacdf['end'].apply(int)
@@ -353,13 +386,17 @@ def GetVelocityThreshold(velocity):
     :return stddev:
     :return maddev:
     """
+
     # compute threshold
-    msdx = np.sqrt(np.nanmedian(np.power(velocity[:, 0], 2)) - np.power(np.nanmedian(velocity[:, 0]), 2))
-    msdy = np.sqrt(np.nanmedian(np.power(velocity[:, 1], 2)) - np.power(np.nanmedian(velocity[:, 1]), 2))
+    msdx = np.sqrt(np.nanmedian(
+        np.power(velocity[:, 0], 2)) - np.power(np.nanmedian(velocity[:, 0]), 2))
+    msdy = np.sqrt(np.nanmedian(
+        np.power(velocity[:, 1], 2)) - np.power(np.nanmedian(velocity[:, 1]), 2))
 
     if msdx < np.finfo('float').tiny:  # if less than the smallest usable float
         # switch to a mean estimator instead and see
-        msdx = np.sqrt(np.nanmean(np.power(velocity[:, 0], 2)) - np.power(np.nanmean(velocity[:, 0]), 2))
+        msdx = np.sqrt(np.nanmean(
+            np.power(velocity[:, 0], 2)) - np.power(np.nanmean(velocity[:, 0]), 2))
         # raise an error if still smaller
         if msdx < np.finfo('float').tiny:
             raise RepresentationError('Calculated velocity threshold (msdx) was smaller than the smallest '
@@ -369,7 +406,8 @@ def GetVelocityThreshold(velocity):
     # do the same for the y-component
     if msdy < np.finfo('float').tiny:  # if less than the smallest usable float
         # switch to a mean estimator instead and see
-        msdy = np.sqrt(np.nanmean(np.power(velocity[:, 1], 2)) - np.power(np.nanmean(velocity[:, 1]), 2))
+        msdy = np.sqrt(np.nanmean(
+            np.power(velocity[:, 1], 2)) - np.power(np.nanmean(velocity[:, 1]), 2))
         # raise an error if still smaller
         if msdy < np.finfo('float').tiny:
             raise RepresentationError('Calculated velocity threshold (msdy) was smaller than the smallest '
@@ -382,44 +420,34 @@ def GetVelocityThreshold(velocity):
 
     return msdx, msdy, stddev, maddev
 
-platform= 'mac'
 
-if platform == 'bluebear':
-    jenseno_dir = '/rds/projects/j/jenseno-avtemporal-attention'
-elif platform == 'mac':
-    jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
+data_dir = r"../../Results/EyeTracking"
+os.makedirs(data_dir, exist_ok=True)
 
-# Define where to read and write the data
-deriv_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives')
+for item in os.listdir(data_dir):
+    if item.startswith("sub-"):
+        sub_dir = os.path.join(data_dir, item)
 
-# load in params and epochs
-for sub_code in range(7,33):
-    output_fpath = op.join(deriv_dir, 'target_orientation', 'eyetracking')
-    output_dir = op.join(output_fpath,'sub-S' + str(1000+sub_code))
-    with open(op.join(output_dir, 'EL_params.json'), 'rb') as f:
-        params = pickle.load(f)
-        
-    # Microsaccades in attention right epochs
-    with open(op.join(output_dir, 'EL_noblinks_right.json'), 'rb') as f:
-        blink_data_right = pickle.load(f)
-        
-    EpochDataNoBlinks_right = blink_data_right[0]
-    gazeData_right = [df[['LX', 'LY', 'RX', 'RY']] for df in EpochDataNoBlinks_right]
-    
-    saccadeinfo_right = ExtractSaccades(gazeData_right, params, getBinocular=True)
-    
-    # Microsaccades in attention left epochs
-    with open(op.join(output_dir, 'EL_noblinks_left.json'), 'rb') as f:
-        blink_data_left = pickle.load(f)
-        
-    EpochDataNoBlinks_left = blink_data_left[0]
-    gazeData_left = [df[['LX', 'LY', 'RX', 'RY']] for df in EpochDataNoBlinks_left]
-    
-    saccadeinfo_left = ExtractSaccades(gazeData_left, params, getBinocular=True)
-    
-    # Save
-    with open(op.join(output_dir, 'EL_saccadeinfo_right.json'), 'wb') as f:
-        pickle.dump(saccadeinfo_right, f)
-    with open(op.join(output_dir, 'EL_saccadeinfo_left.json'), 'wb') as f:
-        pickle.dump(saccadeinfo_left, f)
-        
+        for file in os.listdir(sub_dir):
+            if file.endswith("_EL_noblinks_All.pkl"):
+                print(f"\nProcessing File: {file}")
+
+                with open(op.join(sub_dir, file), 'rb') as f:
+                    blink_data = pickle.load(f)
+
+                with open(op.join(sub_dir, f"{file.removesuffix('_EL_noblinks_All.pkl')}_EL_params.pkl"), 'rb') as f:
+                    params = pickle.load(f)
+
+                EpochDataNoBlinks = blink_data[0]
+                gazeData = [df[['LX', 'LY', 'RX', 'RY']]
+                            for df in EpochDataNoBlinks]
+
+                saccadeinfo = ExtractSaccades(
+                    gazeData, params, getBinocular=True)
+
+                Output_file_name = f"{file.removesuffix('_EL_noblinks_All.pkl')}_EL_saccadeinfo.pkl"
+                Output_file_path = os.path.join(sub_dir, Output_file_name)
+
+                # Save
+                with open(Output_file_path, 'wb') as f:
+                    pickle.dump(saccadeinfo, f)
