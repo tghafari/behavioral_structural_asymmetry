@@ -25,11 +25,11 @@ platform = 'mac'
 if platform == 'bluebear':
     jenseno_dir = '/rds/projects/j/jenseno-avtemporal-attention'
 elif platform == 'mac':
-    jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
+    jenseno_dir = '/Volumes/jenseno-avtemporal-attention-1'
 
 # Define where to read and write the data
 volume_sheet_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/MRI_lateralisations/lateralisation_indices')
-lat_sheet_fname = op.join(volume_sheet_dir, 'lateralisation_volumes_1_32.csv')
+lat_sheet_fname = op.join(volume_sheet_dir, 'lateralisation_volumes_1_45.csv')
 df = pd.read_csv(lat_sheet_fname)
 lateralisation_volume = df.iloc[:,1:8].to_numpy()
 
@@ -77,13 +77,17 @@ for his in range(7):
     p_values_shapiro.append(shapiro_p)
     
     # 1 sample t-test for left/right lateralisation
-    t_statistic, t_p_value = stats.ttest_1samp(valid_lateralisation_volume, null_hypothesis_mean)
+    t_statistic, t_p_value = stats.ttest_1samp(valid_lateralisation_volume, 
+                                               null_hypothesis_mean, 
+                                               nan_policy='omit')
     t_stats.append(t_statistic)
     t_p_vals.append(t_p_value)
     
     # one sample wilcoxon signed rank (for non normal distributions)
     _, wilcox_p = stats.wilcoxon(valid_lateralisation_volume - null_hypothesis_median,
-                                 zero_method='wilcox', correction=False)
+                                 zero_method='wilcox', 
+                                 nan_policy='omit',
+                                 correction=False)
     wilcox_p_vals.append(wilcox_p)
   
     # plot histogram
@@ -96,16 +100,16 @@ for his in range(7):
 #   pdf = stats.norm.pdf(x, mu, std)
 #   ax.plot(x, pdf, 'r-', label='Normal Fit', linewidth=0.5)        
     
-    txt = r'$p = {:.2f}$'.format(p)
-    ax.text(min(ax.get_xlim()) + max(ax.get_xlim()), max(ax.get_ylim()), txt,
-            fontsize=8)#, fontname='Calibri')
-    txt = r'$1samp_p = {:.2f}$'.format(t_p_value)
-    #ax.text(min(ax.get_xlim()) + 0.2 * max(ax.get_xlim()), max(ax.get_ylim()) - 50, txt,
-    #        fontsize=10)#, fontname='Calibri'), fontname='Calibri')
-    txt = r'$wilcox_p = {:.2f}$'.format(wilcox_p)
-    #ax.text(min(ax.get_xlim()) + 0.2 * max(ax.get_xlim()), max(ax.get_ylim()) - 60, txt,
-    #        fontsize=10)#, fontname='Calibri'), fontname='Calibri')
+    box_props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    txt_norm = r'$p = {:.2f}$'.format(p)
+    txt_t = r'$1samp\_p = {:.2f}$'.format(t_p_value)
+    txt_wilx = r'$wilcox\_p = {:.2f}$'.format(wilcox_p)
     
+    ax.text(0.05, 0.95, 
+            txt_wilx,
+            transform=ax.transAxes, 
+            fontsize=10, verticalalignment='top', 
+            bbox=box_props)
     ax.tick_params(axis='both', which='both', length=0)
     ax.set_axisbelow(True)
 
