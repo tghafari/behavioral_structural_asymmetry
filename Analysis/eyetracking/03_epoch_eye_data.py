@@ -1,140 +1,199 @@
-# -*- coding: utf-8 -*-
 """
 ===============================================
 03_epoch_eye_data
 
-this code gets the output of 02_initialise_eyetracking_parameters
-to segmentthe full eye tracking data into epochs.
+This code gets the output of 02_initialise_eyetracking_parameters
+to segment the full eye tracking data into epochs.
 
-written by Tara Ghafari 
-adapted from:
+Written by Tara Ghafari 
+Modified by Mohammad Ebrahim Katebi
+
+Adapted from:
 https://github.com/Cogitate-consortium/Eye-Tracking-Code/blob/master/Experiment%201/Python/DataParser.py#L26
-==============================================
+===============================================
 ToDos:
 """
+
 import numpy as np
 import pickle
 import os.path as op
-        
-def SequenceEyeData(params, eyeData):
+import os
+
+
+def sequence_eye_data(params, eye_data):
     """
-    segments the full eye data into trials. so at each trial timestamp, we grab the data from some pre-onset until
-    sometime post-onset to get a window of data that associate with that trial
-    :param params: the parameters dictionary. should be the output of initParams
-    :param eyeDFs: the data frames with the eye tracker data. should be the ouptut of the asc parser function
-    :return: TrialData: a list of dataframes holding the samples for each trial
-    :return: TrialInfo: an updated version of the timestamps dataframe; updated to hold the TrialWindowStart and
-    TrialWindowEnd columns
+    Segments the full eye data into trials.
+
+    Args:
+    params (dict): The parameters dictionary, output of initParams.
+    eye_data (tuple): The data frames with the eye tracker data, output of the asc parser function.
+
+    Returns:
+    tuple: (Epoch_All, EpochInfo)
+        Epoch_All: A list of dataframes holding the samples for each trial.
+        EpochInfo: A dictionary holding trial information.
     """
+    data = eye_data[5]
 
-    # get the dataframe with the data/samples
-    data = eyeData[5]
+    stim_onset = np.array(
+        eye_data[1].time[eye_data[1].text.str.contains(' Shift')])
+    stim_direction = np.array(
+        eye_data[1].text[eye_data[1].text.str.contains(' Shift')])
+    stim_direction = np.array([direction.split(" Shift")[0]
+                              for direction in stim_direction])
 
-    # get the trial window start and end for each trial
-    trialOnset = np.array(eyeData[1].time[eyeData[1].text == 'Trial Onset'])
-    right_cue_onset = np.array(eyeData[1].time[eyeData[1].text == 'Right Cue'])
-    left_cue_onset = np.array(eyeData[1].time[eyeData[1].text == 'Left Cue'])
-    # Combine the time points into a single variable
-    cue_onset = np.concatenate((right_cue_onset, left_cue_onset))
-    cue_onset = np.sort(cue_onset)
-    right_epoch_start = right_cue_onset + params['CueDur'] * 1000
-    left_epoch_start = left_cue_onset + params['CueDur'] * 1000 
-    right_epoch_end = right_epoch_start + params['PostCueOffset'] * 1000
-    left_epoch_end = left_epoch_start + params['PostCueOffset'] * 1000
-    epoch_start = cue_onset + params['CueDur'] * 1000
-    epoch_end = epoch_start + params['PostCueOffset'] * 1000
+    epoch_start = stim_onset
+    epoch_end = epoch_start + \
+        (params['StimDur'] * 1000) + (params['PostStimOffset'] * 1000)
 
-    # initialize outputs
-    EpochRight = [None] * len(right_cue_onset)
-    EpochLeft = [None] * len(left_cue_onset)
-    EpochBoth = [None] * len(trialOnset)
-    EpochInfo = dict([])
+    epoch_all = [None] * len(stim_onset)
+    epoch_info = {
+        'epoch_start': epoch_start,
+        'epoch_end': epoch_end,
+        'epoch_Direction': stim_direction
+    }
 
-    
-    EpochInfo['right_epoch_start'] = right_epoch_start
-    EpochInfo['left_epoch_start'] = left_epoch_start
-    EpochInfo['right_epoch_end'] = right_epoch_end
-    EpochInfo['left_epoch_end'] = left_epoch_end
-    EpochInfo['epoch_start'] = epoch_start
-    EpochInfo['epoch_end'] = epoch_end
+    print(f'Number of epochs = {len(stim_onset)}')
 
-    print('num right and left epochs = ' + str(len(trialOnset)))
+    for epoch in range(len(stim_onset)):
+        epoch_st_idx = data.iloc[:, 0] == epoch_start[epoch]
+        epoch_end_idx = data.iloc[:, 0] == epoch_end[epoch]
 
-    # loop through epochs
-    for epoch in range(0, len(right_epoch_start)):
+        if not np.sum(epoch_st_idx) or not np.sum(epoch_end_idx):
+            epoch_st_idx = data.iloc[:, 0] == epoch_start[epoch] - 1
+            epoch_end_idx = data.iloc[:, 0] == epoch_end[epoch] - 1
 
-        # get the indices for the start and end with which to index the data array
-        right_stIdx = data.iloc[:, 0] == right_epoch_start[epoch]
-        left_endIdx = data.iloc[:, 0] == left_epoch_end[epoch]
-        left_stIdx = data.iloc[:, 0] == left_epoch_start[epoch]
-        right_endIdx = data.iloc[:, 0] == right_epoch_end[epoch]
-        
-        if (not np.sum(np.array(right_stIdx)) or not np.sum(np.array(right_endIdx))):
-            right_stIdx = data.iloc[:, 0] == right_epoch_start[epoch] -1 
-            right_endIdx = data.iloc[:, 0] == right_epoch_end[epoch] - 1
-            
-        if (not np.sum(np.array(left_stIdx)) or not np.sum(np.array(left_endIdx))):            
-            left_stIdx = data.iloc[:, 0] == left_epoch_start[epoch] - 1        
-            left_endIdx = data.iloc[:, 0] == left_epoch_end[epoch] - 1
-       
-        # convert logical indices to numeric indices
-        right_stIdx = right_stIdx[right_stIdx].index.values[0]
-        right_endIdx = right_endIdx[right_endIdx].index.values[0]
-        EpochRight[epoch] = data.iloc[right_stIdx:right_endIdx, :]
-        EpochRight[epoch].reset_index(drop=True, inplace=True)
-        left_stIdx = left_stIdx[left_stIdx].index.values[0]
-        left_endIdx = left_endIdx[left_endIdx].index.values[0]        
-        EpochLeft[epoch] = data.iloc[left_stIdx:left_endIdx, :]
-        EpochLeft[epoch].reset_index(drop=True, inplace=True)
-        
-        if (not np.sum(np.array(right_stIdx)) or not np.sum(np.array(right_endIdx)))\
-            or (not np.sum(np.array(left_stIdx)) or not np.sum(np.array(left_endIdx))):
-            print('The indice of trial start and end could not be found for trial %d,'
-                              ' check the raw data' % epoch)
-   
-    # loop for all the cues (right and left concatenated)  -- needs to be fixed for concat epochs     
-    for epoch in range(0, len(trialOnset)):
-        # get the indices for the start and end with which to index the data array
-        epoch_stIdx = data.iloc[:, 0] == epoch_start[epoch]
-        epoch_endIdx = data.iloc[:, 0] == epoch_end[epoch]
-        
-        if (not np.sum(np.array(epoch_stIdx)) or not np.sum(np.array(epoch_endIdx))):
-            epoch_stIdx = data.iloc[:, 0] == epoch_start[epoch] -1 
-            epoch_endIdx = data.iloc[:, 0] == epoch_end[epoch] - 1
-         
-            # convert logical indices to numeric indices
-        epoch_stIdx = epoch_stIdx[epoch_stIdx].index.values[0]
-        epoch_endIdx = epoch_endIdx[epoch_endIdx].index.values[0]
-        EpochBoth[epoch] = data.iloc[epoch_stIdx:epoch_endIdx, :]
-        EpochBoth[epoch].reset_index(drop=True, inplace=True)   
-            
-    return EpochRight, EpochLeft, EpochBoth, EpochInfo
+        epoch_st_idx = epoch_st_idx[epoch_st_idx].index.values[0]
+        epoch_end_idx = epoch_end_idx[epoch_end_idx].index.values[0]
 
-      
-platform= 'mac'
+        epoch_all[epoch] = data.iloc[epoch_st_idx:epoch_end_idx,
+                                     :].reset_index(drop=True)
 
-if platform == 'bluebear':
-    jenseno_dir = '/rds/projects/j/jenseno-avtemporal-attention'
-elif platform == 'mac':
-    jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
+    return epoch_all, epoch_info
 
-# Define where to read and write the data
-deriv_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives')
 
-# load in eyeData and params
-for sub_code in range(7,33):
-    output_fpath = op.join(deriv_dir, 'target_orientation', 'eyetracking')
-    output_dir = op.join(output_fpath,'sub-S' + str(1000+sub_code))
-    with open(op.join(output_dir, 'EL_eyeData.json'), 'rb') as f:
-        eyeData = pickle.load(f)
-        
-    with open(op.join(output_dir, 'EL_params.json'), 'rb') as f:
+def remove_global_signal_per_trial(epoch_data, eye_data):
+    """
+    Removes the global signal baseline from the gaze data for each RX, LX, RY, LY channel
+    for each trial separately.
+
+    Args:
+    epoch_data (tuple): (Epoch_All, EpochInfo) from sequence_eye_data function.
+    eye_data (tuple): The original eye data.
+
+    Returns:
+    tuple: (Epoch_All, EpochInfo) with global signal removed.
+    """
+    epoch_all, epoch_info = epoch_data
+    channels = ['RX', 'LX', 'RY', 'LY']
+
+    trial_info = eye_data[0]
+    trial_starts = trial_info['tStart'].values
+    trial_ends = trial_info['tEnd'].values
+
+    global_signals = {i: {channel: np.nan for channel in channels}
+                      for i in range(len(trial_starts))}
+
+    for trial_idx, (start, end) in enumerate(zip(trial_starts, trial_ends)):
+        trial_epochs_indices = [i for i, epoch in enumerate(
+            epoch_all) if start <= epoch.iloc[0, 0] < end]
+
+        for channel in channels:
+            trial_channel_data = np.concatenate(
+                [epoch_all[i][channel].dropna().values for i in trial_epochs_indices])
+
+            if len(trial_channel_data) > 0:
+                global_signal = np.nanmean(trial_channel_data)
+                global_signals[trial_idx][channel] = global_signal
+
+                for i in trial_epochs_indices:
+                    epoch_all[i][channel] = epoch_all[i][channel].subtract(
+                        global_signal, fill_value=np.nan)
+            else:
+                print(f"Warning: All data for channel {channel} in trial {trial_idx} is NaN. "
+                      f"Skipping baseline removal for this channel in this trial.")
+
+    epoch_info['Global_Signals_Per_Trial'] = global_signals
+
+    return epoch_all, epoch_info
+
+
+def adjust_to_screen_center(epoch_all, params):
+    """
+    Adjusts the gaze coordinates to be centered on the screen.
+
+    Args:
+    epoch_all (list): List of epoch dataframes.
+    params (dict): Parameters dictionary.
+
+    Returns:
+    list: Adjusted epoch_all.
+    """
+    screen_center_x = params['ScreenResolution'][0] / 2
+    screen_center_y = params['ScreenResolution'][1] / 2
+
+    for i, epoch in enumerate(epoch_all):
+        epoch_all[i]['RX'] = epoch['RX'] + screen_center_x
+        epoch_all[i]['LX'] = epoch['LX'] + screen_center_x
+        epoch_all[i]['RY'] = epoch['RY'] + screen_center_y
+        epoch_all[i]['LY'] = epoch['LY'] + screen_center_y
+
+    return epoch_all
+
+
+def process_eye_tracking_data(file_path, params_path):
+    """
+    Processes eye tracking data from a file, removes global signal per trial,
+    and adjusts coordinates to screen center.
+
+    Args:
+    file_path (str): Path to the eye data file.
+    params_path (str): Path to the parameters file.
+
+    Returns:
+    tuple: (Epoch_All, EpochInfo) processed data.
+    """
+    with open(file_path, 'rb') as f:
+        eye_data = pickle.load(f)
+
+    with open(params_path, 'rb') as f:
         params = pickle.load(f)
-        
-    epoch_data = SequenceEyeData(params, eyeData)
-    
-    # save epoch_data as json file
-    with open(op.join(output_dir, 'EL_epochs.json'), 'wb') as f:
-        pickle.dump(epoch_data, f)
-        
-    
+
+    epoch_data = sequence_eye_data(params, eye_data)
+    epoch_all, epoch_info = remove_global_signal_per_trial(
+        epoch_data, eye_data)
+    epoch_all = adjust_to_screen_center(epoch_all, params)
+
+    return epoch_all, epoch_info
+
+
+def main():
+    data_dir = r"../../Results/EyeTracking"
+    os.makedirs(data_dir, exist_ok=True)
+
+    for item in os.listdir(data_dir):
+        if item.startswith("sub-"):
+            sub_dir = os.path.join(data_dir, item)
+
+            for file in os.listdir(sub_dir):
+                if file.endswith("_EL_eyeData.pkl"):
+                    print(f"\nProcessing File: {file}")
+
+                    file_path = op.join(sub_dir, file)
+                    params_path = op.join(
+                        sub_dir, f"{file.removesuffix('_EL_eyeData.pkl')}_EL_params.pkl")
+
+                    epoch_all, epoch_info = process_eye_tracking_data(
+                        file_path, params_path)
+
+                    output_file_name = f"{file.removesuffix('_EL_eyeData.pkl')}_EL_epochs.pkl"
+                    output_file_path = os.path.join(sub_dir, output_file_name)
+
+                    with open(output_file_path, 'wb') as f:
+                        pickle.dump((epoch_all, epoch_info), f)
+
+                    print(f"Processed data saved to: {output_file_path}")
+
+
+if __name__ == "__main__":
+    main()
