@@ -52,6 +52,7 @@ structural_columns = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu']
 behavioural_columns = ['Landmark_PSE', 'Target_PSE_Laterality', 'Landmark_MS', 'Target_MS_Laterality']
 
 def E2_ModelSelection(lat_index_csv):
+    formulas = []
     data = pd.read_csv(lat_index_csv)
     results = {}
 
@@ -83,7 +84,7 @@ def E2_ModelSelection(lat_index_csv):
                                      for r in range(2, min(len(cols), 7)) 
                                      for comb in itertools.combinations(cols, r)]
                 formula = f'{dependent} ~ ' + ' + '.join(cols + interaction_terms)
-
+                formulas.append(formula)
                 model = smf.ols(formula, data=data_filtered).fit()
                 LME[n_regr][j] = model
                 str_lbl[n_regr][j] = cols + interaction_terms
@@ -93,19 +94,23 @@ def E2_ModelSelection(lat_index_csv):
                 Rsqrd_adjst[n_regr][j] = model.rsquared_adj
 
         # Find the best models based on each metric
-        def get_best_metric(metric, is_min=True):
+        def get_best_metrics(metric, is_min=True):
             best_values = np.full(len(metric), np.nan)
-            best_labels = [None] * len(metric)
+            best_indices = np.full(len(metric), np.nan)
+            best_labels = [[None] * len(metric)]
+            
             for n_regr in range(len(metric)):
-                best_idx = np.nanargmin(metric[n_regr]) if is_min else np.nanargmax(metric[n_regr])
-                best_values[n_regr] = metric[n_regr][best_idx]
-                best_labels[n_regr] = str_lbl[n_regr][best_idx]
-            return best_values, best_labels
+                best_values[n_regr] = np.nanmin(metric[n_regr]) if is_min else np.nanmax(metric[n_regr])  # the minimum value
+                best_indices[n_regr] = np.nanargmin(metric[n_regr]) if is_min else np.nanargmax(metric[n_regr])  # the index of minimum value
+                best_labels[n_regr][:n_regr] = str_lbl[n_regr][int(best_indices[n_regr])]
+            # best_labels has a size/shape issue
+            return best_indices, best_indices, best_labels
 
-        best_AICs, AIC_labels = get_best_metric(AIC)
-        best_BICs, BIC_labels = get_best_metric(BIC)
-        best_LL, LL_labels = get_best_metric(logLikelihood, is_min=False)
-        best_Rsqrd, Rsqrd_labels = get_best_metric(Rsqrd_adjst, is_min=False)
+
+        best_AICs, AIC_labels = get_best_metrics(AIC)
+        best_BICs, BIC_labels = get_best_metrics(BIC)
+        best_LL, LL_labels = get_best_metrics(logLikelihood, is_min=False)
+        best_Rsqrd, Rsqrd_labels = get_best_metrics(Rsqrd_adjst, is_min=False)
 
         results[dependent] = {
             'AIC': best_AICs,
@@ -118,7 +123,7 @@ def E2_ModelSelection(lat_index_csv):
             'Rsqrd_labels': Rsqrd_labels,
         }
 
-    return results
+    return results, formulas
 
 def plot_model_summary(model, title, labels):
     """Visualizes the model coefficients and their statistical significance."""
@@ -142,23 +147,31 @@ def plot_model_summary(model, title, labels):
     plt.show()
 
 # Run the model selection
-results = E2_ModelSelection(lat_index_csv)
+results, formulas = E2_ModelSelection(lat_index_csv)
+
+# Plot the summaries of the best models
+
+plot_model_summary(results['AIC'], 'AIC Best Model Parameters', results['AIC_labels'])
+plot_model_summary(results['BICs'], 'BIC Best Model Parameters', results['BIC_labels'])
+plot_model_summary(results['best_Rsqrd'], 'R-squared Adjusted Best Model Parameters', results['Rsqrd_labels'])
+plot_model_summary(results['best_LL'], 'Log-likelihood Best Model Parameters', results['LL_labels'])
 
 
-# from here on doesn't do the plotting.
+
+
+# # from here on doesn't do the plotting.
 # Visualize the results
-for dependent, result in results.items():
+for dependent in behavioural_columns:
     print(f"\nResults for {dependent}:")
-    for metric, values in result.items():
-        if metric.endswith("_labels"):
-            continue
-        print(f"  {metric}: {values}")
+    plot_model_summary(results[dependent]['AIC'], 'AIC Best Model Parameters', results[dependent['AIC_labels']])
 
-# from previous versions
-# Visualize the results
-for dependent, result in results.items():
-    print(f"\nBest model for {dependent}:\n{result['model'].summary()}")
-    plot_model_summary(result['model'], f"Model Summary: {dependent}", result['model'].params.index[1:])
+# # from previous versions
+# # Visualize the results
+# for dependent, result in results.items():
+#     print(dependent)
+#     print(result)
+#     print(f"\nBest model for {dependent}:\n{result['model'].summary()}")
+#     plot_model_summary(result['model'], f"Model Summary: {dependent}", result['model'].params.index[1:])
 
 
 
