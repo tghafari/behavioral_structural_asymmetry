@@ -144,6 +144,8 @@ def plot_model_summary(model, title, labels):
 # Run the model selection
 results = E2_ModelSelection(lat_index_csv)
 
+
+# from here on doesn't do the plotting.
 # Visualize the results
 for dependent, result in results.items():
     print(f"\nResults for {dependent}:")
@@ -152,7 +154,7 @@ for dependent, result in results.items():
             continue
         print(f"  {metric}: {values}")
 
-
+# from previous versions
 # Visualize the results
 for dependent, result in results.items():
     print(f"\nBest model for {dependent}:\n{result['model'].summary()}")
