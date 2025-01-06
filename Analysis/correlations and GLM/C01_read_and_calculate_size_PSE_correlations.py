@@ -44,10 +44,10 @@ elif platform == 'mac':
 # Define where to read and write the data
 volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/substr-beh'
 # op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/collated')
-lat_volume_csv = op.join(volume_sheet_dir, 'unified_behavioral_structural_asymmetry_lateralisation_indices_1_45.csv')
+lat_index_csv = op.join(volume_sheet_dir, 'unified_behavioral_structural_asymmetry_lateralisation_indices_1_45.csv')
 
 # Read the CSV as a DataFrame
-data = pd.read_csv(lat_volume_csv)
+data = pd.read_csv(lat_index_csv)
 
 # Define columns for analysis
 structural_columns = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu']

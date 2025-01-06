@@ -1,18 +1,178 @@
 # -*- coding: utf-8 -*-
 """
 ===============================================
+02_selecting_model_with_interactions
 
-02_selecting_model
+This code reads a CSV file containing lateralization 
+indices of substructures, PSEs, and MS.
+It fits models to predict behavioral 
+measures (PSE/MS laterality) using structural measures
+and their interactions, then selects the best models 
+based on AIC, BIC, log-likelihood, 
+and adjusted R-squared.
 
-This code reads loads a csv file containing
-the lateralisation index of substrs, PSEs and MS.
-then runs all the possible combination of models
-to select which model can predict PSE/MS laterality
-better. that's the winning model.
 
 written by Tara Ghafari
 ===============================================
+"""# -*- coding: utf-8 -*-
 """
+================================================
+
+02_selecting_model_with_interactions_and_combinations
+
+This script evaluates all possible combinations of independent variables (structural columns)
+and their interactions to predict behavioral measures. It identifies the best models based on
+AIC, BIC, log-likelihood, and adjusted R-squared.
+
+Updated by Assistant
+================================================
+"""
+
+import pandas as pd
+import numpy as np
+import os.path as op
+import itertools
+import statsmodels.formula.api as smf
+import matplotlib.pyplot as plt
+
+# Define paths
+platform = 'mac'
+if platform == 'bluebear':
+    jenseno_dir = '/rds/projects/j/jenseno-avtemporal-attention'
+elif platform == 'mac':
+    jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
+
+# Define where to read and write the data
+volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/substr-beh'
+# op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/collated')
+lat_index_csv = op.join(volume_sheet_dir, 'unified_behavioral_structural_asymmetry_lateralisation_indices_1_45.csv')
+
+# Define columns for analysis
+structural_columns = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu']
+behavioural_columns = ['Landmark_PSE', 'Target_PSE_Laterality', 'Landmark_MS', 'Target_MS_Laterality']
+
+def E2_ModelSelection(lat_index_csv):
+    data = pd.read_csv(lat_index_csv)
+    results = {}
+
+    for dependent in behavioural_columns:
+        print(f"\nAnalyzing dependent variable: {dependent}")
+        
+        # Drop NaNs in the dependent variable
+        data_filtered = data.dropna(subset=[dependent])
+        
+        # Prepare data
+        y = data_filtered[dependent]
+        X = data_filtered[structural_columns]
+
+        # Generate all unique combinations of independent variables
+        nReg = [list(itertools.combinations(range(len(structural_columns)), n_regr)) for n_regr in range(1, len(structural_columns) + 1)]
+
+        def preallocate_metrics(nReg):
+            return [np.full(len(combs), np.nan) for combs in nReg]
+
+        LME = [[None] * len(combs) for combs in nReg]
+        str_lbl = [[None] * len(combs) for combs in nReg]
+        AIC, BIC, logLikelihood, Rsqrd_adjst = [preallocate_metrics(nReg) for _ in range(4)]
+
+        # Fit models for all combinations
+        for n_regr in range(len(nReg)):
+            for j, reg_comb in enumerate(nReg[n_regr]):
+                cols = [structural_columns[i] for i in reg_comb]
+                interaction_terms = [":".join(comb) 
+                                     for r in range(2, min(len(cols), 7)) 
+                                     for comb in itertools.combinations(cols, r)]
+                formula = f'{dependent} ~ ' + ' + '.join(cols + interaction_terms)
+
+                model = smf.ols(formula, data=data_filtered).fit()
+                LME[n_regr][j] = model
+                str_lbl[n_regr][j] = cols + interaction_terms
+                AIC[n_regr][j] = model.aic
+                BIC[n_regr][j] = model.bic
+                logLikelihood[n_regr][j] = model.llf
+                Rsqrd_adjst[n_regr][j] = model.rsquared_adj
+
+        # Find the best models based on each metric
+        def get_best_metric(metric, is_min=True):
+            best_values = np.full(len(metric), np.nan)
+            best_labels = [None] * len(metric)
+            for n_regr in range(len(metric)):
+                best_idx = np.nanargmin(metric[n_regr]) if is_min else np.nanargmax(metric[n_regr])
+                best_values[n_regr] = metric[n_regr][best_idx]
+                best_labels[n_regr] = str_lbl[n_regr][best_idx]
+            return best_values, best_labels
+
+        best_AICs, AIC_labels = get_best_metric(AIC)
+        best_BICs, BIC_labels = get_best_metric(BIC)
+        best_LL, LL_labels = get_best_metric(logLikelihood, is_min=False)
+        best_Rsqrd, Rsqrd_labels = get_best_metric(Rsqrd_adjst, is_min=False)
+
+        results[dependent] = {
+            'AIC': best_AICs,
+            'AIC_labels': AIC_labels,
+            'BIC': best_BICs,
+            'BIC_labels': BIC_labels,
+            'log_likelihood': best_LL,
+            'LL_labels': LL_labels,
+            'adjusted_R_squared': best_Rsqrd,
+            'Rsqrd_labels': Rsqrd_labels,
+        }
+
+    return results
+
+def plot_model_summary(model, title, labels):
+    """Visualizes the model coefficients and their statistical significance."""
+    params = model.params.iloc[1:]  # Exclude the intercept
+    errors = model.bse.iloc[1:]
+    pvalues = model.pvalues.iloc[1:]
+
+    x = np.arange(len(params))
+    plt.figure(figsize=(12, 6))
+    plt.bar(x, params, yerr=errors, capsize=5, color='steelblue')
+    plt.axhline(0, color='black', linewidth=1)
+    plt.xticks(x, labels, rotation=45, ha='right')
+
+    for i, (param, error, pvalue) in enumerate(zip(params, errors, pvalues)):
+        if pvalue < 0.05:
+            plt.text(i, param + (error if param > 0 else -error), '*', ha='center', color='red', fontsize=14)
+
+    plt.title(title)
+    plt.ylabel('Coefficient Value')
+    plt.tight_layout()
+    plt.show()
+
+# Run the model selection
+results = E2_ModelSelection(lat_index_csv)
+
+# Visualize the results
+for dependent, result in results.items():
+    print(f"\nResults for {dependent}:")
+    for metric, values in result.items():
+        if metric.endswith("_labels"):
+            continue
+        print(f"  {metric}: {values}")
+
+
+# Visualize the results
+for dependent, result in results.items():
+    print(f"\nBest model for {dependent}:\n{result['model'].summary()}")
+    plot_model_summary(result['model'], f"Model Summary: {dependent}", result['model'].params.index[1:])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 import pandas as pd
