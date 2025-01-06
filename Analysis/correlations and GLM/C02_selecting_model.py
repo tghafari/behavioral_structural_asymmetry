@@ -97,20 +97,32 @@ def E2_ModelSelection(lat_index_csv):
         def get_best_metrics(metric, is_min=True):
             best_values = np.full(len(metric), np.nan)
             best_indices = np.full(len(metric), np.nan)
-            best_labels = [[None] * len(metric)]
+            best_labels = [[None] * len(metric) for _ in range(len(metric))]
             
-            for n_regr in range(len(metric)):
+            for n_regr in range(len(metric)):  # best_indices not required
                 best_values[n_regr] = np.nanmin(metric[n_regr]) if is_min else np.nanmax(metric[n_regr])  # the minimum value
                 best_indices[n_regr] = np.nanargmin(metric[n_regr]) if is_min else np.nanargmax(metric[n_regr])  # the index of minimum value
                 best_labels[n_regr][:n_regr] = str_lbl[n_regr][int(best_indices[n_regr])]
-            # best_labels has a size/shape issue
-            return best_indices, best_indices, best_labels
+                best_labels[n_regr] = [label for label in best_labels[n_regr] if label is not None]
+
+            return best_values, best_indices, best_labels
 
 
-        best_AICs, AIC_labels = get_best_metrics(AIC)
-        best_BICs, BIC_labels = get_best_metrics(BIC)
-        best_LL, LL_labels = get_best_metrics(logLikelihood, is_min=False)
-        best_Rsqrd, Rsqrd_labels = get_best_metrics(Rsqrd_adjst, is_min=False)
+        best_AICs, best_AIC_idx, AIC_labels = get_best_metrics(AIC)
+        best_BICs, best_BIC_idx, BIC_labels = get_best_metrics(BIC)
+        best_LL, best_LL_idx, LL_labels = get_best_metrics(logLikelihood, is_min=False)
+        best_Rsqrd, best_Rsqrd_idx, Rsqrd_labels = get_best_metrics(Rsqrd_adjst, is_min=False)
+
+        def find_winning_model(best_values, best_labels, best_indices, is_min=True):
+            best_idx = np.nanargmin(best_values) if is_min else np.nanargmax(best_values)
+            best_label = best_labels[best_idx]
+
+            best_model = LME[best_idx][int(best_values(best_idx, best_indices))]
+
+            return best_model, best_label
+
+
+
 
         results[dependent] = {
             'AIC': best_AICs,
