@@ -79,6 +79,9 @@ qqplot_figname = op.join(volume_sheet_dir, 'qqplot')
 coefficient_figname = op.join(volume_sheet_dir, 'beta_coefficients')
 regresplot_figname = op.join(volume_sheet_dir, 'partial_regression')
 
+report_all_methods = True  # do you want to report best 5 models with all methods?
+plotting = False
+
 # Step 1: Load the CSV file
 data_full = pd.read_csv(lat_index_csv)
 
@@ -89,8 +92,6 @@ print(data_full.head())
 dependent_vars = ['Landmark_PSE', 'Target_PSE_Laterality', 'Landmark_MS', 'Target_MS_Laterality']
 independent_vars = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu']  
 dependent_var = input(f'which dependent variable to do now? {dependent_vars}\n (Do not add quotation marks!)\n')
-
-report_all_methods = False  # do you want to report best 5 models with all methods?
 
 print(f'\nRunning models on {dependent_var}')
 # Remove NaNs from dependent variable (but keep rows in the dataset)
@@ -166,7 +167,7 @@ for i in range(1, len(all_terms) + 1):
 
 # Convert results to a DataFrame for analysis
 results_df = pd.DataFrame(results)
-results_df.sort_values(by='AIC', inplace=True)
+results_df.sort_values(by='AIC', inplace=True)  # can change AIC to something else here
 results_df.to_csv(f'{models_fname}_{dependent_var}.csv')
 
 # Step 7: Analyze the best model based on AIC
@@ -184,59 +185,58 @@ if report_all_methods:
     print("\nTop 5 Models by Log-Likelihood:\n", results_df.nlargest(5, 'LogLik'))
     print("\nTop 5 Models by Adjusted R²:\n", results_df.nlargest(5, 'Adj_R2'))
 
-# Step 8: Plot residuals of the best model
-y_pred = best_model.predict(sm.add_constant(data[list(best_predictors)]))
-residuals = data[dependent_var] - y_pred  # more complicated way doing residuals=best_model.resid
 
-plt.figure(figsize=(10, 6))
-sns.scatterplot(x=y_pred, y=residuals)
-plt.axhline(0, color='red', linestyle='--')
-plt.title(f'Residuals vs Predicted Values Modeling {dependent_var}')
-plt.xlabel('Predicted Values')
-plt.ylabel('Residuals')
-plt.savefig(f'{res_figname}_{dependent_var}.png')
-# plt.show()
+if plotting: 
+        
+    #################################### PLOTTING #############################################
+    y_pred = best_model.predict(sm.add_constant(data[list(best_predictors)]))
+    residuals = data[dependent_var] - y_pred  # more complicated way of doing residuals=best_model.resid
 
-# --- Q-Q Plot for Residuals ---
-residuals = best_model.resid  # Extract residuals from the best model
+    # --- Scatter Plot for Residuals ---
+    plt.figure(figsize=(10, 6))
+    sns.scatterplot(x=y_pred, y=residuals)
+    plt.axhline(0, color='red', linestyle='--')
+    plt.title(f'Residuals vs Predicted Values Modeling {dependent_var}')
+    plt.xlabel('Predicted Values')
+    plt.ylabel('Residuals')
+    plt.savefig(f'{res_figname}_{dependent_var}.png')
 
-plt.figure(figsize=(8, 6))
-qqplot(residuals, line='45', fit=True, alpha=0.5, color='blue')
-plt.title('Q-Q Plot of Residuals', fontsize=16)
-plt.grid(True, linestyle='--', alpha=0.6)
-plt.xlabel('Theoretical Quantiles', fontsize=12)
-plt.ylabel('Sample Quantiles', fontsize=12)
-plt.tight_layout()
-plt.savefig(f'{qqplot_figname}_{dependent_var}.png')  # Save the Q-Q plot
+    # --- Q-Q Plot for Residuals ---
+    plt.figure(figsize=(8, 6))
+    qqplot(residuals, line='45', fit=True, alpha=0.5, color='blue')
+    plt.title(f'Q-Q Plot of Residuals Modeling {dependent_var}', fontsize=16)
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.xlabel('Theoretical Quantiles', fontsize=12)
+    plt.ylabel('Sample Quantiles', fontsize=12)
+    plt.tight_layout()
+    plt.savefig(f'{qqplot_figname}_{dependent_var}.png')  # Save the Q-Q plot
 
-# Step 10: Plot beta coefficients
-coefficients = best_model.params
-std_err = best_model.bse
-fvalue = best_model.fvalue
-fp_value = best_model.f_pvalue
+    # --- Plot beta coefficients ---
+    coefficients = best_model.params
+    std_err = best_model.bse
+    fvalue = best_model.fvalue
+    fp_value = best_model.f_pvalue
 
-plt.figure(figsize=(12, 8))
-coefficients.plot(kind='bar', yerr=std_err, color='skyblue', alpha=0.8, edgecolor='black')
-plt.title(f'Beta Coefficients of the Best Model for {dependent_var}', fontsize=16)
-plt.ylabel('Coefficient Value')
-plt.xlabel('Predictors')
-plt.axhline(0, color='red', linestyle='--', linewidth=1)
+    plt.figure(figsize=(12, 8))
+    coefficients.plot(kind='bar', yerr=std_err, color='skyblue', alpha=0.8, edgecolor='black')
+    plt.title(f'Beta Coefficients of the Best Model for {dependent_var}', fontsize=16)
+    plt.ylabel('Coefficient Value')
+    plt.xlabel('Predictors')
+    plt.axhline(0, color='red', linestyle='--', linewidth=1)
 
-# Add text annotations with goodness-of-fit statistics
-text = (f"AIC: {best_model.aic:.2f}\n"
-        f"BIC: {best_model.bic:.2f}\n"
-        f"Adjusted R²: {best_model.rsquared_adj:.3f}\n"
-        f"fvalue: {fvalue:.3f}\n"
-        f"fp-value: {fp_value:.3f}")
-plt.text(-1.5, coefficients.min() * 0.8, text, fontsize=12, color='black', bbox=dict(facecolor='white', alpha=0.7))
+    # Add text annotations with goodness-of-fit statistics
+    text = (f"AIC: {best_model.aic:.2f}\n"
+            f"BIC: {best_model.bic:.2f}\n"
+            f"Adjusted R²: {best_model.rsquared_adj:.3f}\n"
+            f"fvalue: {fvalue:.3f}\n"
+            f"fp-value: {fp_value:.3f}")
+    plt.text(-1.5, coefficients.min() * 0.8, text, fontsize=12, color='black', bbox=dict(facecolor='white', alpha=0.7))
+    plt.tight_layout()
+    plt.savefig(f'{coefficient_figname}_{dependent_var}.png')
 
-plt.tight_layout()
-plt.savefig(f'{coefficient_figname}_{dependent_var}.png')
-
-# Step 11: Partial regression plot
-plt.figure(figsize=(12, 8))
-plot_partregress_grid(best_model)
-plt.suptitle(f'Partial Regression Plots Modeling {dependent_var}', fontsize=16)
-plt.tight_layout(rect=[0, 0, 1, 0.95])
-plt.savefig(f'{regresplot_figname}_{dependent_var}.png')
-# plt.show()
+    # --- Partial regression plot ---
+    plt.figure(figsize=(12, 8))
+    plot_partregress_grid(best_model)
+    plt.suptitle(f'Partial Regression Plots Modeling {dependent_var}', fontsize=16)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.savefig(f'{regresplot_figname}_{dependent_var}.png')
