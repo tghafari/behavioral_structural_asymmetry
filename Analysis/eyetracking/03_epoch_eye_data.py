@@ -168,7 +168,7 @@ def process_eye_tracking_data(file_path, params_path):
 
 
 def main():
-    data_dir = r"../../Results/EyeTracking"
+    data_dir = r"../../Results/EyeTracking/Landmark"
     os.makedirs(data_dir, exist_ok=True)
 
     for item in os.listdir(data_dir):

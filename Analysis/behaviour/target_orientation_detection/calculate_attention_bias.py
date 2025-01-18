@@ -9,330 +9,281 @@ each participants bias towards right and left
 written by Mohammad Ebrahim Katebi (mekatebi.2000@gmail.com)
 adapted by Tara Ghafari
 ==============================================  
-ToDos:
-    1) 
-Issues:
-    1) 
-Questions:
-    1) 
 """
 
-# import libraries
+# Import libraries
+import os
 import os.path as op
 import pandas as pd
 import numpy as np
-import dataframe_image as dfi
 import matplotlib.pyplot as plt
 from scipy.stats import weibull_min
 from scipy.optimize import curve_fit
 
+# Set up directories
+DATA_DIR = r"E:/Target_Data"
+OUTPUT_FOLDER_PATH = r"../../../Results/Beh/Target"
+os.makedirs(OUTPUT_FOLDER_PATH, exist_ok=True)
+
 # Obligate pandas to show entire data
 pd.set_option('display.max_rows', None, 'display.max_columns', None)
 
-# Define Weibull distrbituion parameters
+# Define Weibull distribution parameters
 y_scale_guess = 0.5
 y_bias_guess = 0.5
 ppf = 0.75
 
 # Define Weibull functions
+
+
 def weibull_min_cdf(x_log, shape, loc, scale, y_scale, y_bias):
-
-    # leave the parameters to be optimized
+    """Calculate Weibull CDF with fixed parameters."""
     y = weibull_min.cdf(x_log, 6, loc, scale)
-
-    # y_scaled = (y * y_scale) + y_bias  # uses parameters from weibull
-    # uses fixed parameters - final decision
     y_scaled = (y * y_scale_guess) + y_bias_guess
-
     return y_scaled
 
 
 def weibull_min_ppf(ppf, shape, loc, scale, y_scale, y_bias):
-
-    # ppf_unscaled = (ppf - y_bias) / y_scale  # uses parameters from weibull
-    # uses fixed parameters - final decision
+    """Calculate Weibull PPF with fixed parameters."""
     ppf_unscaled = (ppf - y_bias_guess) / y_scale_guess
-
     return weibull_min.ppf(ppf_unscaled, 6, loc, scale)
 
 
-def Finalysis(fpath):
-    """reads in csv file from PTB and calculates
-    number of correct trials in right and left attention.
-    Returns a table containing those values
-    """
+def analyze_data(fpath):
+    """Analyze single subject data from CSV file."""
+    try:
+        data = pd.read_csv(fpath)
+        data = data[data['State'] == 1]
+        contrasts = np.unique(data['Contrast'])
 
-    Data = pd.read_csv(fpath)  # address to csv file from PTB
+        # Preallocate Results
+        results = np.stack((
+            contrasts,
+            np.zeros(np.shape(contrasts)[0]),
+            np.zeros(np.shape(contrasts)[0]),
+            np.zeros(np.shape(contrasts)[0])
+        ), axis=1)
 
-    Data = Data[Data['State'] == 1]
+        for contrast in contrasts:
+            contrast_data = data[data['Contrast'] == contrast]
+            contrast_trials_all = len(contrast_data)
 
-    Contrasts = np.unique(Data['Contrast'])
+            # Process right attention trials
+            contrast_attention_right = contrast_data[contrast_data['Attention_Direction'] == 'Right']
+            contrast_trials_right = len(contrast_attention_right)
 
-    # preallocate Results: Contrast, Right Correct Percent, Left Correct Percent, All Correct Percent
-    Results = np.stack((Contrasts, np.zeros(np.shape(Contrasts)[0]),
-                        np.zeros(np.shape(Contrasts)[0]),
-                        np.zeros(np.shape(Contrasts)[0])), axis=1)
+            right_corrects = contrast_attention_right[
+                ((contrast_attention_right['Answer'] == 'LeftShift') &
+                 (contrast_attention_right['Target_Oriention'] == 45)) |
+                ((contrast_attention_right['Answer'] == 'RightShift') &
+                 (contrast_attention_right['Target_Oriention'] == -45))
+            ]
+            right_correct_percent = len(
+                right_corrects) / contrast_trials_right if contrast_trials_right > 0 else 0
 
-    for Contrast in Contrasts:
+            # Process left attention trials
+            contrast_attention_left = contrast_data[contrast_data['Attention_Direction'] == 'Left']
+            contrast_trials_left = len(contrast_attention_left)
 
-        Contrast_Data = Data[Data['Contrast'] == Contrast]
+            left_corrects = contrast_attention_left[
+                ((contrast_attention_left['Answer'] == 'LeftShift') &
+                 (contrast_attention_left['Target_Oriention'] == 45)) |
+                ((contrast_attention_left['Answer'] == 'RightShift') &
+                 (contrast_attention_left['Target_Oriention'] == -45))
+            ]
+            left_correct_percent = len(
+                left_corrects) / contrast_trials_left if contrast_trials_left > 0 else 0
 
-        Contrast_Trials_All = np.shape(Contrast_Data)[0]
+            # Update results
+            idx = np.where(results[:, 0] == contrast)[0][0]
+            results[idx, 1] = right_correct_percent
+            results[idx, 2] = left_correct_percent
+            results[idx, 3] = (len(right_corrects) +
+                               len(left_corrects)) / contrast_trials_all
 
-        Contrast_Attention_Right = Contrast_Data[Contrast_Data['Attention_Direction'] == 'Right']
-        Contrast_Trials_Right = np.shape(Contrast_Attention_Right)[0]
+        contrast_table = pd.DataFrame(
+            data=results,
+            columns=["Contrast", "Right_Correct_Percent",
+                     "Left_Correct_Percent", "All_Correct_Percent"]
+        ).set_index(['Contrast'])
 
-        Contrast_Attention_Right_Corrects = Contrast_Attention_Right[((Contrast_Attention_Right['Answer'] == 'LeftShift') &
-                                                                      (Contrast_Attention_Right['Target_Oriention'] == 45)) |
-                                                                     ((Contrast_Attention_Right['Answer'] == 'RightShift') &
-                                                                      (Contrast_Attention_Right['Target_Oriention'] == -45))]
+        return contrast_table
 
-        Contrast_Attention_Right_Correct_Count = np.shape(
-            Contrast_Attention_Right_Corrects)[0]
-        Contrast_Attention_Right_Correct_Percent = Contrast_Attention_Right_Correct_Count / \
-            Contrast_Trials_Right
-
-        Contrast_Attention_Left = Contrast_Data[Contrast_Data['Attention_Direction'] == 'Left']
-        Contrast_Trials_Left = np.shape(Contrast_Attention_Left)[0]
-
-        Contrast_Attention_Left_Corrects = Contrast_Attention_Left[((Contrast_Attention_Left['Answer'] == 'LeftShift') &
-                                                                    (Contrast_Attention_Left['Target_Oriention'] == 45)) |
-                                                                   ((Contrast_Attention_Left['Answer'] == 'RightShift') &
-                                                                    (Contrast_Attention_Left['Target_Oriention'] == -45))]
-
-        Contrast_Attention_Left_Correct_Count = np.shape(
-            Contrast_Attention_Left_Corrects)[0]
-        Contrast_Attention_Left_Correct_Percent = Contrast_Attention_Left_Correct_Count / \
-            Contrast_Trials_Left
-
-        for i in range(np.shape(Results)[0]):
-            """puts right corrects and left corrects and total corrects in Result matrix"""
-
-            if Results[i][0] == Contrast:
-
-                Results[i][1] = Contrast_Attention_Right_Correct_Percent
-                Results[i][2] = Contrast_Attention_Left_Correct_Percent
-                Results[i][3] = (Contrast_Attention_Right_Correct_Count +
-                                 Contrast_Attention_Left_Correct_Count) / Contrast_Trials_All
-
-    contrast_Table = pd.DataFrame(data=Results, columns=[
-        "Contrast", "Right_Correct_Percent", "Left_Correct_Percent", "All_Correct_Percent"])
-    contrast_Table = contrast_Table.set_index(['Contrast'])
-
-    return contrast_Table
+    except Exception as e:
+        print(f"Error processing file {fpath}: {str(e)}")
+        return None
 
 
-def check_for_outlier(contrast_Table, sub_code, outliers):
-    """this definition finds the outliers
-    outliers are those who have 
-    max performance below %75: poor performers
-    or min performance above %75: the staircase hasn't worked """
+def check_for_outlier(contrast_table, sub_code, outliers):
+    """Check if subject performance indicates they should be marked as outlier."""
+    if contrast_table is None:
+        outliers.append(sub_code)
+        return
 
-    right_correct_percent = contrast_Table['Right_Correct_Percent']
-    left_correct_percent = contrast_Table['Left_Correct_Percent']
-    
-    # Use numpy to find the min and max values
-    max_performance_right = np.max(right_correct_percent)
-    min_performance_right = np.min(right_correct_percent)
-    max_performance_left = np.max(left_correct_percent)
-    min_performance_left = np.min(left_correct_percent)
+    right_correct = contrast_table['Right_Correct_Percent']
+    left_correct = contrast_table['Left_Correct_Percent']
 
-    # Check the conditions and append to outliers if any condition is met
-    if (max_performance_right < 0.75 or max_performance_left < 0.75 or 
-        min_performance_right > 0.75 or min_performance_left > 0.75):
+    max_right = np.max(right_correct)
+    min_right = np.min(right_correct)
+    max_left = np.max(left_correct)
+    min_left = np.min(left_correct)
+
+    if (max_right < 0.75 or max_left < 0.75 or
+            min_right > 0.75 or min_left > 0.75):
         outliers.append(sub_code)
 
 
-def plot_fitted_data(contrast_Table, sub_code):
-    """scatter plots corrects with log x-axis"""
-    # dfi.export(contrast_Table, op.join(deriv_dir, sub_code + '_contrast_table.png'), dpi=400)  # figures the contrasts with correct responses
+def plot_fitted_data(contrast_table, sub_code, outliers):
+    """Plot psychometric function and fit Weibull curves."""
+    try:
+        x_log = np.log10(contrast_table.index)
+        y = contrast_table['All_Correct_Percent']
+        y_right = contrast_table['Right_Correct_Percent']
+        y_left = contrast_table['Left_Correct_Percent']
 
-    # Plot scatter plot:
-    x_log = np.log10(contrast_Table.index)  # contrasts are in log10
-    y = contrast_Table['All_Correct_Percent']
-    y_Right = contrast_Table['Right_Correct_Percent']
-    y_Left = contrast_Table['Left_Correct_Percent']
+        fig, ax = plt.subplots(figsize=(9, 9))
 
-    plt.figure(figsize=(9, 9))
-    plt.scatter(x_log, y, marker='*', color='black', s=25)
-    plt.scatter(x_log, y_Right, marker='x', color='red', s=25)
-    plt.scatter(x_log, y_Left, marker='+', color='blue', s=25)
+        # Plot scatter points
+        ax.scatter(x_log, y, marker='*', color='black', s=25, label='All')
+        ax.scatter(x_log, y_right, marker='x',
+                   color='red', s=25, label='Right')
+        ax.scatter(x_log, y_left, marker='+', color='blue', s=25, label='Left')
 
-    # Define axis lables:
-    plt.xlabel('Log10 Contrast',
-               fontsize='x-large', fontweight=1000)
-    plt.ylabel('% Answered Correct', fontsize='x-large', fontweight=1000)
+        # Set up plot parameters
+        ax.set_xlabel('Log10 Contrast', fontsize='x-large', fontweight='bold')
+        ax.set_ylabel('% Answered Correct',
+                      fontsize='x-large', fontweight='bold')
+        ax.set_xlim(x_log[0]-1, x_log[-1]+1)
+        ax.set_ylim(0.2, 1.1)
+        ax.set_yticks([0.25, 0.5, 0.75, 1])
 
-    # Define axis starting and end points:
-    plt.xlim(x_log[0]-1, x_log[-1]+1)
-    plt.ylim(0.2, 1.1)
+        # Plot Weibull fits
+        cdf_plot_x = np.linspace(x_log[0]-1, x_log[-1]+1, 1000)
 
-    # plt.xticks(np.linspace(-10, 5, 16))
-    plt.yticks([0.25, 0.5, 0.75, 1])
-    # plt.show()
+        # Fit and plot for all data
+        pse_all, r2_all = fit_and_plot_weibull(
+            ax, x_log, y, cdf_plot_x, 'black', 'All')
 
-    cdf_Plot_x = np.linspace(x_log[0]-1, x_log[-1]+1, 1000)
+        # Fit and plot for right data
+        pse_right, r2_right = fit_and_plot_weibull(
+            ax, x_log, y_right, cdf_plot_x, 'red', 'Right')
 
-    # All  ///////////////////////////////////////////////////////////////
+        # Fit and plot for left data
+        pse_left, r2_left = fit_and_plot_weibull(
+            ax, x_log, y_left, cdf_plot_x, 'blue', 'Left')
 
-    # Fit Weibull distribution:
-    shape_All, loc_All, scale_All = weibull_min.fit(x_log)
-    fit, Temp = curve_fit(weibull_min_cdf, x_log, y, p0=[
-                          shape_All, loc_All, scale_All, y_scale_guess, y_bias_guess], maxfev=1000000, check_finite=False)
+        # Add PSE reference line
+        ax.axhline(y=ppf, color='gray', lw=1, linestyle=':', label='PSE')
 
-    shape_All = fit[0]
-    loc_All = fit[1]
-    scale_All = fit[2]
-    y_scale_All = fit[3]
-    y_bias_All = fit[4]
+        # Create legend
+        legend_title = f'Bias= {round(pse_right - pse_left, 3)} Log Contrast'
+        if sub_code in outliers:
+            legend_title = 'Outlier\n' + legend_title
 
-    cdf_All_Plot = weibull_min_cdf(
-        cdf_Plot_x, shape_All, loc_All, scale_All, y_scale_All, y_bias_All)
+        ax.legend(loc='center right', title=legend_title,
+                  title_fontsize='x-large', fontsize='medium',
+                  edgecolor='pink')
 
-    # Draw Weibull Curves:
-    plt.plot(cdf_Plot_x, cdf_All_Plot, 'black', lw=1, label='All Weibull CDF')
+        # Clean up plot
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
 
-    # Define direction of bias:
-    PSE_All = weibull_min_ppf(ppf, shape_All, loc_All,
-                              scale_All, y_scale_All, y_bias_All)
+        # Add title
+        plt.title(f"Subject {sub_code}\nRight PSE = {round(pse_right, 3)}, R² = {round(r2_right, 3)}\n"
+                  f"Left PSE = {round(pse_left, 3)}, R² = {round(r2_left, 3)}",
+                  pad=15, fontsize=10, fontweight=200, loc='left')
 
-    # Draw PSE Vertical and Horizontal Lines:
-    plt.axvline(x=PSE_All, color='gray', lw=1, linestyle=':')
-    plt.axhline(y=ppf, color='gray', lw=1, linestyle=':', label='PSE')
+        plt.tight_layout()
 
-    # Right ///////////////////////////////////////////////////////////////
+        return pse_right, r2_right, pse_left, r2_left
 
-    # Fit Weibull distribution:
-    shape_Right, loc_Right, scale_Right = weibull_min.fit(x_log)
-    fit, Temp = curve_fit(weibull_min_cdf, x_log, y_Right, p0=[
-                          shape_Right, loc_Right, scale_Right, y_scale_guess, y_bias_guess], maxfev=1000000, check_finite=False)
-
-    shape_Right = fit[0]
-    loc_Right = fit[1]
-    scale_Right = fit[2]
-    y_scale_Right = fit[3]
-    y_bias_Right = fit[4]
-
-    cdf_Right = weibull_min_cdf(
-        x_log, shape_Right, loc_Right, scale_Right, y_scale_Right, y_bias_Right)
-    cdf_Right_Plot = weibull_min_cdf(
-        cdf_Plot_x, shape_Right, loc_Right, scale_Right, y_scale_Right, y_bias_Right)
-
-    # Draw Weibull Curves:
-    plt.plot(cdf_Plot_x, cdf_Right_Plot, 'red',
-             lw=1, label='Right Weibull CDF')
-
-    # Define direction of bias:
-    PSE_Right = weibull_min_ppf(
-        ppf, shape_Right, loc_Right, scale_Right, y_scale_Right, y_bias_Right)
-
-    # Draw PSE Vertical and Horizontal Lines:
-    plt.axvline(x=PSE_Right, color='red', lw=1, linestyle=':')
-
-    # Goodness of Weibull fit statistics (R-squared):
-    ss_res_Right = np.sum((y_Right-cdf_Right)**2)
-    ss_tot_Right = np.sum((y_Right-np.mean(y_Right))**2)
-    r_square_Right = 1-(ss_res_Right/ss_tot_Right)
-
-    # Left ///////////////////////////////////////////////////////////////
-
-    # Fit Weibull distribution:
-    shape_Left, loc_Left, scale_Left = weibull_min.fit(x_log)
-
-    # Use non-linear least squares to fit weibull_min_cdf function, to x_log
-    fit, Temp = curve_fit(weibull_min_cdf, x_log, y_Left, p0=[
-                          shape_Left, loc_Left, scale_Left, y_scale_guess, y_bias_guess], maxfev=100000, check_finite=False)
-
-    shape_Left = fit[0]
-    loc_Left = fit[1]
-    scale_Left = fit[2]
-    y_scale_Left = fit[3]
-    y_bias_Left = fit[4]
-
-    cdf_Left = weibull_min_cdf(
-        x_log, shape_Left, loc_Left, scale_Left, y_scale_Left, y_bias_Left)
-    cdf_Left_Plot = weibull_min_cdf(
-        cdf_Plot_x, shape_Left, loc_Left, scale_Left, y_scale_Left, y_bias_Left)
-
-    # Draw Weibull Curves:
-    plt.plot(cdf_Plot_x, cdf_Left_Plot, 'blue',
-             lw=1, label='Left Weibull CDF')
-
-    # Define direction of bias:
-    PSE_Left = weibull_min_ppf(
-        ppf, shape_Left, loc_Left, scale_Left, y_scale_Left, y_bias_Left)
-
-    # Draw PSE Vertical and Horizontal Lines:
-    plt.axvline(x=PSE_Left, color='blue', lw=1, linestyle=':')
-
-    # Goodness of Weibull fit statistics (R-squared):
-    ss_res_Left = np.sum((y_Left-cdf_Left)**2)
-    ss_tot_Left = np.sum((y_Left-np.mean(y_Left))**2)
-    r_square_Left = 1-(ss_res_Left/ss_tot_Left)
-
-    legend_title = 'Bias= {} Log Contrast'.format(
-        round(PSE_Right - PSE_Left, 3))
-
-    if sub_code in outliers:
-
-        legend_title = 'Outlier\n' + legend_title
-
-    # Plot Guide Box:
-    plt.legend(loc=5, title=legend_title, title_fontsize='x-large',
-               alignment='left', fontsize='medium', edgecolor='pink')
-
-    # Remove top and left frames:
-    plt.gca().spines['top'].set_visible(False)
-    plt.gca().spines['right'].set_visible(False)
-
-    return PSE_Right, r_square_Right, PSE_Left, r_square_Left
-
-# ====================================== main body of code ==================================#
+    except Exception as e:
+        print(f"Error plotting data for {sub_code}: {str(e)}")
+        return None, None, None, None
 
 
-# Define address of resuls and figures
-rds_dir = '/Volumes/jenseno-avtemporal-attention'
-behavioural_bias_dir = 'Projects/subcortical-structures/SubStr-and-behavioral-bias'
-target_resutls_dir = op.join(rds_dir, behavioural_bias_dir,
-                             'programming/MATLAB/main-study/target-orientation-detection/Results')
-deriv_dir = op.join(rds_dir, behavioural_bias_dir,
-                    'derivatives/target_orientation')
-outliers_list_dir = op.join(deriv_dir, 'outliers')
+def fit_and_plot_weibull(ax, x_log, y, cdf_plot_x, color, label):
+    """Helper function to fit and plot Weibull curve."""
+    shape, loc, scale = weibull_min.fit(x_log)
+    fit, _ = curve_fit(weibull_min_cdf, x_log, y,
+                       p0=[shape, loc, scale, y_scale_guess, y_bias_guess],
+                       maxfev=100000, check_finite=False)
 
-subjects = np.arange(1, 33)  # number of subjects
-sub_ids = []
-PSE_lateralisation_indices = []  # PSE lateralisations for all participants
-outliers = []  # outlier participants list
+    cdf = weibull_min_cdf(x_log, *fit)
+    cdf_plot = weibull_min_cdf(cdf_plot_x, *fit)
 
-for sub in subjects:
-    sub_code = f"sub-S{sub+1000}"  # next time used S{sub+1000} (without sub-)
-    file_name = f"sub-S{sub+1000}_ses-01_task-Orientation_Detection_run-01_logfile.csv"
-    fpath = op.join(target_resutls_dir, sub_code, 'ses-01/beh', file_name)
-    savefig_path = op.join(deriv_dir, 'figuresB', sub_code +
-                           '_contrast_psychometric_plot.png')
+    ax.plot(cdf_plot_x, cdf_plot, color, lw=1, label=f'{label} Weibull CDF')
 
-    contrast_Table = Finalysis(fpath)
+    pse = weibull_min_ppf(ppf, *fit)
+    ax.axvline(x=pse, color=color, lw=1, linestyle=':')
 
-    check_for_outlier(contrast_Table, sub_code, outliers)
+    # Calculate R-squared
+    ss_res = np.sum((y - cdf)**2)
+    ss_tot = np.sum((y - np.mean(y))**2)
+    r_squared = 1 - (ss_res/ss_tot)
 
-    PSE_Right, r_square_Right, PSE_Left, r_square_Left = plot_fitted_data(
-        contrast_Table, sub_code)
-    PSE_lateralisation_index = (
-        abs(PSE_Right) - abs(PSE_Left)) / (abs(PSE_Right) + abs(PSE_Left))
-    
-    if sub_code not in outliers:
-        PSE_lateralisation_indices.append(PSE_lateralisation_index)
-        sub_ids.append(sub_code)
+    return pse, r_squared
 
-    plt.title(f"Subject {sub_code} Right PSE = {round(PSE_Right, 3)}, Right r2 = {round(r_square_Right, 3)}, "
-              f"Left PSE = {round(PSE_Left, 3)}, Left r2 = {round(r_square_Left, 3)}", pad=15, fontsize=10, fontweight=200, loc='left')
 
-    plt.tight_layout()   # full screnn plot
-    plt.savefig(savefig_path, dpi=300)
+def process_all_subjects():
+    """Process all subjects in the data directory."""
+    all_pses = []
+    outliers = []
 
-lateralisation_indices_df = pd.DataFrame(PSE_lateralisation_indices, columns=['PSE_lat_idx'], index=sub_ids)
-lateralisation_indices_df.to_csv(op.join(deriv_dir, 'lateralisation_indices',
-                                          'PSE_lateralisation_indices.csv'))
-outliers = pd.DataFrame(outliers, columns=['outlier_participants'])
-outliers.to_csv(op.join(outliers_list_dir,
-                'outlier_participants.csv'), index=False)
+    for item in os.listdir(DATA_DIR):
+        if item.startswith("sub-"):
+            sub_dir = op.join(DATA_DIR, item)
+            for session in os.listdir(sub_dir):
+                if session.startswith("ses-"):
+                    ses_dir = op.join(sub_dir, session)
+                    beh_dir = op.join(ses_dir, "beh")
+                    if op.isdir(beh_dir):
+                        for file in os.listdir(beh_dir):
+                            if file.endswith("_logfile.csv"):
+                                subject_name = item
+                                print(f"\nProcessing: {subject_name}")
+
+                                try:
+                                    # Process single subject
+                                    fpath = op.join(beh_dir, file)
+                                    contrast_table = analyze_data(fpath)
+
+                                    if contrast_table is not None:
+                                        check_for_outlier(
+                                            contrast_table, subject_name, outliers)
+
+                                        # Plot and save results
+                                        pses = plot_fitted_data(
+                                            contrast_table, subject_name, outliers)
+                                        if pses[0] is not None:
+                                            all_pses.append(pses)
+
+                                            # Save the plot
+                                            plt.savefig(op.join(OUTPUT_FOLDER_PATH,
+                                                                f'{subject_name}_psychometric.png'),
+                                                        dpi=300)
+                                        plt.close()
+
+                                except Exception as e:
+                                    print(
+                                        f"Error processing {subject_name}: {str(e)}")
+                                    continue
+
+    return all_pses, outliers
+
+
+if __name__ == "__main__":
+    # Create output directory if it doesn't exist
+    os.makedirs(OUTPUT_FOLDER_PATH, exist_ok=True)
+
+    # Process all subjects
+    all_pses, outliers = process_all_subjects()
+
+    # Save results
+    pse_df = pd.DataFrame(all_pses,
+                          columns=['PSE_Right', 'R2_Right', 'PSE_Left', 'R2_Left'])
+    pse_df.to_csv(op.join(OUTPUT_FOLDER_PATH, 'PSE_values.csv'), index=False)
+
+    outliers_df = pd.DataFrame(outliers, columns=['outlier_participants'])
+    outliers_df.to_csv(
+        op.join(OUTPUT_FOLDER_PATH, 'outliers.csv'), index=False)

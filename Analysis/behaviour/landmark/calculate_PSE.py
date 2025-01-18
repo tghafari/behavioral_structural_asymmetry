@@ -1,265 +1,307 @@
-
-"""
-===============================================
-This code will read the data from the landmark task, calculate the PSE for each
-subject using the Weibull distribution (Figure 3-A)
-Finally, it plots the PSE and bias direction of all subjects in Figure 3-B
-
-Author: S.M.H Ghafari
-Email: m8ghafari@gmail.com
-==============================================  
-"""
-
 import os
 import os.path as op
-import math
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
-from scipy.stats import weibull_min, kstest
+from scipy.stats import weibull_min
 from scipy.optimize import curve_fit
 
-# Obligate pandas to show entire data
-pd.set_option('display.max_rows', None, 'display.max_columns', None)
+# Set up directories
+DATA_DIR = r"E:/Landmark_Data"
+OUTPUT_FOLDER_PATH = r"../../../Results/Beh/Landmark"
+os.makedirs(OUTPUT_FOLDER_PATH, exist_ok=True)
 
-platform = 'mac'
-
-# Define where to read and write the data
-if platform == 'bluebear':
-    jenseno_dir = '/rds/projects/j/jenseno-avtemporal-attention'
-elif platform == 'mac':
-    jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
-
-behavioural_bias_dir = 'Projects/subcortical-structures/SubStr-and-behavioral-bias'
-landmark_resutls_dir = op.join(jenseno_dir, behavioural_bias_dir, 'programming/MATLAB/main-study/landmark-task/Results')
-deriv_dir = op.join(jenseno_dir, behavioural_bias_dir, 'derivatives/landmark/figure3-290424')
-
-subjects = np.arange(1,33) # number of subjects
+# Define Weibull distribution parameters and functions
+Y_SCALE_GUESS, Y_BIAS_GUESS = 1, 0
 
 
-# Define databinning function for figure A
-def DataBinner(column):
-    return round(math.log(column, 0.8))
-
-# Define Weibull distrbituion parameters
-y_scale_guess = 1
-y_bias_guess = 0
-ppf = 0.5
-
-
-# Define Weibull distrbituion function
 def weibull_min_cdf(x_weibull, shape, loc, scale, y_scale, y_bias):
-    y = weibull_min.cdf(x_weibull, shape, loc, scale)
-    # y_scaled = (y * y_scale) + y_bias
-    y_scaled = (y * y_scale_guess) + y_bias_guess
+    y = weibull_min.cdf(x_weibull, 7, loc, scale)
+    y_scaled = (y * Y_SCALE_GUESS) + Y_BIAS_GUESS
     return y_scaled
 
 
 def weibull_min_ppf(ppf, shape, loc, scale, y_scale, y_bias):
-    # ppf_unscaled = (ppf - y_bias) / y_scale
-    ppf_unscaled = (ppf - y_bias_guess) / y_scale_guess
-    return weibull_min.ppf(ppf_unscaled, shape, loc, scale)
+    ppf_unscaled = (ppf - Y_BIAS_GUESS) / Y_SCALE_GUESS
+    return weibull_min.ppf(ppf_unscaled, 7, loc, scale)
 
-# These below lists are used to list calculated bias of each subject. list will be used to plot figure 3-B:
-Left_Bias_list=[]
-Right_Bias_list=[]
-No_Bias_list=[]
 
-# this function plots figure 3A from 'cite sabine's paper'
-def Figure3A(fpath):
-    Data = pd.read_csv(fpath)
+def data_binner(x, use_log):
+    return np.round(x).astype(int) if use_log else np.floor(x / 0.1).astype(int) * 0.1
 
-    # Data binning
-    Data['Bin'] = Data['Shift_Size'].apply(DataBinner)
-    Rightvalues = Data.loc[Data['Shift_Direction'] == 'Right', 'Bin']
-    Rightvaluesmax = Rightvalues.max()+1  # why +1?
-    Leftvalues = Data.loc[Data['Shift_Direction'] == 'Left', 'Bin']
-    Leftvaluesmax = Leftvalues.max()+1
-    Data.loc[Data['Shift_Direction'] == 'Left', 'Bin_Mean'] = Leftvaluesmax - \
-        Data.loc[Data['Shift_Direction'] == 'Left', 'Bin']
-    Data.loc[Data['Shift_Direction'] == 'Right', 'Bin_Mean'] = Rightvaluesmax - \
-        Data.loc[Data['Shift_Direction'] == 'Right', 'Bin']
-    Data['Bin_Mean'] = np.where(
-        Data['Shift_Direction'] == 'Left', Data['Bin_Mean'] * -1, Data['Bin_Mean'])
-    # Define "Biggerright" column:
-    Data['Biggerright'] = 0
-    Data['Biggerright'] = np.where((Data['Block_Question'] == 'Longer') & (
-        Data['Answer'] == 'Right'), Data['Biggerright'] + 1, Data['Biggerright'])
-    Data['Biggerright'] = np.where((Data['Block_Question'] == 'Shorter') & (
-        Data['Answer'] == 'Left'), Data['Biggerright'] + 1, Data['Biggerright'])
-    # Draw table of binned data:
-    Table = pd.DataFrame()
-    Table['Bin_Size'] = Data.groupby(
-        ['Block_Number', 'Bin', 'Bin_Mean', 'Shift_Direction'])['Biggerright'].count()
-    Table['Rights'] = Data.groupby(
-        ['Block_Number', 'Bin', 'Bin_Mean', 'Shift_Direction'])['Biggerright'].sum()
-    Table['Proportion_Reported_Right'] = Data.groupby(
-        ['Block_Number', 'Bin', 'Bin_Mean', 'Shift_Direction'])['Biggerright'].mean()
-    # Plot scatter plot:
-    x = Table.index.get_level_values('Bin_Mean')
-    y = Table['Proportion_Reported_Right'].tolist()
-    numberofpoints = len(x)
-    plt.figure(figsize=(8, 8))
-    plt.scatter(x, y, marker='x', color='red', s=10)
-    # Define axis lables:
-    plt.xlabel('Horizontal Line Offset (Log of Deg. Vis. Ang.)',
-               fontsize='x-large', fontweight=1000)
-    plt.ylabel('Proportion Reported Right',
-               fontsize='x-large', fontweight=1000)
-    # Define axis start and end points:
-    plt.xlim(Leftvaluesmax*-1 - 1, Rightvaluesmax + 1)
-    plt.ylim(0, 1.1)
-    # Define axis ticks:
-    xaxisticks = range(Leftvaluesmax*-1, Rightvaluesmax+1, 1)
-    xaxislables = ['-0.8\u00b0']
-    for i in range(Leftvaluesmax*-1+1, Rightvaluesmax):
-        if i == 0:
-            xaxislables.append('0')
-        else:
-            xaxislables.append('')
-    xaxislables.append('+0.8\u00b0')
-    plt.xticks(ticks=xaxisticks, labels=xaxislables)
-    plt.yticks([0, 0.5, 1])
-    # Fit Weibull distribution:
-    x_weibull = np.linspace(min(x), max(x), numberofpoints)
+
+def prepare_data(data, bin_data=True, use_log=True):
+
+    data['Shift_Size_Signed'] = np.where(
+        data['Shift_Direction'] == 'Left', -data['Shift_Size'], data['Shift_Size'])
+
+    if use_log:
+
+        global max_x_log
+
+        max_x_log = np.round(
+            np.max(np.log(np.abs(data['Shift_Size_Signed'])) / np.log(0.8)))
+
+        data['x_log'] = np.sign(data['Shift_Size_Signed']) * \
+            (max_x_log -
+             np.log(np.abs(data['Shift_Size_Signed'])) / np.log(0.8))
+        x_values = 'x_log'
+    else:
+        x_values = 'Shift_Size_Signed'
+
+    if bin_data:
+        data['Bin'] = data[x_values].apply(lambda x: data_binner(x, use_log))
+        x_values = 'Bin'
+
+    data['Biggerright'] = ((data['Block_Question'] == 'Longer') & (data['Answer'] == 'Right')) | \
+                          ((data['Block_Question'] == 'Shorter')
+                           & (data['Answer'] == 'Left'))
+
+    table = data.groupby([x_values])['Biggerright'].agg(
+        ['count', 'sum', 'mean']).reset_index()
+    table.columns = [x_values, 'Bin_Size',
+                     'Rights', 'Proportion_Reported_Right']
+
+    return table, x_values
+
+
+def fit_weibull(x, y):
+    x_weibull = np.linspace(min(x), max(x), len(x))
     shape_x, loc_x, scale_x = weibull_min.fit(x_weibull)
-    fit, temp = curve_fit(weibull_min_cdf, x, y, p0=[
-                          shape_x, loc_x, scale_x, y_scale_guess, y_bias_guess], maxfev=10000, check_finite=False)
-    shape_x = fit[0]
-    loc_x = fit[1]
-    scale_x = fit[2]
-    y_scale = fit[3]
-    y_bias = fit[4]
-    cdf_y = weibull_min_cdf(x_weibull, shape_x, loc_x,
-                            scale_x, y_scale, y_bias)
-    # Define direction of bias:
-    PSE = weibull_min_ppf(0.5, shape_x, loc_x, scale_x, y_scale, y_bias)
-    PSE_floored = math.floor(PSE)
-    if PSE_floored < 0:
-        Bias = 'Lefward Bias'
-        PSE_floored = Leftvaluesmax + PSE_floored
-        Left_Bias_list.append(PSE_floored)
-    elif PSE_floored > 0:
-        Bias = 'Righward Bias'
-        PSE_floored = Rightvaluesmax - PSE_floored + 1
-        Right_Bias_list.append(PSE_floored)
+    fit, _ = curve_fit(weibull_min_cdf, x, y, p0=[shape_x, loc_x, scale_x, Y_SCALE_GUESS, Y_BIAS_GUESS],
+                       maxfev=100000, check_finite=False)
+    cdf_y = weibull_min_cdf(x_weibull, *fit)
+    pse = weibull_min_ppf(0.5, *fit)
+    r2 = r2_score(y, cdf_y)
+    return x_weibull, cdf_y, pse, r2
+
+
+def plot_analysis(ax, x, y, x_weibull, cdf_y, pse, r2, title, x_label, use_log):
+    ax.scatter(x, y, marker='x', color='red', s=10)
+    ax.plot(x_weibull, cdf_y, 'blue', lw=1.3, label='Weibull CDF')
+    ax.axvline(x=0, color='black', linestyle='--', dashes=(5, 3),
+               lw=1.75, label='Veridical Midpoint')
+    ax.axvline(x=pse, color='grey', lw=1, linestyle=':')
+    ax.axhline(y=0.5, color='grey', lw=1, linestyle=':', label='PSE')
+
+    ax.set_xlabel(x_label, fontsize='small', fontweight='bold')
+    ax.set_ylabel('Proportion Reported Right',
+                  fontsize='small', fontweight='bold')
+    ax.set_ylim(-0.05, 1.05)
+    ax.set_yticks([0, 0.5, 1])
+
+    if use_log:
+
+        ax.set_xlim(-max_x_log - 0.1, max_x_log + 0.1)
+        xaxisticks = [-max_x_log, 0, max_x_log]
+        ax.set_xticks(xaxisticks)
+
     else:
-        Bias = 'No Bias'
-        No_Bias_list.append(PSE_floored)
-    # Draw Weibull Curves:
-    plt.plot(x_weibull, cdf_y, 'blue', lw=1.3, label='Weibull CDF')
-    # Draw "veridical Midponit" line:
-    plt.axvline(x=0, color='black', linestyle='--', dashes=(5, 3),
-                lw=1.75, label='Veridical Midponit')
-    # Draw PSE Vertical and Horizontal Lines:
-    plt.axvline(x=PSE, color='grey', lw=1, linestyle=':')
-    plt.axhline(y=0.5, color='grey', lw=1, linestyle=':', label='PSE')
-    # Find the Best Location for Plot Guide Box:
-    if PSE > 0:
-        PSE = Rightvaluesmax - PSE
-        plt.legend(loc=2, title='PSE={} VA{} ({})'.format(round(0.8**PSE, 4), chr(176), Bias), title_fontsize='x-large',
-               alignment='left', fontsize='large')
-    else:
-        PSE = Leftvaluesmax + PSE
-        plt.legend(loc=2, title='PSE=-{} VA{} ({})'.format(round(0.8**PSE, 4), chr(176), Bias), title_fontsize='x-large',
-              alignment='left', fontsize='large')
-    # Goodness of Weibull fit statistics (R-squared):
-    Table_r2 = Table.sort_values(by=['Bin_Mean'])
-    y_true_r2 = Table_r2['Proportion_Reported_Right'].tolist()
-    r2 = r2_score(y_true=y_true_r2, y_pred=cdf_y)
-    # Remove top and left frames:
-    plt.gca().spines['top'].set_visible(False)
-    plt.gca().spines['right'].set_visible(False)
-    
-    return r2, Left_Bias_list, Right_Bias_list, No_Bias_list
 
-# Plot figure 3-A for all subjects:
-for sub in subjects:
-    sub_code = f"sub-S{sub+1000}"
-    file_name = f"sub-S{sub+1000}_ses-01_task-Landmark_run-01_logfile.csv"
-    savefig_path = op.join(deriv_dir, sub_code + '_figure3A2.png')
-    fpath = op.join(landmark_resutls_dir, sub_code, 'ses-01/beh', file_name)
-    # plot figure 3A
-    r2, left_bias_list, right_bias_list, no_bias_list = Figure3A(fpath)
-    # Define plot(s) title:
-    plt.title('Figure 3-A. Subject %s _ r2 = %s' % (sub_code, r2), pad=10, fontsize=10, fontweight=100, loc='left')
-    # Full screnn plot:
-    plt.tight_layout()
-    # Save figure 3-A plot(s):
-    plt.savefig(savefig_path, dpi=300)
-    plt.close()
-PSE_Data = pd.DataFrame()
-PSE_list = right_bias_list + left_bias_list + no_bias_list
-PSE_Data['PSE'] = PSE_list
+        ax.set_xlim(-1.1, 1.1)
+        xaxisticks = [-1, -0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8, 1]
+        ax.set_xticks(xaxisticks)
 
-# Calculate mean and standard deviation
-mean_PSE = np.mean(PSE_Data['PSE'])
-std_PSE = np.std(PSE_Data['PSE'])
+    bias = 'Leftward Bias' if pse < 0 else 'Rightward Bias' if pse > 0 else 'No Bias'
+    ax.legend(loc=2, title=f'PSE={abs(pse):.3f}° ({bias})\nR2={r2:.3f}',
+              title_fontsize='small', fontsize='small')
 
-# Define boolean mask to identify elements to keep (non outliers)
-mask = (PSE_Data['PSE'] >= mean_PSE - 2 * std_PSE) & (PSE_Data['PSE'] <= mean_PSE + 2 * std_PSE)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.set_title(title, fontsize='small', fontweight='bold', loc='left')
 
-# Remove outliers outside the range of mean ± 2 * std
-outliers = PSE_Data['PSE'][~mask].to_numpy()
-PSE_Data = PSE_Data[mask]
 
-# Filter right_list and left_list using the mask
-right_list = [x for x in right_bias_list if x not in outliers]
-left_list= [x for x in left_bias_list if x not in outliers]
+def plot_staircase(data, output_folder, subject_name):
+    unique_lengths = data['Line_Lenght'].unique()
+    unique_blocks = data['Block_Number'].unique()
 
-# Divide left and right bias based on PSEs
-right_bias_max = max(right_list)
-left_bias_max = max(left_list)
-bias_list=[]
-for r in right_list:
-    right = right_bias_max - r + 1
-    bias_list.append(right)
-for l in left_list:
-    left = l - left_bias_max - 1
-    bias_list.append(left)
-bias_list = bias_list + no_bias_list
-Bias_Data = pd.DataFrame()
-Bias_Data['PSE_bin'] = bias_list
+    fig, axs = plt.subplots(len(unique_lengths), len(
+        unique_blocks), figsize=(6*len(unique_blocks), 5*len(unique_lengths)))
+    fig.suptitle(
+        f'Staircase Process - {subject_name}', fontsize=22, fontweight='bold')
 
-# Plot figure 3-B:
-Bias_Table=pd.DataFrame()
-Bias_Table['Number_Subjets'] = Bias_Data.groupby(['PSE_bin'])['PSE_bin'].count()
-Bias_x = Bias_Table.index.get_level_values('PSE_bin')
-Bias_y = Bias_Table['Number_Subjets']
-plt.figure(figsize=(8, 8))
-plt.bar(Bias_x, Bias_y, width=0.5, color='black')
-# Define axis lables:
-plt.xlabel('Spatial Bias (Log of Deg. Vis. Ang.)',
-           fontsize='x-large', fontweight=1000)
-plt.ylabel('# Subjets', fontsize='x-large', fontweight=1000)
-# Define axis start and end points
-plt.xlim(left_bias_max*-1-2,right_bias_max+1)
-plt.ylim(0,10)
-# Define axis ticks
-xaxisticks_Bias = np.arange(left_bias_max*-1-1,right_bias_max+1)
-xaxislables_Bias = ['-0.8\u00b0']
-for i in np.arange(left_bias_max*-1,right_bias_max):
-    if i == 0:
-        xaxislables_Bias.append('0')
-    else:
-        xaxislables_Bias.append('')
-xaxislables_Bias.append('+0.8\u00b0')
-plt.xticks(ticks=xaxisticks_Bias, labels=xaxislables_Bias)
-plt.yticks(np.arange(0, 10, 1))
-# Draw "veridical Midponit" line:
-plt.axvline(x=0, color='black', linestyle='--', dashes=(5, 3),
-            lw=1.75, label='Veridical Midponit')
-# Add bias side text:
-plt.text(-4, 12, 'LVF Bias', fontsize=18)
-plt.text(4, 12, 'RVF Bias', fontsize=18)
-# Define plot(s) title:
-plt.title('Figure 3-B', pad=15, fontsize=10, fontweight=200, loc='left')
-# Remove top and left frames:
-plt.gca().spines['top'].set_visible(False)
-plt.gca().spines['right'].set_visible(False)
-# Full screnn plot:
-plt.tight_layout()
-# Save figure 3-B plot:
-savefig_path_3B = op.join(deriv_dir, 'figure3B.png')
-plt.savefig(savefig_path_3B, dpi=300)
+    color_scheme = {'Left': 'blue', 'Right': 'red'}
+    color_correct = 'limegreen'
+    color_incorrect = 'red'
+    color_missing = 'gray'
+
+    for length_idx, length in enumerate(unique_lengths):
+        for block_idx, block in enumerate(unique_blocks):
+            ax = axs[length_idx, block_idx] if len(unique_lengths) > 1 and len(
+                unique_blocks) > 1 else axs[max(length_idx, block_idx)]
+
+            block_length_data = data[(data['Line_Lenght'] == length) & (
+                data['Block_Number'] == block)]
+
+            if not block_length_data.empty:
+                for direction in ['Left', 'Right']:
+                    direction_data = block_length_data[block_length_data['Shift_Direction'] == direction]
+                    trial_index = range(1, len(direction_data) + 1)
+
+                    ax.plot(trial_index, direction_data['Shift_Size'], color=color_scheme[direction],
+                            linewidth=2, alpha=0.7, label=f'{direction} Shift')
+
+                    correct_trials = (
+                        ((direction_data['Block_Question'] == 'Longer') & (direction_data['Shift_Direction'] == 'Right') & (direction_data['Answer'] == 'Right')) |
+                        ((direction_data['Block_Question'] == 'Longer') & (direction_data['Shift_Direction'] == 'Left') & (direction_data['Answer'] == 'Left')) |
+                        ((direction_data['Block_Question'] == 'Shorter') & (direction_data['Shift_Direction'] == 'Right') & (direction_data['Answer'] == 'Left')) |
+                        ((direction_data['Block_Question'] == 'Shorter') & (
+                            direction_data['Shift_Direction'] == 'Left') & (direction_data['Answer'] == 'Right'))
+                    )
+
+                    ax.scatter(np.array(trial_index)[correct_trials], direction_data['Shift_Size'][correct_trials],
+                               c=color_correct, s=40, edgecolors='k', zorder=3)
+
+                    incorrect_trials = ~correct_trials & (
+                        direction_data['State'] == 1)
+                    ax.scatter(np.array(trial_index)[incorrect_trials], direction_data['Shift_Size'][incorrect_trials],
+                               c=color_incorrect, s=40, edgecolors='k', zorder=3)
+
+                    missing_trials = direction_data['State'] == 3
+                    ax.scatter(np.array(trial_index)[missing_trials], direction_data['Shift_Size'][missing_trials],
+                               c=color_missing, s=40, edgecolors='k', zorder=3)
+
+            ax.set_ylim(0, data['Shift_Size'].max() * 1.1)
+            ax.set_xlim(0, len(block_length_data) // 2 + 1)
+            ax.grid(alpha=0.2)
+
+            if length_idx == len(unique_lengths) - 1:
+                ax.set_xlabel('Trial Index', fontweight='bold')
+            if block_idx == 0:
+                ax.set_ylabel('Shift Size', fontweight='bold')
+
+            ax.set_title(f'Length: {length}, Block: {block}',
+                         fontsize=16, fontweight='bold')
+
+    custom_lines = [plt.Line2D([0], [0], color=color_scheme['Left'], lw=2),
+                    plt.Line2D([0], [0], color=color_scheme['Right'], lw=2),
+                    plt.Line2D([0], [0], color=color_correct,
+                               marker='o', linestyle='None'),
+                    plt.Line2D([0], [0], color=color_incorrect,
+                               marker='o', linestyle='None'),
+                    plt.Line2D([0], [0], color=color_missing, marker='o', linestyle='None')]
+    fig.legend(custom_lines, ['Left Shift', 'Right Shift', 'Correct', 'Incorrect', 'Missing'],
+               loc='lower center', ncol=5, bbox_to_anchor=(0.5, 0))
+
+    plt.tight_layout(pad=4)
+    plt.subplots_adjust(top=0.95, bottom=0.05)
+
+    savefig_path = op.join(output_folder, f'{subject_name}_Staircase.png')
+    fig.savefig(savefig_path, dpi=200)
+    plt.close(fig)
+
+
+def analyze_subject(fpath):
+    data = pd.read_csv(fpath)
+    subject_name = op.basename(fpath).removesuffix('_logfile.csv')
+
+    fig, axs = plt.subplots(2, 2, figsize=(13, 13))
+    pses = []
+
+    for i, (bin_data, use_log) in enumerate([(True, True), (True, False), (False, False), (False, True)]):
+        table, x_values = prepare_data(data, bin_data, use_log)
+        x = table[x_values]
+        y = table['Proportion_Reported_Right']
+
+        x_weibull, cdf_y, pse, r2 = fit_weibull(x, y)
+
+        title = f"{'Binned' if bin_data else 'Unbinned'}, {'Log' if use_log else 'Linear'} Scale"
+        x_label = f"Horizontal Line Offset ({'Log of ' if use_log else ''}Deg. Vis. Ang.)"
+
+        plot_analysis(axs[i//2, i % 2], x, y, x_weibull,
+                      cdf_y, pse, r2, title, x_label, use_log)
+
+        if use_log:
+            pse_raw = np.sign(pse) * (0.8 ** (max_x_log - np.abs(pse)))
+            pses.append(pse_raw)
+        else:
+            pses.append(pse)
+
+    fig.suptitle(
+        f'Figure 3-A. Subject {subject_name}', fontsize='large', fontweight='bold')
+    plt.tight_layout(pad=2.5)
+
+    savefig_path = op.join(OUTPUT_FOLDER_PATH, f"{subject_name}_figure3A.png")
+    fig.savefig(savefig_path, dpi=200)
+    plt.close(fig)
+
+    plot_staircase(data, OUTPUT_FOLDER_PATH, subject_name)
+
+    return pses
+
+
+def process_all_subjects():
+    all_pses = []
+    for item in os.listdir(DATA_DIR):
+        if item.startswith("sub-"):
+            sub_dir = op.join(DATA_DIR, item)
+            for session in os.listdir(sub_dir):
+                if session.startswith("ses-"):
+                    ses_dir = op.join(sub_dir, session)
+                    beh_dir = op.join(ses_dir, "beh")
+                    if op.isdir(beh_dir):
+                        for file in os.listdir(beh_dir):
+                            if file.endswith("_logfile.csv"):
+                                print(f"\nProcessing File: {file}")
+                                fpath = op.join(beh_dir, file)
+                                pses = analyze_subject(fpath)
+                                all_pses.append(pses)
+    return all_pses
+
+
+def plot_figure_3b(all_pses):
+    pse_data = pd.DataFrame(all_pses, columns=[
+                            'Binned_Log', 'Binned_Linear', 'Unbinned_Linear', 'Unbinned_Log'])
+
+    # fig, axs = plt.subplots(2, 2, figsize=(16, 16))
+    # fig.suptitle('Figure 3-B: Distribution of PSE Values',
+    #              fontsize='x-large', fontweight='bold')
+
+    # for i, column in enumerate(pse_data.columns):
+    #     pse_values = pse_data[column]
+    #     bins = np.linspace(-0.8, 0.8, 17)
+
+    #     bias_data = pd.cut(pse_values, bins=bins)
+    #     bias_table = bias_data.value_counts().sort_index()
+
+    #     ax = axs[i//2, i % 2]
+    #     bin_midpoints = (bins[:-1] + bins[1:]) / 2
+
+    #     ax.bar(bin_midpoints, bias_table.values, width=0.08,
+    #            color='skyblue', edgecolor='navy')
+
+    #     ax.set_xlabel('Spatial Bias (Deg. Vis. Ang.)',
+    #                   fontsize='medium', fontweight='bold')
+    #     ax.set_ylabel('Number of Subjects',
+    #                   fontsize='medium', fontweight='bold')
+    #     ax.set_xlim(-0.8, 0.8)
+    #     ax.set_xticks([-0.8, -0.4, 0, 0.4, 0.8])
+    #     ax.set_xticklabels(['-0.8°', '-0.4°', '0°', '+0.4°', '+0.8°'])
+    #     ax.set_ylim(0, max(bias_table.values) + 1)
+
+    #     ax.axvline(x=0, color='red', linestyle='--',
+    #                lw=1.5, label='Veridical Midpoint')
+    #     ax.text(-0.75, ax.get_ylim()[1]*0.95,
+    #             'LVF Bias', fontsize=10, color='darkgreen')
+    #     ax.text(0.55, ax.get_ylim()[1]*0.95,
+    #             'RVF Bias', fontsize=10, color='darkgreen')
+
+    #     ax.spines['top'].set_visible(False)
+    #     ax.spines['right'].set_visible(False)
+    #     ax.set_title(column.replace('_', ' '),
+    #                  fontsize='large', fontweight='bold')
+
+    #     ax.legend(loc='upper left')
+
+    # plt.tight_layout()
+    # savefig_path_3b = op.join(OUTPUT_FOLDER_PATH, 'figure3B.png')
+    # plt.savefig(savefig_path_3b, dpi=300)
+    # plt.close(fig)
+
+    pse_data.to_csv(op.join(OUTPUT_FOLDER_PATH, 'PSE_values.csv'), index=False)
+
+
+if __name__ == "__main__":
+    all_pses = process_all_subjects()
+    plot_figure_3b(all_pses)

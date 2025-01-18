@@ -88,7 +88,7 @@ def init_params(eye_data, participant_code, fs, eye):
 
 
 def main():
-    data_dir = r"../../Results/EyeTracking"
+    data_dir = r"../../Results/EyeTracking/Landmark"
     output_folder_path = data_dir
 
     os.makedirs(output_folder_path, exist_ok=True)

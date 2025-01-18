@@ -7,8 +7,8 @@ from scipy.stats import circmean, circstd
 import copy
 
 # Set up directories
-DATA_DIR = r"../../Results/EyeTracking/Landmark"
-OUTPUT_FOLDER_PATH = r"../../Results/EyeTracking/Landmark/Microsaccade_Analysis"
+DATA_DIR =  r"../../../Results/EyeTracking/Target"
+OUTPUT_FOLDER_PATH =  r"../../../Results/EyeTracking/Target/Microsaccade_Analysis"
 
 os.makedirs(OUTPUT_FOLDER_PATH, exist_ok=True)
 
@@ -48,7 +48,7 @@ def create_figure_1(data, file_name):
     ax2 = fig.add_subplot(432, projection='polar')
     palette = sns.color_palette("Set1")
     color_map = {'Left': palette[0], 'Right': palette[1]}
-    colors = data['Stim_Direction'].map(color_map)
+    colors = data['Cue_Direction'].map(color_map)
     ax2.scatter(np.deg2rad(data['Direction']),
                 data['Total_Amplitude'], c=colors, alpha=0.5, s=8)
     ax2.set_theta_zero_location('E')
@@ -73,12 +73,12 @@ def create_figure_1(data, file_name):
     # Mean amplitude by stim direction
     ax4 = fig.add_subplot(434)
     stim_direction_amplitude = data.groupby(
-        'Stim_Direction')['Total_Amplitude'].agg(['mean', 'std'])
+        'Cue_Direction')['Total_Amplitude'].agg(['mean', 'std'])
     stim_direction_amplitude['mean'].plot(
         kind='bar', yerr=stim_direction_amplitude['std'], ax=ax4, capsize=5)
-    ax4.set_xlabel('Stim Direction')
+    ax4.set_xlabel('Cue Direction')
     ax4.set_ylabel('Mean Amplitude')
-    ax4.set_title('Mean Amplitude by Stim Direction')
+    ax4.set_title('Mean Amplitude by Cue Direction')
 
     # Distance to fixation in polar coordinates
     ax6 = fig.add_subplot(436, projection='polar')
@@ -107,13 +107,13 @@ def create_figure_1(data, file_name):
 
     # Mean distance to fixation by stim direction
     ax8 = fig.add_subplot(438)
-    stim_direction_distance = data.groupby('Stim_Direction')[
+    stim_direction_distance = data.groupby('Cue_Direction')[
         'Distance_To_Fixation'].agg(['mean', 'std'])
     stim_direction_distance['mean'].plot(
         kind='bar', yerr=stim_direction_distance['std'], ax=ax8, capsize=5)
-    ax8.set_xlabel('Stim Direction')
+    ax8.set_xlabel('Cue Direction')
     ax8.set_ylabel('Mean Distance to Fixation')
-    ax8.set_title('Mean Distance to Fixation by Stim Direction')
+    ax8.set_title('Mean Distance to Fixation by Cue Direction')
 
     # Absolute distance to fixation in polar coordinates
     ax9 = fig.add_subplot(439, projection='polar')
@@ -134,35 +134,34 @@ def create_figure_1(data, file_name):
     return fig
 
 
-def create_figure_2_stim_direction(data, file_name):
-    unique_stim_directions = sorted(data['Stim_Direction'].unique())
-    unique_block_types = ['Shorter', 'Longer']
+def create_figure_2_cue_direction(data, file_name):
+    unique_stim_directions = sorted(data['Cue_Direction'].unique())
+    # unique_block_types = ['Shorter', 'Longer']
 
     fig, axs = plt.subplots(2, 4, figsize=(
         20, 10), subplot_kw=dict(projection='polar'))
-    fig.suptitle(f"Microsaccade Analysis by Stim Direction and Block Type - {file_name}",
+    fig.suptitle(f"Microsaccade Analysis by Cue Direction - {file_name}",
                  fontsize=22, fontweight='bold', y=1.05)
 
     for i, stim_direction in enumerate(unique_stim_directions):
-        for j, block_type in enumerate(unique_block_types):
-            filtered_data = data[(data['Stim_Direction'] == stim_direction) &
-                                 (data['Block_Question'] == block_type)]
+        
+            filtered_data = data[(data['Cue_Direction'] == stim_direction)]
 
-            ax = axs[i, j*2]
+            ax = axs[i]
             direction_rad = np.deg2rad(filtered_data['Direction'])
             ax.hist(direction_rad, bins=32, range=(0, 2*np.pi))
             ax.set_theta_zero_location('E')
             ax.set_theta_direction(1)
             ax.set_title(
-                f'Direction Distribution\n(Stim: {stim_direction}, Block: {block_type})')
+                f'Direction Distribution\n(Stim: {stim_direction}')
 
-            ax = axs[i, j*2+1]
+            ax = axs[i]
             ax.scatter(np.deg2rad(filtered_data['Direction']), filtered_data['Total_Amplitude'],
                        alpha=0.5, s=6)
             ax.set_theta_zero_location('E')
             ax.set_theta_direction(1)
             ax.set_title(
-                f'Microsaccades\n(Stim: {stim_direction}, Block: {block_type})')
+                f'Microsaccades\n(Stim: {stim_direction}')
 
     plt.tight_layout(pad=4.0)
     fig.subplots_adjust(top=0.92, bottom=0.05, left=0.05, right=0.95)
@@ -232,11 +231,11 @@ def process_file(file_path, output_folder):
                  dpi=300, bbox_inches='tight', pad_inches=0.55)
     plt.close(fig1)
 
-    fig2_stim_direction = create_figure_2_stim_direction(data, base_name)
-    output_file_2_stim_direction = f"{base_name}_Microsaccade_Analysis_StimDirection_BlockType.png"
-    fig2_stim_direction.savefig(os.path.join(output_folder, output_file_2_stim_direction),
-                                dpi=200, bbox_inches='tight', pad_inches=0.55)
-    plt.close(fig2_stim_direction)
+    # fig2_stim_direction = create_figure_2_cue_direction(data, base_name)
+    # output_file_2_stim_direction = f"{base_name}_Microsaccade_Analysis_CueDirection.png"
+    # fig2_stim_direction.savefig(os.path.join(output_folder, output_file_2_stim_direction),
+    #                            dpi=200, bbox_inches='tight', pad_inches=0.55)
+    # plt.close(fig2_stim_direction)
 
     fig3 = create_figure_3(data, base_name)
     if fig3:
@@ -264,12 +263,12 @@ def main():
                      dpi=300, bbox_inches='tight', pad_inches=0.55)
     plt.close(avg_fig1)
 
-    avg_fig2_stim_direction = create_figure_2_stim_direction(
-        all_data, f"Landmark - All_Data - {count} Subject(s)")
-    avg_output_file_2_stim_direction = "All_Microsaccade_Analysis_StimDirection_BlockType.png"
-    avg_fig2_stim_direction.savefig(os.path.join(OUTPUT_FOLDER_PATH, avg_output_file_2_stim_direction),
-                                    dpi=200, bbox_inches='tight', pad_inches=0.55)
-    plt.close(avg_fig2_stim_direction)
+    # avg_fig2_stim_direction = create_figure_2_cue_direction(
+    #     all_data, f"Landmark - All_Data - {count} Subject(s)")
+    # avg_output_file_2_stim_direction = "All_Microsaccade_Analysis_StimDirection_BlockType.png"
+    # avg_fig2_stim_direction.savefig(os.path.join(OUTPUT_FOLDER_PATH, avg_output_file_2_stim_direction),
+    #                                 dpi=200, bbox_inches='tight', pad_inches=0.55)
+    # plt.close(avg_fig2_stim_direction)
 
     avg_fig3 = create_figure_3(
         all_data, f"Landmark - All_Data - {count} Subject(s)")

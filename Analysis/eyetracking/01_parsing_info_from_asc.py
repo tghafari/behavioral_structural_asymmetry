@@ -162,8 +162,8 @@ def parse_eyelink_asc(eyetracking_asc_file):
 
 
 def main():
-    data_dir = r"../../Landmark_Data"
-    output_folder_path = r"../../Results/EyeTracking"
+    data_dir = r"E:/Landmark_Data"
+    output_folder_path = r"../../Results/EyeTracking/Landmark"
 
     os.makedirs(output_folder_path, exist_ok=True)
 
