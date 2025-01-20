@@ -140,7 +140,7 @@ def RemoveBlinks(epoch_data, params):
     return EpochDataNoBlinks, Blinks, BlinkArray.T, epoch_data[1]
 
 
-data_dir = r"../../Results/EyeTracking"
+data_dir = r"../../Results/EyeTracking/Landmark"
 os.makedirs(data_dir, exist_ok=True)
 
 for item in os.listdir(data_dir):

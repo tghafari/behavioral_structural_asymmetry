@@ -8,14 +8,14 @@ import re
 
 # Set up logging
 logging.basicConfig(
-    filename=r"../../Results/EyeTracking/Eyetracking_Analysis.log",
+    filename=r"../../../Results/EyeTracking/Target/Eyetracking_Analysis.log",
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
 # Define constants
-DATA_DIR = r"../../Results/EyeTracking/Landmark"
-BEH_DATA_DIR = r"E:/Landmark_Data"
+DATA_DIR = r"../../../Results/EyeTracking/Target"
+BEH_DATA_DIR = r"E:/Target_Data"
 OUTPUT_FOLDER_PATH = DATA_DIR
 TIME_WINDOW = 100  # in milliseconds
 
@@ -83,18 +83,16 @@ def process_eyetracking_data(sub_dir, file, beh_data):
                             microsaccade['gazeOffset_x'],
                             microsaccade['gazeOffset_y'],
                             start_time,
-                            end_time,
-                            beh_epoch_data['Block_Question'] if beh_data is not None else None
-                        ]
+                            end_time]
 
                         clean_data.append(combined_data)
                         last_included_time = start_time
 
     # Create DataFrame and save to CSV
     columns = [
-        'Epoch', 'Direction', 'Total_Amplitude', 'Distance_To_Fixation', 'Stim_Direction',
+        'Epoch', 'Direction', 'Total_Amplitude', 'Distance_To_Fixation', 'Cue_Direction',
         'Epoch_Exclusion', 'GazeOnset_x', 'GazeOnset_y', 'GazeOffset_x', 'GazeOffset_y',
-        'Start_Time', 'End_Time', 'Block_Question'
+        'Start_Time', 'End_Time'
     ]
     clean_data_df = pd.DataFrame(clean_data, columns=columns)
 
