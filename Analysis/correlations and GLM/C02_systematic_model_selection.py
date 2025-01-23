@@ -69,7 +69,7 @@ elif platform == 'mac':
     jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
 
 # Define where to read and write the data
-volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/substr-beh'
+volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/behaviour'
 # op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/collated')
 lat_index_csv = op.join(volume_sheet_dir, 'unified_behavioral_structural_asymmetry_lateralisation_indices_1_45.csv')
 pairplot_figname = op.join(volume_sheet_dir, 'pair_plot')
@@ -158,7 +158,7 @@ for i in range(1, len(all_terms) + 1):
                 'BIC': model.bic,
                 'LogLik': model.llf,
                 'Adj_R2': model.rsquared_adj,
-                'Model': model
+                'Model': model.summary(),
             })
         except Exception as e:
             # Skip combinations that fail (e.g., singular matrices)
