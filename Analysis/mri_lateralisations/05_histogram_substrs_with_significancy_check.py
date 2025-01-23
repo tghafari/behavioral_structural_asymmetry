@@ -113,5 +113,6 @@ for his in range(7):
     ax.tick_params(axis='both', which='both', length=0)
     ax.set_axisbelow(True)
 
+[fig.delaxes(ax) for ax in axs.flatten() if not ax.has_data()]  # remove empty plots
 plt.tight_layout()
 plt.show()
