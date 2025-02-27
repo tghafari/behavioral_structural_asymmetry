@@ -104,7 +104,7 @@ ax.scatter(x, y, alpha=0.7)
 ax.set_xlabel('Landmark_PSE')
 ax.set_ylabel('Target_PSE_Laterality')
 
-# Pearson correlation
+# Spearman correlation
 correlation, p_value = spearmanr(x, y)
 box_props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 ax.text(0.05, 0.95, 
@@ -113,6 +113,78 @@ ax.text(0.05, 0.95,
         fontsize=10, 
         verticalalignment='top',
         bbox=box_props)
+
+# Plot Landmark_PSE vs Landmark_MS
+x = data['Landmark_PSE']
+y = data['Landmark_MS']
+
+valid_idx = ~(x.isna() | y.isna())
+x = x[valid_idx]
+y = y[valid_idx]
+
+
+ax = axs[-1, 1]
+ax.scatter(x, y, alpha=0.7)
+ax.set_xlabel('Landmark_PSE')
+ax.set_ylabel('Landmark_MS')
+
+# Spearman correlation
+correlation, p_value = spearmanr(x, y)
+box_props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+ax.text(0.05, 0.95, 
+        f'r={correlation:.2f}\np={p_value:.3f}', 
+        transform=ax.transAxes, 
+        fontsize=10, 
+        verticalalignment='top',
+        bbox=box_props)
+
+x = data['Target_PSE_Laterality']
+y = data['Target_MS_Laterality']
+
+valid_idx = ~(x.isna() | y.isna())
+x = x[valid_idx]
+y = y[valid_idx]
+
+
+ax = axs[-1, 2]
+ax.scatter(x, y, alpha=0.7)
+ax.set_xlabel('Target_PSE_Laterality')
+ax.set_ylabel('Target_MS_Laterality')
+
+# Spearman correlation
+correlation, p_value = spearmanr(x, y)
+box_props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+ax.text(0.05, 0.95, 
+        f'r={correlation:.2f}\np={p_value:.3f}', 
+        transform=ax.transAxes, 
+        fontsize=10, 
+        verticalalignment='top',
+        bbox=box_props)
+
+# Plot Landmark_MS vs. Target_MS_Laterality
+x = data['Landmark_MS']
+y = data['Target_MS_Laterality']
+
+valid_idx = ~(x.isna() | y.isna())
+x = x[valid_idx]
+y = y[valid_idx]
+
+
+ax = axs[-1, 3]
+ax.scatter(x, y, alpha=0.7)
+ax.set_xlabel('Landmark_MS')
+ax.set_ylabel('Target_MS_Laterality')
+
+# Spearman correlation
+correlation, p_value = spearmanr(x, y)
+box_props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+ax.text(0.05, 0.95, 
+        f'r={correlation:.2f}\np={p_value:.3f}', 
+        transform=ax.transAxes, 
+        fontsize=10, 
+        verticalalignment='top',
+        bbox=box_props)
+
 
 [fig.delaxes(ax) for ax in axs.flatten() if not ax.has_data()]  # remove empty plots
 # Adjust margins and display the plot
