@@ -74,10 +74,10 @@ volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-Un
 lat_index_csv = op.join(volume_sheet_dir, 'unified_behavioral_structural_asymmetry_lateralisation_indices_1_45.csv')
 pairplot_figname = op.join(volume_sheet_dir, 'pair_plot')
 models_fname = op.join(volume_sheet_dir, 'model_results')
-res_figname = op.join(volume_sheet_dir, 'residuals')
-qqplot_figname = op.join(volume_sheet_dir, 'qqplot')
-coefficient_figname = op.join(volume_sheet_dir, 'beta_coefficients')
-regresplot_figname = op.join(volume_sheet_dir, 'partial_regression')
+res_figname = op.join(models_fname, 'residuals')
+qqplot_figname = op.join(models_fname, 'qqplot')
+coefficient_figname = op.join(models_fname, 'beta_coefficients')
+regresplot_figname = op.join(models_fname, 'partial_regression')
 
 report_all_methods = True  # do you want to report best 5 models with all methods?
 plotting = False
@@ -90,12 +90,12 @@ print(data_full.head())
 
 # Step 2: Define dependent and independent variables
 dependent_vars = ['Landmark_PSE', 'Target_PSE_Laterality', 'Landmark_MS', 'Target_MS_Laterality']
-independent_vars = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu']  
+independent_vars = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu', 'Landmark_MS']  
 dependent_var = input(f'which dependent variable to do now? {dependent_vars}\n (Do not add quotation marks!)\n')
 
 print(f'\nRunning models on {dependent_var}')
 # Remove NaNs from dependent variable (but keep rows in the dataset)
-data = data_full.dropna(subset=[dependent_var])
+data = data_full.dropna(subset=[dependent_var] + independent_vars)
 
 # Step 3: Visualize relationships 
 g = sns.pairplot(data[independent_vars + [dependent_var]])
@@ -125,7 +125,9 @@ print("Variance Inflation Factor (VIF):\n", vif)
 # Step 5: Generate interaction terms
 """don't use the create_interaction_terms,
 doesn't make sense to add all possible interaction combinations"""
-interaction_terms = ['Caud*Puta', 'Caud*Pall', 'Pall*Puta', 'Caud*Puta*Pall']  # those interactions that make sense to me
+interaction_terms = ['Caud*Puta', 'Caud*Pall', 'Pall*Puta', 
+                     'Caud*Puta*Pall', 'Thal*Puta', 'Puta*Landmark_MS',
+                     'Thal*Landmark_MS']  # those interactions that make sense to me
 all_terms = independent_vars + interaction_terms  # Include main effects and interactions
 
 # Add interaction terms to the DataFrame
@@ -158,7 +160,8 @@ for i in range(1, len(all_terms) + 1):
                 'BIC': model.bic,
                 'LogLik': model.llf,
                 'Adj_R2': model.rsquared_adj,
-                'Model': model.summary(),
+                'Model_summary': model.summary(),
+                'Model': model,
             })
         except Exception as e:
             # Skip combinations that fail (e.g., singular matrices)
@@ -173,10 +176,11 @@ results_df.to_csv(f'{models_fname}_{dependent_var}.csv')
 # Step 7: Analyze the best model based on AIC
 best_model_row = results_df.iloc[0]
 best_model = best_model_row['Model']
+best_model_summary = best_model_row['Model_summary']
 best_predictors = best_model_row['Predictors']
 
 print("\nBest Model Predictors Based on AIC:", best_predictors)
-print("\nBest Model Summary Base on AIC:\n", best_model.summary())
+print("\nBest Model Summary Base on AIC:\n", best_model_summary)
 
 if report_all_methods:
     # Confirm findings with BIC, Log-Likelihood, and R²
