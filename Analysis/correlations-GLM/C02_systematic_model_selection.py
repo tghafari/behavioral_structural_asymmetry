@@ -81,6 +81,7 @@ res_figname = op.join(models_fname, 'residuals2')
 qqplot_figname = op.join(models_fname, 'qqplot2')
 coefficient_figname = op.join(models_fname, 'beta_coefficients2')
 regresplot_figname = op.join(models_fname, 'partial_regression2')
+mediationplot_figname = op.join(models_fname, 'mediation2')
 
 report_all_methods = True  # do you want to report best 5 models with all methods?
 plotting = False
@@ -149,15 +150,19 @@ for substr in independent_vars:
         print(f'Extracting the indirect effect for {substr} on {dep_vars[dependent_var]}')
         indirect_effect = med_result.loc[med_result['path'] == 'Indirect', 'coef'].values[0]
         indirect_p = med_result.loc[med_result['path'] == 'Indirect', 'pval'].values[0]
+        indirect_se = med_result.loc[med_result['path'] == 'Indirect', 'se'].values[0]  # Extract standard error
+
     except Exception as e:
         print(f"Mediation analysis error for {substr} on {dep_vars[dependent_var]}: {e}")
         indirect_effect = np.nan
         indirect_p = np.nan
+        indirect_se = np.nan  # Handle missing SE values
     
     mediation_results[dependent_var].append({
         'Subcortical': substr,
         'Indirect_Effect': indirect_effect,
-        'p_value': indirect_p
+        'p_value': indirect_p,
+        'SE': indirect_se  # Store standard error in results
     })
 
 # Convert results to DataFrames for plotting
@@ -240,8 +245,8 @@ if plotting:
         
     #################################### PLOTTING #############################################
     y_pred = best_model.predict(sm.add_constant(data[list(best_predictors)]))
-    residuals = data[dependent_var] - y_pred  # more complicated way of doing residuals=best_model.resid
-
+    residuals = data[dep_vars[dependent_var]] - y_pred  # more complicated way of doing residuals=best_model.resid
+    print('Plotting...')
     # --- Scatter Plot for Residuals ---
     plt.figure(figsize=(10, 6))
     sns.scatterplot(x=y_pred, y=residuals)
@@ -293,11 +298,17 @@ if plotting:
 
     # --- Mediation Analysis Results ---
     # Bar plot for indirect effects for Target behavior
+    # Convert SE column to NumPy array
+    y_errors = med_df['SE'].values  # Ensure it's a 1D NumPy array
+
+    # --- Mediation Analysis Results ---
     plt.figure(figsize=(10, 6))
-    sns.barplot(data=med_df, x='Subcortical', y='Indirect_Effect', palette="viridis")
+    sns.barplot(data=med_df, x='Subcortical', y='Indirect_Effect', palette="viridis", errorbar=None)  # Disable automatic error bars
+    # Manually add error bars
+    plt.errorbar(x=range(len(med_df)), y=med_df['Indirect_Effect'], yerr=y_errors, fmt='none', capsize=5, color='black')
     plt.title(f'Mediation Analysis: Indirect Effects {dependent_var}', fontsize=16)
     for index, row in med_df.iterrows():
         plt.text(index, row['Indirect_Effect'], f"p = {row['p_value']:.3f}", ha='center', va='bottom', fontsize=12)
     plt.tight_layout()
-    plt.savefig("mediation.png")
+    plt.savefig(f'{mediationplot_figname}_{dependent_var}.png')
     plt.show()
