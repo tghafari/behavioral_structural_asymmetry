@@ -2,22 +2,30 @@
 ===============================================
 C02_systematic_model_selection
 
-this code will do:
-
-GLM Analysis with Interaction Terms and Model Selection
---------------------------------------------------------
-This script performs the following steps:
-1. Loads the data and defines dependent and independent variables.
-2. Visualizes relationships between variables using pairplots.
-3. Checks multicollinearity using Variance Inflation Factor (VIF).
-4. Creates interaction terms between predictors.
-5. Automates GLM fitting for all combinations of predictors 
-    (main effects and interactions).
-6. Selects the best model based on AIC and confirms with BIC, 
-    log-likelihood, and adjusted R².
-7. Visualizes results, including:
-   - Bar plot of beta coefficients with model statistics.
-   - Partial regression plots for predictors in the best model.
+This script performs GLM Analysis with Interaction Terms, Model Selection,
+Mediation, and Moderation Analysis. 
+The main steps are:
+1. Load data and define the dependent and independent variables.
+2. Visualize relationships among variables using pairplots.
+3. Evaluate multicollinearity via Variance Inflation Factor (VIF).
+4. Generate interaction terms among predictors.
+5. Automate GLM fitting across combinations of predictors (main effects and interactions)
+   and select the best model based on AIC, BIC, log-likelihood, and adjusted R².
+6. Assess the mediating effect of microsaccades (Me) following Baron and Kenny’s (1986)
+   three-step procedure:
+   - Step 1: Regress the dependent variable (Target_PSE) on each independent variable 
+             (e.g., Thal, Accu) to establish a total effect.
+             (e.g., Target_PSE = β10 + β11 * Thal + ε1)
+   - Step 2: Regress the mediator (Me) on each independent variable to verify that the 
+             independent variable predicts the mediator.
+             (e.g., Me = β30 + β31 * Thal + ε3)
+   - Step 3: Regress Target_PSE on both the independent variable and the mediator to assess 
+             the direct effect and compute the indirect effect (β31 * β52).
+             (e.g., Target_PSE = β50 + β51 * Thal + β52 * Me + ε5)
+7. Evaluate the moderation effect of microsaccades by testing interactions between predictors
+   and the moderator on Target_PSE.
+8. Visualize the results through plots of beta coefficients, partial regression plots, and
+   mediation analysis outcomes.
 
 written by Tara Ghafari
 ===============================================
@@ -41,8 +49,13 @@ import seaborn as sns
 
 def calculate_vif(X):
     """
-    Check for multicollinearity using VIF
-    Drop variables with high VIF (>5 as a rule of thumb)
+    Calculate the Variance Inflation Factor (VIF) for each predictor to assess multicollinearity.
+    
+    Parameters:
+    X (pd.DataFrame): DataFrame containing predictor variables.
+
+    Returns:
+    pd.DataFrame: A DataFrame with variables and their corresponding VIF values.
     """
 
     vif_data = pd.DataFrame()
@@ -65,17 +78,27 @@ def create_interaction_terms(variables):
 
 def baron_kenny_mediation(data, independent_var, mediator_var, dependent_var):
     """
-    Perform Baron and Kenny's mediation analysis steps.
+    Conduct mediation analysis following Baron and Kenny's three-step approach.
 
+    The analysis involves:
+      Step 1: Regressing the dependent variable (Y) on the independent variable (X)
+              to assess the total effect.
+      Step 2: Regressing the mediator (Me) on the independent variable (X) to confirm
+              that X predicts Me.
+      Step 3: Regressing Y on both X and Me to determine the direct effect of X on Y
+              and the effect of the mediator.
+    
     Parameters:
-    data (pd.DataFrame): The dataset containing the variables.
-    independent_var (str): The name of the independent variable (X).
-    mediator_var (str): The name of the mediator variable (Me).
-    dependent_var (str): The name of the dependent variable (Y).
+    data (pd.DataFrame): Dataset containing all relevant variables.
+    independent_var (str): Name of the independent variable (X).
+    mediator_var (str): Name of the mediator variable (Me).
+    dependent_var (str): Name of the dependent variable (Y).
 
     Returns:
-    dict: A dictionary containing regression results and coefficients.
+    tuple: A dictionary with regression summaries for each step and a dictionary with
+           key coefficients from the models.
     """
+
     results = {}
 
     # Step 1: Regress Y on X
@@ -106,6 +129,54 @@ def baron_kenny_mediation(data, independent_var, mediator_var, dependent_var):
 
     return results, coefficients
 
+def moderation_analysis(data, dependent_var, independent_vars, moderator_var):
+    """
+    Perform moderation analysis by testing interaction effects between independent variables and a moderator.
+
+    The function creates interaction terms between each independent variable and the moderator,
+    then fits a regression model including main effects and these interactions. A significant
+    interaction term suggests that the effect of an independent variable on the dependent variable
+    is moderated by the moderator variable.
+
+    Parameters:
+    data (pd.DataFrame): Dataset containing all relevant variables.
+    dependent_var (str): Name of the dependent variable (Y).
+    independent_vars (list): List of independent variable names.
+    moderator_var (str): Name of the moderator variable (e.g., microsaccades).
+
+    Returns:
+    dict: A dictionary containing the regression model summary, coefficients, p-values, standard errors,
+          F-statistic, its p-value, and adjusted R-squared value.
+    """
+    results = {}
+    interaction_terms = []
+
+    # Create interaction terms between each independent variable and the moderator
+    for iv in list(independent_vars):
+        interaction_term = f'{iv}_x_{moderator_var}'
+        data[interaction_term] = data[iv] * data[moderator_var]
+        interaction_terms.append(interaction_term)
+
+    # Define the predictors: independent variables, moderator, and interaction terms
+    predictors = list(independent_vars) + [moderator_var] + interaction_terms
+    X = sm.add_constant(data[predictors])
+
+    # Fit the regression model
+    model = sm.OLS(data[dependent_var], X).fit()
+    coefficients = model.params
+
+    # Save
+    results['model_summary'] = model.summary()
+    results['coefficients'] = coefficients
+    results['p_values'] = model.pvalues
+    results['standard_error'] = model.bse
+    results['fvalue'] = model.fvalue
+    results['f_pvalue'] = model.f_pvalue
+    results['rsquared_adj'] = model.rsquared_adj
+
+    return results
+
+
 # Define paths
 platform = 'mac'
 if platform == 'bluebear':
@@ -117,14 +188,14 @@ elif platform == 'mac':
 volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/behaviour'
 # op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/collated')
 lat_index_csv = op.join(volume_sheet_dir, 'unified_behavioral_structural_asymmetry_lateralisation_indices_1_45.csv')
-pairplot_figname = op.join(volume_sheet_dir, 'pair_plot')
-mediators_fname = op.join(volume_sheet_dir, 'mediators')
-models_fname = op.join(volume_sheet_dir, 'model_results')
-res_figname = op.join(models_fname, 'residuals')
-qqplot_figname = op.join(models_fname, 'qqplot')
-coefficient_figname = op.join(models_fname, 'beta_coefficients')
-regresplot_figname = op.join(models_fname, 'partial_regression')
-mediationplot_figname = op.join(models_fname, 'mediation')
+pairplot_figname = op.join(volume_sheet_dir, 'pair_plot2')
+mediators_fname = op.join(volume_sheet_dir, 'mediators2')
+models_fname = op.join(volume_sheet_dir, 'model_results2')
+res_figname = op.join(models_fname, 'residuals2')
+qqplot_figname = op.join(models_fname, 'qqplot2')
+coefficient_figname = op.join(models_fname, 'beta_coefficients2')
+regresplot_figname = op.join(models_fname, 'partial_regression2')
+mediationplot_figname = op.join(models_fname, 'mediation2')
 
 report_all_methods = True  # do you want to report best 5 models with all methods?
 plotting = True
@@ -190,8 +261,8 @@ interaction_terms = ['Caud*Puta', 'Caud*Pall',
 
 moderation_terms =  [f'Puta*{moderator}',
                      f'Thal*{moderator}',
-                     f'Caud*{moderator}', 
-                     f'Pall*{moderator}']  # ignored for now
+                     f'Accu*{moderator}',
+                     ]  # ignored for now
 
 all_terms = independent_vars + [moderator] + interaction_terms  # Include main effects and interactions
 
@@ -296,6 +367,14 @@ med_df = pd.DataFrame(mediation_results[dependent_var])
 med_df.to_csv(f'{mediators_fname}_{dependent_var}.csv')
 
 
+# -----------------------
+# Moderation Analysis:
+# -----------------------
+moderation_results = moderation_analysis(data, dep_vars[dependent_var], best_predictors, mediator[dependent_var])
+
+moderation_df = pd.DataFrame(moderation_results[dependent_var])
+moderation_df.to_csv(f'moderation_{mediators_fname}_{dependent_var}.csv')
+
 if plotting: 
         
     #################################### PLOTTING #############################################
@@ -367,3 +446,26 @@ if plotting:
     plt.tight_layout()
     plt.savefig(f'{mediationplot_figname}_{dependent_var}.png')
     plt.show()
+
+
+    # --- Plot moderation effects ---
+    mod_coefficients = moderation_results['coefficients']
+    mod_std_err = moderation_results['standard_error']
+    mod_fvalue = moderation_results['fvalue']
+    mod_fp_value = moderation_results['f_pvalue']
+    mod_rsquared_adj = moderation_results['rsquared_adj']
+
+    plt.figure(figsize=(12, 8))
+    mod_coefficients.plot(kind='bar', yerr=mod_std_err, color='skyblue', alpha=0.8, edgecolor='black')
+    plt.title(f'Beta Coefficients of the Best Model for {dependent_var}', fontsize=16)
+    plt.ylabel('Coefficient Value')
+    plt.xlabel('Predictors')
+    plt.axhline(0, color='red', linestyle='--', linewidth=1)
+
+    # Add text annotations with goodness-of-fit statistics
+    text = (f"Adjusted R²: {mod_rsquared_adj:.3f}\n"
+            f"fvalue: {mod_fvalue:.3f}\n"
+            f"fp-value: {mod_fp_value:.3f}")
+    plt.text(-1.5, mod_coefficients.min() * 0.8, text, fontsize=12, color='black', bbox=dict(facecolor='white', alpha=0.7))
+    plt.tight_layout()
+    plt.savefig(f'{mod_coefficient_figname}_{dependent_var}.png')
