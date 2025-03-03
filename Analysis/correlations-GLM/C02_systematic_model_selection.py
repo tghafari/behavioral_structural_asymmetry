@@ -187,17 +187,19 @@ elif platform == 'mac':
 # Define where to read and write the data
 volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/behaviour'
 # op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/collated')
-lat_index_csv = op.join(volume_sheet_dir, 'unified_behavioral_structural_asymmetry_lateralisation_indices_1_45.csv')
-pairplot_figname = op.join(volume_sheet_dir, 'pair_plot2')
-mediators_fname = op.join(volume_sheet_dir, 'mediators2')
-models_fname = op.join(volume_sheet_dir, 'model_results2')
-res_figname = op.join(models_fname, 'residuals2')
-qqplot_figname = op.join(models_fname, 'qqplot2')
-coefficient_figname = op.join(models_fname, 'beta_coefficients2')
-regresplot_figname = op.join(models_fname, 'partial_regression2')
-mediationplot_figname = op.join(models_fname, 'mediation2')
+lat_index_csv = op.join(volume_sheet_dir, 'unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers.csv')
+pairplot_figname = op.join(volume_sheet_dir, 'pair_plot3')
+mediators_fname = op.join(volume_sheet_dir, 'mediators3')
+moderators_fname = op.join(volume_sheet_dir, 'moderators3')
+models_fname = op.join(volume_sheet_dir, 'model_results')
+res_figname = op.join(models_fname, 'residuals3')
+qqplot_figname = op.join(models_fname, 'qqplot3')
+coefficient_figname = op.join(models_fname, 'beta_coefficients3')
+regresplot_figname = op.join(models_fname, 'partial_regression3')
+mediationplot_figname = op.join(models_fname, 'mediation3')
+mod_coefficient_figname = op.join(models_fname, 'moderation3')
 
-report_all_methods = True  # do you want to report best 5 models with all methods?
+report_all_methods = False  # do you want to report best 5 models with all methods?
 plotting = True
 
 # Step 1: Load the CSV file
@@ -225,6 +227,7 @@ g.fig.suptitle(f'Pairplot of Variables ({dependent_var})', y=0.95, fontsize=16)
 
 # Loop through the axes of the pairplot to calculate and annotate Spearman correlations
 for i, j in zip(*np.triu_indices_from(g.axes, k=1)):  # Loop over upper triangle
+    print('Plotting pair plots...')
     ax = g.axes[i, j]
     if ax is not None:
         x_var = plot_cols[j]  # Get column name from plot_cols
@@ -264,7 +267,7 @@ moderation_terms =  [f'Puta*{moderator}',
                      f'Accu*{moderator}',
                      ]  # ignored for now
 
-all_terms = independent_vars + [moderator] + interaction_terms  # Include main effects and interactions
+all_terms = independent_vars + interaction_terms  # Include main effects and interactions
 
 # Add interaction terms to the DataFrame
 for term in interaction_terms:
@@ -276,6 +279,7 @@ results = []
 
 # Generate all possible subsets of predictors
 for i in range(1, len(all_terms) + 1):
+    print('Finding the best model...')
     for combo in combinations(all_terms, i):
         # Check if interaction terms have their respective main effects included
         main_effects = set(chain.from_iterable(var.split('*') for var in combo if '*' in var))  # Extract variables in interactions
@@ -370,10 +374,10 @@ med_df.to_csv(f'{mediators_fname}_{dependent_var}.csv')
 # -----------------------
 # Moderation Analysis:
 # -----------------------
-moderation_results = moderation_analysis(data, dep_vars[dependent_var], best_predictors, mediator[dependent_var])
-
+moderation_results = {f'{dependent_var}': []}
+moderation_results[dependent_var] = moderation_analysis(data, dep_vars[dependent_var], best_predictors, mediator[dependent_var])
 moderation_df = pd.DataFrame(moderation_results[dependent_var])
-moderation_df.to_csv(f'moderation_{mediators_fname}_{dependent_var}.csv')
+moderation_df.to_csv(f'{moderators_fname}_{dependent_var}.csv')
 
 if plotting: 
         
@@ -449,15 +453,15 @@ if plotting:
 
 
     # --- Plot moderation effects ---
-    mod_coefficients = moderation_results['coefficients']
-    mod_std_err = moderation_results['standard_error']
-    mod_fvalue = moderation_results['fvalue']
-    mod_fp_value = moderation_results['f_pvalue']
-    mod_rsquared_adj = moderation_results['rsquared_adj']
+    mod_coefficients = moderation_results[dependent_var]['coefficients']
+    mod_std_err = moderation_results[dependent_var]['standard_error']
+    mod_fvalue = moderation_results[dependent_var]['fvalue']
+    mod_fp_value = moderation_results[dependent_var]['f_pvalue']
+    mod_rsquared_adj = moderation_results[dependent_var]['rsquared_adj']
 
     plt.figure(figsize=(12, 8))
     mod_coefficients.plot(kind='bar', yerr=mod_std_err, color='skyblue', alpha=0.8, edgecolor='black')
-    plt.title(f'Beta Coefficients of the Best Model for {dependent_var}', fontsize=16)
+    plt.title(f'Beta Coefficients of moderation in the Best Model for {dependent_var}', fontsize=16)
     plt.ylabel('Coefficient Value')
     plt.xlabel('Predictors')
     plt.axhline(0, color='red', linestyle='--', linewidth=1)
