@@ -63,6 +63,49 @@ def create_interaction_terms(variables):
         interactions.extend(['*'.join(comb) for comb in combinations(variables, r)])
     return interactions
 
+def baron_kenny_mediation(data, independent_var, mediator_var, dependent_var):
+    """
+    Perform Baron and Kenny's mediation analysis steps.
+
+    Parameters:
+    data (pd.DataFrame): The dataset containing the variables.
+    independent_var (str): The name of the independent variable (X).
+    mediator_var (str): The name of the mediator variable (Me).
+    dependent_var (str): The name of the dependent variable (Y).
+
+    Returns:
+    dict: A dictionary containing regression results and coefficients.
+    """
+    results = {}
+
+    # Step 1: Regress Y on X
+    X = sm.add_constant(data[independent_var])
+    model1 = sm.OLS(data[dependent_var], X).fit()
+    results['Step 1'] = model1.summary()
+    beta_11 = model1.params[independent_var]
+
+    # Step 2: Regress Me on X
+    model2 = sm.OLS(data[mediator_var], X).fit()
+    results['Step 2'] = model2.summary()
+    beta_21 = model2.params[independent_var]
+
+    # Step 3: Regress Y on X and Me
+    X_Me = sm.add_constant(data[[independent_var, mediator_var]])
+    model3 = sm.OLS(data[dependent_var], X_Me).fit()
+    results['Step 3'] = model3.summary()
+    beta_31 = model3.params[independent_var]
+    beta_32 = model3.params[mediator_var]
+
+    # Compile coefficients
+    coefficients = {
+        'beta_11 (X -> Y)': beta_11,
+        'beta_21 (X -> Me)': beta_21,
+        'beta_31 (X -> Y | Me)': beta_31,
+        'beta_32 (Me -> Y | X)': beta_32
+    }
+
+    return results, coefficients
+
 # Define paths
 platform = 'mac'
 if platform == 'bluebear':
@@ -74,17 +117,17 @@ elif platform == 'mac':
 volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/behaviour'
 # op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/collated')
 lat_index_csv = op.join(volume_sheet_dir, 'unified_behavioral_structural_asymmetry_lateralisation_indices_1_45.csv')
-pairplot_figname = op.join(volume_sheet_dir, 'pair_plot2')
-mediators_fname = op.join(volume_sheet_dir, 'mediators2')
-models_fname = op.join(volume_sheet_dir, 'model_results2')
-res_figname = op.join(models_fname, 'residuals2')
-qqplot_figname = op.join(models_fname, 'qqplot2')
-coefficient_figname = op.join(models_fname, 'beta_coefficients2')
-regresplot_figname = op.join(models_fname, 'partial_regression2')
-mediationplot_figname = op.join(models_fname, 'mediation2')
+pairplot_figname = op.join(volume_sheet_dir, 'pair_plot')
+mediators_fname = op.join(volume_sheet_dir, 'mediators')
+models_fname = op.join(volume_sheet_dir, 'model_results')
+res_figname = op.join(models_fname, 'residuals')
+qqplot_figname = op.join(models_fname, 'qqplot')
+coefficient_figname = op.join(models_fname, 'beta_coefficients')
+regresplot_figname = op.join(models_fname, 'partial_regression')
+mediationplot_figname = op.join(models_fname, 'mediation')
 
 report_all_methods = True  # do you want to report best 5 models with all methods?
-plotting = False
+plotting = True
 
 # Step 1: Load the CSV file
 data_full = pd.read_csv(lat_index_csv)
@@ -136,49 +179,20 @@ X = data[independent_vars + [mediator[dependent_var]]]
 vif = calculate_vif(X)
 print("Variance Inflation Factor (VIF):\n", vif)
 
-# Step 5: Mediation Analysis for each subcortical region
-mediation_results = {f'{dependent_var}': []}
-
-for substr in independent_vars:
-    # -----------------------
-    # Mediation Analysis:
-    # -----------------------
-    try:
-        med_result = pg.mediation_analysis(data=data, x=substr, 
-                                            m=mediator[dependent_var], 
-                                            y=dep_vars[dependent_var], n_boot=5000)
-        print(f'Extracting the indirect effect for {substr} on {dep_vars[dependent_var]}')
-        indirect_effect = med_result.loc[med_result['path'] == 'Indirect', 'coef'].values[0]
-        indirect_p = med_result.loc[med_result['path'] == 'Indirect', 'pval'].values[0]
-        indirect_se = med_result.loc[med_result['path'] == 'Indirect', 'se'].values[0]  # Extract standard error
-
-    except Exception as e:
-        print(f"Mediation analysis error for {substr} on {dep_vars[dependent_var]}: {e}")
-        indirect_effect = np.nan
-        indirect_p = np.nan
-        indirect_se = np.nan  # Handle missing SE values
-    
-    mediation_results[dependent_var].append({
-        'Subcortical': substr,
-        'Indirect_Effect': indirect_effect,
-        'p_value': indirect_p,
-        'SE': indirect_se  # Store standard error in results
-    })
-
-# Convert results to DataFrames for plotting
-med_df = pd.DataFrame(mediation_results[dependent_var])
-med_df.to_csv(f'{mediators_fname}_{dependent_var}.csv')
-
-# Step 6: Generate interaction terms
+# Step 5: Generate interaction terms
 """don't use the create_interaction_terms,
 doesn't make sense to add all possible interaction combinations"""
 moderator = mediator[dependent_var]
 # those interactions that make sense to me
 interaction_terms = ['Caud*Puta', 'Caud*Pall', 
                      'Pall*Puta', 'Thal*Puta',
-                     'Caud*Puta*Pall', f'Puta*{moderator}', 
-                     f'Thal*{moderator}',f'Caud*{moderator}', 
-                     f'Pall*{moderator}']  
+                     'Caud*Puta*Pall']
+
+moderation_terms =  [f'Puta*{moderator}',
+                     f'Thal*{moderator}',
+                     f'Caud*{moderator}', 
+                     f'Pall*{moderator}']  # ignored for now
+
 all_terms = independent_vars + [moderator] + interaction_terms  # Include main effects and interactions
 
 # Add interaction terms to the DataFrame
@@ -239,6 +253,47 @@ if report_all_methods:
     print("\nTop 5 Models by BIC:\n", results_df.nsmallest(5, 'BIC'))
     print("\nTop 5 Models by Log-Likelihood:\n", results_df.nlargest(5, 'LogLik'))
     print("\nTop 5 Models by Adjusted R²:\n", results_df.nlargest(5, 'Adj_R2'))
+
+
+# Step 8: Mediation Analysis for microsaccades on the regresors of best model
+mediation_results = {f'{dependent_var}': []}
+
+for regres in best_predictors:
+    # -----------------------
+    # Mediation Analysis:
+    # -----------------------
+    try:
+        # Pingpuin method
+        med_result = pg.mediation_analysis(data=data, x=regres, 
+                                            m=mediator[dependent_var], 
+                                            y=dep_vars[dependent_var], n_boot=5000)
+        print(f'Extracting the indirect effect for {regres} on {dep_vars[dependent_var]}')
+        indirect_effect = med_result.loc[med_result['path'] == 'Indirect', 'coef'].values[0]
+        indirect_p = med_result.loc[med_result['path'] == 'Indirect', 'pval'].values[0]
+        indirect_se = med_result.loc[med_result['path'] == 'Indirect', 'se'].values[0]  # Extract standard error
+
+        # Baron and Kenny's (1986) method:
+        results, coefficients = baron_kenny_mediation(data, regres, mediator[dependent_var], dep_vars[dependent_var])
+
+    except Exception as e:
+        print(f"Mediation analysis error for {regres} on {dep_vars[dependent_var]}: {e}")
+        indirect_effect = np.nan
+        indirect_p = np.nan
+        indirect_se = np.nan  # Handle missing SE values
+    
+    mediation_results[dependent_var].append({
+        'Subcortical': regres,
+        'Indirect_Effect': indirect_effect,
+        'p_value': indirect_p,
+        'SE': indirect_se,  # Store standard error in results
+        'baron_kenny_results': results,
+        'baron_kenny_coefs': coefficients,
+        
+    })
+
+# Convert results to DataFrames for plotting
+med_df = pd.DataFrame(mediation_results[dependent_var])
+med_df.to_csv(f'{mediators_fname}_{dependent_var}.csv')
 
 
 if plotting: 
