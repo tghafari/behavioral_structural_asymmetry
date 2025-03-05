@@ -50,7 +50,8 @@ volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-Un
 lat_index_csv = op.join(volume_sheet_dir, 'FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers.csv')
 
 # Read the CSV as a DataFrame
-data = pd.read_csv(lat_index_csv)
+data_full = pd.read_csv(lat_index_csv)
+# data = data_full.dropna(subset=['Landmark_PSE','Landmark_MS'])
 
 # Define columns for analysis
 structural_columns = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu']
@@ -64,13 +65,14 @@ fig, axs = plt.subplots(num_rows, num_cols, figsize=(5 * num_cols, 4 * num_rows)
 # Plot structural vs. behavioral columns
 for col_idx, structural in enumerate(structural_columns):
     for row_idx, behavioural in enumerate(behavioural_columns):
+        data = data_full.dropna(subset=[behavioural] + [structural])
         x = data[structural]
         y = data[behavioural]
 
-        # Exclude NaN values - manually put Nan in place of outliers on the csv file
-        valid_idx = ~(x.isna() | y.isna())
-        x = x[valid_idx]
-        y = y[valid_idx]
+        # Exclude NaN values - manually put NaN in place of outliers on the csv file in advance
+        # valid_idx = ~(x.isna() | y.isna())
+        # x = x[valid_idx]
+        # y = y[valid_idx]
 
         # Scatter plot
         ax = axs[row_idx, col_idx]
@@ -91,12 +93,13 @@ for col_idx, structural in enumerate(structural_columns):
 
 
 # Plot Landmark_PSE vs. Target_PSE_Laterality
+data = data_full.dropna(subset=['Landmark_PSE','Target_PSE_Laterality'])
 x = data['Landmark_PSE']
 y = data['Target_PSE_Laterality']
 
-valid_idx = ~(x.isna() | y.isna())
-x = x[valid_idx]
-y = y[valid_idx]
+# valid_idx = ~(x.isna() | y.isna())
+# x = x[valid_idx]
+# y = y[valid_idx]
 
 
 ax = axs[-1, 0]
@@ -115,14 +118,13 @@ ax.text(0.05, 0.95,
         bbox=box_props)
 
 # Plot Landmark_PSE vs Landmark_MS
+data = data_full.dropna(subset=['Landmark_PSE','Landmark_MS'])
 x = data['Landmark_PSE']
 y = data['Landmark_MS']
 
-valid_idx = ~(x.isna() | y.isna())
-x = x[valid_idx]
-y = y[valid_idx]
-
-
+# valid_idx = ~(x.isna() | y.isna())
+# x = x[valid_idx]
+# y = y[valid_idx]
 ax = axs[-1, 1]
 ax.scatter(x, y, alpha=0.7)
 ax.set_xlabel('Landmark_PSE')
@@ -138,14 +140,14 @@ ax.text(0.05, 0.95,
         verticalalignment='top',
         bbox=box_props)
 
+# Plot Target_PSE_Laterality vs Target_MS_Laterality
+data = data_full.dropna(subset=['Target_PSE_Laterality','Target_MS_Laterality'])
 x = data['Target_PSE_Laterality']
 y = data['Target_MS_Laterality']
 
-valid_idx = ~(x.isna() | y.isna())
-x = x[valid_idx]
-y = y[valid_idx]
-
-
+# valid_idx = ~(x.isna() | y.isna())
+# x = x[valid_idx]
+# y = y[valid_idx]
 ax = axs[-1, 2]
 ax.scatter(x, y, alpha=0.7)
 ax.set_xlabel('Target_PSE_Laterality')
@@ -162,13 +164,13 @@ ax.text(0.05, 0.95,
         bbox=box_props)
 
 # Plot Landmark_MS vs. Target_MS_Laterality
+data = data_full.dropna(subset=['Landmark_MS','Target_MS_Laterality'])
 x = data['Landmark_MS']
 y = data['Target_MS_Laterality']
 
-valid_idx = ~(x.isna() | y.isna())
-x = x[valid_idx]
-y = y[valid_idx]
-
+# valid_idx = ~(x.isna() | y.isna())
+# x = x[valid_idx]
+# y = y[valid_idx]
 
 ax = axs[-1, 3]
 ax.scatter(x, y, alpha=0.7)

@@ -217,7 +217,7 @@ mediator =  {'Target': 'Target_MS_Laterality', 'Landmark': 'Landmark_MS', 'Targe
 # Remove NaNs from dependent variable (but keep rows in the dataset)
 dependent_var = input(f'which dependent variable to do now? {dep_vars.keys()}\n (Do not add quotation marks!)\n')
 print(f'\nRunning models on {dependent_var}')
-data = data_full.dropna(subset=[dep_vars[dependent_var]] + independent_vars + [mediator[dependent_var]])
+data = data_full.dropna(subset=[dep_vars[dependent_var]] + independent_vars)
 
 # Step 3: Visualize relationships 
 plot_cols = independent_vars + [mediator[dependent_var]] + [dep_vars[dependent_var]]
@@ -249,7 +249,7 @@ plt.savefig(f'{pairplot_figname}_{dependent_var}.png')
 plt.show()
 
 # Step 4: Check for multicollinearity using VIF
-X = data[independent_vars + [mediator[dependent_var]]]
+X = data[independent_vars] 
 vif = calculate_vif(X)
 print("Variance Inflation Factor (VIF):\n", vif)
 
@@ -331,6 +331,8 @@ if report_all_methods:
 
 
 # Step 8: Mediation Analysis for microsaccades on the regresors of best model
+"""only remove nans from mediator here, not at the beginning"""
+data = data_full.dropna(subset=[dep_vars[dependent_var]] + independent_vars+ [mediator[dependent_var]])
 mediation_results = {f'{dependent_var}': []}
 
 for regres in best_predictors:
