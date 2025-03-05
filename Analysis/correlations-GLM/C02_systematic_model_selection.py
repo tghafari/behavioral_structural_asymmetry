@@ -187,17 +187,17 @@ elif platform == 'mac':
 # Define where to read and write the data
 volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/behaviour'
 # op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/collated')
-lat_index_csv = op.join(volume_sheet_dir, 'unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers.csv')
-pairplot_figname = op.join(volume_sheet_dir, 'pair_plot3')
-mediators_fname = op.join(volume_sheet_dir, 'mediators3')
-moderators_fname = op.join(volume_sheet_dir, 'moderators3')
+lat_index_csv = op.join(volume_sheet_dir, 'FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers.csv')
+pairplot_figname = op.join(volume_sheet_dir, 'pair_plot')
+mediators_fname = op.join(volume_sheet_dir, 'mediators')
+moderators_fname = op.join(volume_sheet_dir, 'moderators')
 models_fname = op.join(volume_sheet_dir, 'model_results')
-res_figname = op.join(models_fname, 'residuals3')
-qqplot_figname = op.join(models_fname, 'qqplot3')
-coefficient_figname = op.join(models_fname, 'beta_coefficients3')
-regresplot_figname = op.join(models_fname, 'partial_regression3')
-mediationplot_figname = op.join(models_fname, 'mediation3')
-mod_coefficient_figname = op.join(models_fname, 'moderation3')
+res_figname = op.join(models_fname, 'residuals')
+qqplot_figname = op.join(models_fname, 'qqplot')
+coefficient_figname = op.join(models_fname, 'beta_coefficients')
+regresplot_figname = op.join(models_fname, 'partial_regression')
+mediationplot_figname = op.join(models_fname, 'mediation')
+mod_coefficient_figname = op.join(models_fname, 'moderation')
 
 report_all_methods = False  # do you want to report best 5 models with all methods?
 plotting = True
