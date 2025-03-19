@@ -209,10 +209,10 @@ data_full = pd.read_csv(lat_index_csv)
 print(data_full.head())
 
 # Step 2: Define dependent and independent variables
-dep_vars = {'Target': 'Target_PSE_Laterality', 'Landmark': 'Landmark_PSE', 'Target_MS': 'Target_MS_Laterality', 'Landmark_MS': 'Landmark_MS'}
+dep_vars = {'Target': 'Threshold_Difference', 'Landmark': 'Landmark_PSE', 'Target_MS': 'Target_MS_Laterality', 'Landmark_MS': 'Landmark_MS'}
 independent_vars = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu']  
 # Define the mediator variable (microsaccade laterality)
-mediator =  {'Target': 'Target_MS_Laterality', 'Landmark': 'Landmark_MS', 'Target_MS': 'Target_PSE_Laterality', 'Landmark_MS': 'Landmark_PSE'}
+mediator =  {'Target': 'Target_MS_Laterality', 'Landmark': 'Landmark_MS', 'Target_MS': 'Threshold_Difference', 'Landmark_MS': 'Landmark_PSE'}
 
 # Remove NaNs from dependent variable (but keep rows in the dataset)
 dependent_var = input(f'which dependent variable to do now? {dep_vars.keys()}\n (Do not add quotation marks!)\n')
