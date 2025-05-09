@@ -11,8 +11,8 @@ This code
         Loops through structural_columns and 
         behavioral_columns to generate scatter plots.
     3. Correlation and p-value:
-        Calculates Pearson correlation coefficients
-        and p-values using pearsonr.
+        Calculates Spearman correlation coefficients
+        and p-values using spearmanr.
     4. Dynamic Plot Layout:
         The number of rows and columns is 
         determined dynamically based on the 
@@ -35,7 +35,7 @@ import os.path as op
 import numpy as np
 
 import matplotlib.pyplot as plt
-from scipy.stats import spearmanr, wilcoxon
+from scipy.stats import spearmanr, wilcoxon, pearsonr
 
 platform= 'mac'
 
@@ -45,9 +45,10 @@ elif platform == 'mac':
     jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
 
 # Define where to read and write the data
-volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/behaviour'
-# op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/collated')
-lat_index_csv = op.join(volume_sheet_dir, 'FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers.csv')
+volume_sheet_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/data/collated/BACKUPtable')
+# BEAR outage
+# '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/behaviour'
+lat_index_csv = op.join(volume_sheet_dir, 'FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers_eye.csv')
 
 # Read the CSV as a DataFrame
 data_full = pd.read_csv(lat_index_csv)
@@ -56,6 +57,7 @@ data_full = pd.read_csv(lat_index_csv)
 # Define columns for analysis
 structural_columns = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu']
 behavioural_columns = ['Landmark_PSE', 'Target_PSE_Laterality', 'Landmark_MS', 'Target_MS_Laterality']
+control_variables = ['Handedness', 'Eye_Dominance']  # add them to behavioural_columns if you wanted to include them in the analysis
 
 # Initialize plots
 num_cols = len(structural_columns)
@@ -80,7 +82,7 @@ for col_idx, structural in enumerate(structural_columns):
         ax.set_xlabel(structural)
         ax.set_ylabel(behavioural)
 
-        # Pearson correlation
+        # Spearman correlation
         correlation, p_value = spearmanr(x, y)
 
         box_props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
@@ -179,6 +181,56 @@ ax.set_ylabel('Target_MS_Laterality')
 
 # Spearman correlation
 correlation, p_value = spearmanr(x, y)
+box_props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+ax.text(0.05, 0.95, 
+        f'r={correlation:.2f}\np={p_value:.3f}', 
+        transform=ax.transAxes, 
+        fontsize=10, 
+        verticalalignment='top',
+        bbox=box_props)
+
+# Plot Handedness vs. Eye_Dominance
+data = data_full.dropna(subset=['Handedness', 'Eye_Dominance'])
+x = data['Handedness']
+y = data['Eye_Dominance']
+
+# valid_idx = ~(x.isna() | y.isna())
+# x = x[valid_idx]
+# y = y[valid_idx]
+
+ax = axs[-1, 4]
+ax.scatter(x, y, alpha=0.7)
+ax.set_xlabel('Handedness')
+ax.set_ylabel('Eye_Dominance')
+
+# Pearson correlation
+""" Using Pearson because eye dominance is binary (0=left, 1=right)"""
+correlation, p_value = pearsonr(x, y)
+box_props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+ax.text(0.05, 0.95, 
+        f'r={correlation:.2f}\np={p_value:.3f}', 
+        transform=ax.transAxes, 
+        fontsize=10, 
+        verticalalignment='top',
+        bbox=box_props)
+
+# Plot Landmark_PSE vs. Eye_Dominance
+data = data_full.dropna(subset=['Landmark_PSE', 'Eye_Dominance'])
+x = data['Landmark_PSE']
+y = data['Eye_Dominance']
+
+# valid_idx = ~(x.isna() | y.isna())
+# x = x[valid_idx]
+# y = y[valid_idx]
+
+ax = axs[-1, 5]
+ax.scatter(x, y, alpha=0.7)
+ax.set_xlabel('Landmark_PSE')
+ax.set_ylabel('Eye_Dominance')
+
+# Pearson correlation
+""" Using Pearson because eye dominance is binary (0=left, 1=right)"""
+correlation, p_value = pearsonr(x, y)
 box_props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
 ax.text(0.05, 0.95, 
         f'r={correlation:.2f}\np={p_value:.3f}', 
