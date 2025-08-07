@@ -187,7 +187,7 @@ elif platform == 'mac':
 # Define where to read and write the data
 volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/behaviour'
 # op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/collated')
-lat_index_csv = op.join(volume_sheet_dir, 'FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers.csv')
+lat_index_csv = op.join(volume_sheet_dir, 'FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers_eye-dominance.csv')
 pairplot_figname = op.join(volume_sheet_dir, 'pair_plot')
 mediators_fname = op.join(volume_sheet_dir, 'mediators')
 moderators_fname = op.join(volume_sheet_dir, 'moderators')
