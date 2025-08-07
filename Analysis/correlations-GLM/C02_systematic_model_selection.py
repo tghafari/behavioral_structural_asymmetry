@@ -185,8 +185,10 @@ elif platform == 'mac':
     jenseno_dir = '/Volumes/jenseno-avtemporal-attention'
 
 # Define where to read and write the data
-volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/behaviour'
-# op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/derivatives/collated')
+# BEAR outage
+# volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/behaviour'
+volume_sheet_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/data/collated')
+
 lat_index_csv = op.join(volume_sheet_dir, 'FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers_eye-dominance.csv')
 pairplot_figname = op.join(volume_sheet_dir, 'pair_plot')
 mediators_fname = op.join(volume_sheet_dir, 'mediators')
@@ -210,7 +212,8 @@ print(data_full.head())
 
 # Step 2: Define dependent and independent variables
 dep_vars = {'Target': 'Threshold_Difference', 'Landmark': 'Landmark_PSE', 'Target_MS': 'Target_MS_Laterality', 'Landmark_MS': 'Landmark_MS'}
-independent_vars = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu']  
+independent_vars = ['Puta']
+# ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu']  
 # Define the mediator variable (microsaccade laterality)
 mediator =  {'Target': 'Target_MS_Laterality', 'Landmark': 'Landmark_MS', 'Target_MS': 'Threshold_Difference', 'Landmark_MS': 'Landmark_PSE'}
 
