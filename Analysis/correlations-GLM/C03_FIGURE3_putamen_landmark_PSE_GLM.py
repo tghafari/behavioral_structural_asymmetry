@@ -10,6 +10,7 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 import statsmodels.api as sm
 from statsmodels.graphics.regressionplots import plot_partregress_grid
 from statsmodels.graphics.gofplots import qqplot
+from scipy.stats import spearmanr
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -354,33 +355,56 @@ plt.text(-1.5, mod_coefficients.min() * 0.8, text, fontsize=12, color='black', b
 plt.tight_layout()
 
 # --- Plot handedness and eye dominance correlations ---
-# === Define columns for correlation ===
-subcortical_LVs = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu']
-behavior = ['Landmark_PSE']
-eye_dominance = ['Landmark_MS']
-handedness = ['Handedness']  # Adjust name if needed
+# === Define variables ===
+traits = {
+    'Eye Dominance': 'Eye_Dominance',
+    'Handedness': 'Handedness'  # Adjust if needed
+}
+targets = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu', 'Landmark_PSE']
 
-# Combine two separate pairplots (Eye Dom + Handedness)
-for trait, label in zip([eye_dominance, handedness], ['EyeDominance', 'Handedness']):
-    plot_cols = trait + subcortical_LVs + behavior
-    df = data_full[plot_cols].dropna()
+# === Prepare correlation and p-value matrices ===
+rho_matrix = pd.DataFrame(index=traits.keys(), columns=targets)
+pval_matrix = pd.DataFrame(index=traits.keys(), columns=targets)
 
-    g = sns.pairplot(df)
-    g.fig.subplots_adjust(top=0.9, bottom=0.1, left=0.1, right=0.9)
-    g.fig.suptitle(f'Pairplot: {label} vs Subcortical LV + Landmark PSE', y=0.98, fontsize=16)
+# Calculate Spearman correlations
+for trait_label, trait_col in traits.items():
+    for target in targets:
+        if trait_col in data_full.columns and target in data_full.columns:
+            # Drop NaNs pairwise
+            df_clean = data_full[[trait_col, target]].dropna()
+            if df_clean.shape[0] > 2:
+                rho, pval = spearmanr(df_clean[trait_col], df_clean[target])
+                rho_matrix.loc[trait_label, target] = round(rho, 2)
+                pval_matrix.loc[trait_label, target] = pval
+            else:
+                rho_matrix.loc[trait_label, target] = np.nan
+                pval_matrix.loc[trait_label, target] = np.nan
 
-    # Annotate correlations in the upper triangle
-    for i, j in zip(*np.triu_indices_from(g.axes, k=1)):
-        ax = g.axes[i, j]
-        if ax is not None:
-            x_var = plot_cols[j]
-            y_var = plot_cols[i]
+# === Annotate correlation matrix ===
+def format_annotation(r, p):
+    if pd.isna(r) or pd.isna(p):
+        return ""
+    p_text = "p < 0.001" if p < 0.001 else f"p = {p:.3f}"
+    return f"ρ = {r:.2f}\n{p_text}"
 
-            if x_var in df.columns and y_var in df.columns:
-                spearman_corr, spearman_p = stats.spearmanr(df[x_var], df[y_var], nan_policy='omit')
-                p_text = "p < 0.001" if spearman_p < 0.001 else f"p = {spearman_p:.3f}"
-                ax.text(0.05, 0.95, f"ρ = {spearman_corr:.2f} \n{p_text}",
-                        transform=ax.transAxes, fontsize=10,
-                        verticalalignment='top', bbox=dict(boxstyle="round", fc="beige", alpha=0.8))
+annot = pd.DataFrame([
+    [format_annotation(rho_matrix.loc[row, col], pval_matrix.loc[row, col]) for col in rho_matrix.columns]
+    for row in rho_matrix.index
+], index=rho_matrix.index, columns=rho_matrix.columns)
 
-    # Save each figure
+# === Plot heatmap ===
+plt.figure(figsize=(12, 3.5))
+sns.heatmap(rho_matrix.astype(float), annot=annot, fmt='', cmap='coolwarm', vmin=-1, vmax=1,
+            linewidths=0.5, cbar_kws={"label": "Spearman ρ"})
+
+plt.title("Correlation of Eye Dominance & Handedness with Subcortical LVs and Landmark PSE", fontsize=14, fontweight='bold')
+plt.ylabel("")
+plt.xlabel("")
+plt.xticks(rotation=45, ha='right')
+plt.yticks(rotation=0)
+plt.tight_layout()
+
+# Save each figure
+fig.savefig(f'{save_path}/Figure1Supp_handedness_eyedominance_correlations.svg', format='svg', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure1Supp_handedness_eyedominance_correlations.png', format='png', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure1Supp_handedness_eyedominance_correlations.tiff', format='tiff', dpi=800, bbox_inches='tight')

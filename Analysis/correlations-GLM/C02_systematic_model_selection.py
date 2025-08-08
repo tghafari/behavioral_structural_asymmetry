@@ -206,8 +206,6 @@ plotting = True
 
 # Step 1: Load the CSV file
 data_full = pd.read_csv(lat_index_csv)
-
-# Check the data
 print(data_full.head())
 
 # Step 2: Define dependent and independent variables
@@ -258,16 +256,11 @@ print("Variance Inflation Factor (VIF):\n", vif)
 # Step 5: Generate interaction terms
 """don't use the create_interaction_terms,
 doesn't make sense to add all possible interaction combinations"""
-moderator = mediator[dependent_var]
 # those interactions that make sense to me
 interaction_terms = ['Caud*Puta', 'Caud*Pall', 
                      'Pall*Puta', 'Thal*Puta',
                      'Caud*Puta*Pall']
 
-moderation_terms =  [f'Puta*{moderator}',
-                     f'Thal*{moderator}',
-                     f'Accu*{moderator}',
-                     ]  # ignored for now
 
 all_terms = independent_vars + interaction_terms  # Include main effects and interactions
 
@@ -333,6 +326,12 @@ if report_all_methods:
 
 
 # Step 8: Mediation Analysis for microsaccades on the regresors of best model
+moderator = mediator[dependent_var]
+moderation_terms =  [f'Puta*{moderator}',
+                     f'Thal*{moderator}',
+                     f'Accu*{moderator}',
+                     ]  # ignored for now
+
 """only remove nans from mediator here, not at the beginning"""
 data = data_full.dropna(subset=[dep_vars[dependent_var]] + independent_vars+ [mediator[dependent_var]])
 mediation_results = {f'{dependent_var}': []}
