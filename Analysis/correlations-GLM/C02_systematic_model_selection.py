@@ -212,8 +212,7 @@ print(data_full.head())
 
 # Step 2: Define dependent and independent variables
 dep_vars = {'Target': 'Threshold_Difference', 'Landmark': 'Landmark_PSE', 'Target_MS': 'Target_MS_Laterality', 'Landmark_MS': 'Landmark_MS'}
-independent_vars = ['Puta']
-# ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu']  
+independent_vars = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu']  
 # Define the mediator variable (microsaccade laterality)
 mediator =  {'Target': 'Target_MS_Laterality', 'Landmark': 'Landmark_MS', 'Target_MS': 'Threshold_Difference', 'Landmark_MS': 'Landmark_PSE'}
 
