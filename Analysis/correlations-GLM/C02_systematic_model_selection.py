@@ -43,6 +43,7 @@ import statsmodels.api as sm
 from statsmodels.graphics.regressionplots import plot_partregress_grid
 from statsmodels.graphics.gofplots import qqplot
 import scipy.stats as stats
+from scipy.stats import spearmanr
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -187,13 +188,13 @@ elif platform == 'mac':
 # Define where to read and write the data
 # BEAR outage
 # volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/behaviour'
-volume_sheet_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/data/collated')
+volume_sheet_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias')
 
-lat_index_csv = op.join(volume_sheet_dir, 'FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers_eye-dominance.csv')
-pairplot_figname = op.join(volume_sheet_dir, 'pair_plot')
-mediators_fname = op.join(volume_sheet_dir, 'mediators')
-moderators_fname = op.join(volume_sheet_dir, 'moderators')
-models_fname = op.join(volume_sheet_dir, 'model_results')
+lat_index_csv = op.join(volume_sheet_dir, 'data/collated/FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers_eye-dominance.csv')
+models_fname = op.join(volume_sheet_dir, 'Results/model_results')
+pairplot_figname = op.join(models_fname, 'pair_plot')
+mediators_fname = op.join(models_fname, 'mediators')
+moderators_fname = op.join(models_fname, 'moderators')
 res_figname = op.join(models_fname, 'residuals')
 qqplot_figname = op.join(models_fname, 'qqplot')
 coefficient_figname = op.join(models_fname, 'beta_coefficients')
@@ -212,7 +213,7 @@ print(data_full.head())
 dep_vars = {'Target': 'Threshold_Difference', 'Landmark': 'Landmark_PSE', 'Target_MS': 'Target_MS_Laterality', 'Landmark_MS': 'Landmark_MS'}
 independent_vars = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu']  
 # Define the mediator variable (microsaccade laterality)
-mediator =  {'Target': 'Target_MS_Laterality', 'Landmark': 'Landmark_MS', 'Target_MS': 'Threshold_Difference', 'Landmark_MS': 'Landmark_PSE'}
+mediator =  {'Target': 'Target_MS_Laterality', 'Landmark': 'Handedness', 'Target_MS': 'Threshold_Difference', 'Landmark_MS': 'Landmark_PSE'}
 
 # Remove NaNs from dependent variable (but keep rows in the dataset)
 dependent_var = input(f'which dependent variable to do now? {dep_vars.keys()}\n (Do not add quotation marks!)\n')
@@ -373,7 +374,6 @@ for regres in best_predictors:
 med_df = pd.DataFrame(mediation_results[dependent_var])
 med_df.to_csv(f'{mediators_fname}_{dependent_var}.csv')
 
-
 # -----------------------
 # Moderation Analysis:
 # -----------------------
@@ -476,3 +476,58 @@ if plotting:
     plt.text(-1.5, mod_coefficients.min() * 0.8, text, fontsize=12, color='black', bbox=dict(facecolor='white', alpha=0.7))
     plt.tight_layout()
     plt.savefig(f'{mod_coefficient_figname}_{dependent_var}.png')
+
+# --- Plot handedness and eye dominance correlations ---
+# === Define variables ===
+traits = {
+    'Eye Dominance': 'Eye_Dominance',
+    'Handedness': 'Handedness'  # Adjust if needed
+}
+targets = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu', 'Landmark_PSE']
+
+# === Prepare correlation and p-value matrices ===
+rho_matrix = pd.DataFrame(index=traits.keys(), columns=targets)
+pval_matrix = pd.DataFrame(index=traits.keys(), columns=targets)
+
+# Calculate Spearman correlations
+for trait_label, trait_col in traits.items():
+    for target in targets:
+        if trait_col in data_full.columns and target in data_full.columns:
+            # Drop NaNs pairwise
+            df_clean = data_full[[trait_col, target]].dropna()
+            if df_clean.shape[0] > 2:
+                rho, pval = spearmanr(df_clean[trait_col], df_clean[target])
+                rho_matrix.loc[trait_label, target] = round(rho, 2)
+                pval_matrix.loc[trait_label, target] = pval
+            else:
+                rho_matrix.loc[trait_label, target] = np.nan
+                pval_matrix.loc[trait_label, target] = np.nan
+
+# === Annotate correlation matrix ===
+def format_annotation(r, p):
+    if pd.isna(r) or pd.isna(p):
+        return ""
+    p_text = "p < 0.001" if p < 0.001 else f"p = {p:.3f}"
+    return f"ρ = {r:.2f}\n{p_text}"
+
+annot = pd.DataFrame([
+    [format_annotation(rho_matrix.loc[row, col], pval_matrix.loc[row, col]) for col in rho_matrix.columns]
+    for row in rho_matrix.index
+], index=rho_matrix.index, columns=rho_matrix.columns)
+
+# === Plot heatmap ===
+plt.figure(figsize=(12, 3.5))
+sns.heatmap(rho_matrix.astype(float), annot=annot, fmt='', cmap='coolwarm', vmin=-1, vmax=1,
+            linewidths=0.5, cbar_kws={"label": "Spearman ρ"})
+
+plt.title("Correlation of Eye Dominance & Handedness with Subcortical LVs and Landmark PSE", fontsize=14, fontweight='bold')
+plt.ylabel("")
+plt.xlabel("")
+plt.xticks(rotation=45, ha='right')
+plt.yticks(rotation=0)
+plt.tight_layout()
+
+# Save each figure
+fig.savefig(f'{save_path}/Figure1Supp_handedness_eyedominance_correlations.svg', format='svg', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure1Supp_handedness_eyedominance_correlations.png', format='png', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure1Supp_handedness_eyedominance_correlations.tiff', format='tiff', dpi=800, bbox_inches='tight')

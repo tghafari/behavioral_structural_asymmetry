@@ -6,11 +6,7 @@ import os.path as op
 
 import pingouin as pg
 from itertools import combinations, chain
-from statsmodels.stats.outliers_influence import variance_inflation_factor
 import statsmodels.api as sm
-from statsmodels.graphics.regressionplots import plot_partregress_grid
-from statsmodels.graphics.gofplots import qqplot
-from scipy.stats import spearmanr
 import scipy.stats as stats
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -129,7 +125,6 @@ elif platform == 'mac':
 # BEAR outage
 # volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/behaviour'
 volume_sheet_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias/data/collated')
-
 lat_index_csv = op.join(volume_sheet_dir, 'FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers_eye-dominance.csv')
 # Save figure in BEAR outage (that's where the latest version of the manuscript is)
 save_path = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/landmark-manus/Figures'
@@ -146,11 +141,8 @@ independent_var = ['Puta']
 dependent_var = 'Landmark'
 data = data_full.dropna(subset=[dep_vars[dependent_var]] + independent_var)
 
-# Step 3: Generate interaction terms
-"""don't use the create_interaction_terms,
-doesn't make sense to add all possible interaction combinations"""
-# Define the mediator variable (microsaccade laterality)
-mediator =  {'Landmark': 'Landmark_MS'}
+# Step 3: Define the mediator variable (microsaccade laterality)
+mediator =  {'Landmark': 'Handedness'}  #'Landmark_MS'} 'Eye_Dominance'}
 moderator = mediator[dependent_var]
 
 # Step 4: fit GLM for Putamen and landmark pse
@@ -180,7 +172,6 @@ best_model_row = results_df.iloc[0]
 best_model = best_model_row['Model']
 best_model_summary = best_model_row['Model_summary']
 best_predictors = best_model_row['Predictors']
-
 
 # Step 5: Mediation Analysis for microsaccades on the regresors of best model
 """only remove nans from mediator here, not at the beginning"""
@@ -317,8 +308,11 @@ fig.savefig(f'{save_path}/Figure3b_Putamen_GLM_partregress.svg', format='svg', d
 fig.savefig(f'{save_path}/Figure3b_Putamen_GLM_partregress.png', format='png', dpi=800, bbox_inches='tight')
 fig.savefig(f'{save_path}/Figure3b_Putamen_GLM_partregress.tiff', format='tiff', dpi=800, bbox_inches='tight')
 
-# --- Mediation Analysis Results ---
-# Bar plot for indirect effects for Target behavior
+
+# ---Plot Mediation Analysis Results ---
+# Read mediation results
+med_df = pd.read_csv
+
 # Convert SE column to NumPy array
 y_errors = med_df['SE'].values  # Ensure it's a 1D NumPy array
 
@@ -332,6 +326,7 @@ for index, row in med_df.iterrows():
     plt.text(index, row['Indirect_Effect'], f"p = {row['p_value']:.3f}", ha='center', va='bottom', fontsize=12)
 plt.tight_layout()
 plt.show()
+
 
 # --- Plot moderation effects ---
 mod_coefficients = moderation_results[dependent_var]['coefficients']
@@ -353,58 +348,3 @@ text = (f"Adjusted R²: {mod_rsquared_adj:.3f}\n"
         f"fp-value: {mod_fp_value:.3f}")
 plt.text(-1.5, mod_coefficients.min() * 0.8, text, fontsize=12, color='black', bbox=dict(facecolor='white', alpha=0.7))
 plt.tight_layout()
-
-# --- Plot handedness and eye dominance correlations ---
-# === Define variables ===
-traits = {
-    'Eye Dominance': 'Eye_Dominance',
-    'Handedness': 'Handedness'  # Adjust if needed
-}
-targets = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu', 'Landmark_PSE']
-
-# === Prepare correlation and p-value matrices ===
-rho_matrix = pd.DataFrame(index=traits.keys(), columns=targets)
-pval_matrix = pd.DataFrame(index=traits.keys(), columns=targets)
-
-# Calculate Spearman correlations
-for trait_label, trait_col in traits.items():
-    for target in targets:
-        if trait_col in data_full.columns and target in data_full.columns:
-            # Drop NaNs pairwise
-            df_clean = data_full[[trait_col, target]].dropna()
-            if df_clean.shape[0] > 2:
-                rho, pval = spearmanr(df_clean[trait_col], df_clean[target])
-                rho_matrix.loc[trait_label, target] = round(rho, 2)
-                pval_matrix.loc[trait_label, target] = pval
-            else:
-                rho_matrix.loc[trait_label, target] = np.nan
-                pval_matrix.loc[trait_label, target] = np.nan
-
-# === Annotate correlation matrix ===
-def format_annotation(r, p):
-    if pd.isna(r) or pd.isna(p):
-        return ""
-    p_text = "p < 0.001" if p < 0.001 else f"p = {p:.3f}"
-    return f"ρ = {r:.2f}\n{p_text}"
-
-annot = pd.DataFrame([
-    [format_annotation(rho_matrix.loc[row, col], pval_matrix.loc[row, col]) for col in rho_matrix.columns]
-    for row in rho_matrix.index
-], index=rho_matrix.index, columns=rho_matrix.columns)
-
-# === Plot heatmap ===
-plt.figure(figsize=(12, 3.5))
-sns.heatmap(rho_matrix.astype(float), annot=annot, fmt='', cmap='coolwarm', vmin=-1, vmax=1,
-            linewidths=0.5, cbar_kws={"label": "Spearman ρ"})
-
-plt.title("Correlation of Eye Dominance & Handedness with Subcortical LVs and Landmark PSE", fontsize=14, fontweight='bold')
-plt.ylabel("")
-plt.xlabel("")
-plt.xticks(rotation=45, ha='right')
-plt.yticks(rotation=0)
-plt.tight_layout()
-
-# Save each figure
-fig.savefig(f'{save_path}/Figure1Supp_handedness_eyedominance_correlations.svg', format='svg', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure1Supp_handedness_eyedominance_correlations.png', format='png', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure1Supp_handedness_eyedominance_correlations.tiff', format='tiff', dpi=800, bbox_inches='tight')
