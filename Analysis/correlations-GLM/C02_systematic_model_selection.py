@@ -302,13 +302,37 @@ for i in range(1, len(all_terms) + 1):
 # Convert results to a DataFrame for analysis
 results_df = pd.DataFrame(results)
 results_df.sort_values(by='AIC', inplace=True)  # can change AIC to something else here
-results_df.to_csv(f'{models_fname}/{dependent_var}_model_results.csv')
+# results_df.to_csv(f'{models_fname}/{dependent_var}_model_results.csv')
 
 # Step 7: Analyze the best model based on AIC
 best_model_row = results_df.iloc[0]
 best_model = best_model_row['Model']
 best_model_summary = best_model_row['Model_summary']
 best_predictors = best_model_row['Predictors']
+
+# === Save best model as a flat coefficient table (useful for plotting in C03) ===
+best_model_table = pd.DataFrame({
+    'Predictor': best_model.params.index,
+    'coefficients': best_model.params.values,
+    'standard_error': best_model.bse.values,
+    't': best_model.tvalues.values,
+    'p_values': best_model.pvalues.values
+})
+
+# Add confidence intervals
+conf_int = best_model.conf_int(alpha=0.05)
+best_model_table['CI_lower'] = conf_int[0].values
+best_model_table['CI_upper'] = conf_int[1].values
+
+# Add model-level stats to each row (same for all)
+best_model_table['fvalue'] = best_model.fvalue
+best_model_table['f_pvalue'] = best_model.f_pvalue
+best_model_table['rsquared_adj'] = best_model.rsquared_adj
+best_model_table['aic'] = best_model.aic
+best_model_table['bic'] = best_model.bic
+
+# Save as CSV (flat table like moderation_df)
+best_model_table.to_csv(f"{models_fname}/{dependent_var}_best_model.csv", index=False)
 
 print("\nBest Model Predictors Based on AIC:", best_predictors)
 print("\nBest Model Summary Base on AIC:\n", best_model_summary)

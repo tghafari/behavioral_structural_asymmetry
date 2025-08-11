@@ -48,29 +48,25 @@ elif platform == 'mac':
 # volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/behaviour'
 volume_sheet_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias')
 models_fname = op.join(volume_sheet_dir, 'Results/model-results/FINAL-model_results')
-lat_index_csv = op.join(volume_sheet_dir, 'data/collated/FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers_eye-dominance.csv')
+# lat_index_csv = op.join(volume_sheet_dir, 'data/collated/FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers_eye-dominance.csv')
 # Save figure in BEAR outage (that's where the latest version of the manuscript is)
 save_path = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/landmark-manus/Figures'
 
-# Step 1: Load the CSV file
-data_full = pd.read_csv(lat_index_csv)
-print(data_full.head())
-
-# Step 2: Define dependent and independent variables
+# Define dependent, independent and mediator/moderator variables
 dep_vars = {'Landmark': 'Landmark_PSE'}
 dependent_var = 'Landmark'
 independent_var = ['Puta']
 mediator =  'Handedness'  # or 'Landmark_MS' or 'Eye_Dominance'
 moderator = mediator
 
-# Remove NaNs from dependent variable (but keep rows in the dataset)
-data = data_full.dropna(subset=[dep_vars[dependent_var]] + independent_var)
-
-# Read the main model (landmark_pse ~ putamen)
+# Read the models (landmark_pse ~ putamen)
 results_df = pd.read_csv(f'{models_fname}/{dependent_var}_model_results.csv')
 best_model_row = results_df.iloc[0]
 best_model = best_model_row['Model']
 best_predictors = best_model_row['Predictors']
+
+med_df = pd.read_csv(f'{models_fname}/{dependent_var}_mediator-{mediator}.csv')
+moderation_df = pd.read_csv(f'{models_fname}/{dependent_var}_moderator-{mediator}.csv')
 
 # -----------------------
 # Plotting Figure 3a and 3b:
@@ -82,8 +78,17 @@ fvalue = best_model.fvalue
 fp_value = best_model.f_pvalue
 
 fig, ax = plt.subplots(figsize=(12, 8))
-coefficients.plot(kind='bar', yerr=std_err, alpha=0.8, 
-                  color='#191970', edgecolor='black')
+
+# === Custom bar colors ===
+color_map = {
+    'Puta': '#191970',                         # Deep blue
+    'const': '#C0C0C0'                         # Silver
+}
+# bar_colors = [color_map.get(idx, '#999999') for idx in ['Puta', 'const']]
+
+coefficients.plot(kind='bar', yerr=std_err, 
+                  capsize=6, alpha=0.8, 
+                  color=color_map, edgecolor='black')
 plt.title(f'Beta Coefficients of the Best Model for {dependent_var}', fontsize=14, fontweight='bold')
 plt.ylabel('Coefficient Value', fontsize=12, fontweight='bold')
 plt.xlabel('Predictors', fontsize=12, fontweight='bold')
@@ -169,9 +174,6 @@ fig.savefig(f'{save_path}/Figure3b_Putamen_GLM_partregress.tiff', format='tiff',
 # Plotting Figure 4 and 5:
 # -----------------------
 # Mediation & Moderation:
-med_df = pd.read_csv(f'{models_fname}/{dependent_var}_mediator-{mediator}.csv')
-moderation_df = pd.read_csv(f'{models_fname}/{dependent_var}_moderator-{mediator}.csv')
-
 # Convert SE column to NumPy array
 y_errors = med_df['SE'].values  # Ensure it's a 1D NumPy array
 
@@ -180,29 +182,81 @@ plt.figure(figsize=(10, 6))
 sns.barplot(data=med_df, x='Subcortical', y='Indirect_Effect', palette="viridis", errorbar=None)  # Disable automatic error bars
 # Manually add error bars
 plt.errorbar(x=range(len(med_df)), y=med_df['Indirect_Effect'], yerr=y_errors, fmt='none', capsize=5, color='black')
-plt.title(f'Mediation Analysis: Indirect Effects {dependent_var}', fontsize=16)
+plt.title(f'Mediation Analysis: Indirect effects of {mediator} on {dependent_var}-{independent_var} relationship', fontsize=14, fontweight='bold')
 for index, row in med_df.iterrows():
-    plt.text(index, row['Indirect_Effect'], f"p = {row['p_value']:.3f}", ha='center', va='bottom', fontsize=12)
+    plt.text(index, row['Indirect_Effect'], f"p = {row['p_value']:.3f}", ha='center', va='bottom', fontsize=12, fontweight='bold')
 plt.tight_layout()
 plt.show()
 
 # --- Plot moderation effects --
+# === Extract components from moderation_df ===
+# Make sure index = predictor names
+moderation_df = moderation_df.set_index('Unnamed: 0')  # Use predictor names as index
+
 mod_coefficients = moderation_df['coefficients']
 mod_std_err = moderation_df['standard_error']
-mod_fvalue = moderation_df['fvalue']
-mod_fp_value = moderation_df['f_pvalue']
-mod_rsquared_adj = moderation_df['rsquared_adj']
+mod_p_values = moderation_df['p_values']
+mod_fvalue = moderation_df['fvalue'].iloc[0]
+mod_fp_value = moderation_df['f_pvalue'].iloc[0]
+mod_rsquared_adj = moderation_df['rsquared_adj'].iloc[0]
 
-plt.figure(figsize=(12, 8))
-mod_coefficients.plot(kind='bar', yerr=mod_std_err, color='skyblue', alpha=0.8, edgecolor='black')
-plt.title(f'Beta Coefficients of moderation in the Best Model for {dependent_var}', fontsize=16)
-plt.ylabel('Coefficient Value')
-plt.xlabel('Predictors')
-plt.axhline(0, color='red', linestyle='--', linewidth=1)
+# === Custom bar colors ===
+color_map = {
+    'Puta': '#191970',                         # Deep blue
+    'Handedness': '#4682B4',                   # Steel blue
+    'Puta_x_Handedness': '#20B2AA',            # Light sea green
+    'const': '#C0C0C0'                         # Silver
+}
+bar_colors = [color_map.get(idx, '#999999') for idx in moderation_df.index]
 
-# Add text annotations with goodness-of-fit statistics
-text = (f"Adjusted R²: {mod_rsquared_adj:.3f}\n"
-        f"fvalue: {mod_fvalue:.3f}\n"
-        f"fp-value: {mod_fp_value:.3f}")
-plt.text(-1.5, mod_coefficients.min() * 0.8, text, fontsize=12, color='black', bbox=dict(facecolor='white', alpha=0.7))
+# === Plot ===
+fig, ax = plt.subplots(figsize=(12, 8))
+
+mod_coefficients.plot(
+    kind='bar', 
+    yerr=mod_std_err, 
+    ax=ax, 
+    alpha=0.85,
+    color=bar_colors, 
+    edgecolor='black', 
+    capsize=6
+)
+
+ax.axhline(0, color='k', linestyle='--', linewidth=1)
+ax.set_title(f'Moderation Effect of Handedness on Putamen → Landmark PSE', fontsize=14, fontweight='bold')
+ax.set_ylabel('Coefficient Value', fontsize=12, fontweight='bold')
+ax.set_xlabel('Predictors', fontsize=12, fontweight='bold')
+ax.tick_params(axis='x', labelrotation=0)
+
+# === Model fit text box ===
+fit_text = (f"Adjusted R²: {mod_rsquared_adj:.3f}\n"
+            f"fvalue = {mod_fvalue:.3f}\n"
+            f"p-value = {mod_fp_value:.3f}")
+ax.text(-0.4, mod_coefficients.min() * 1.0, fit_text, fontsize=12, color='black',
+        bbox=dict(facecolor='oldlace', alpha=0.8, edgecolor='darkgoldenrod', boxstyle='round,pad=1'))
+
+# === Coefficient table box ===
+mod_table = pd.DataFrame({
+    'coef': mod_coefficients,
+    'SE': mod_std_err,
+    't': mod_coefficients / mod_std_err,
+    'p': mod_p_values,
+})
+mod_table['CI_lower'] = mod_table['coef'] - 1.96 * mod_table['SE']
+mod_table['CI_upper'] = mod_table['coef'] + 1.96 * mod_table['SE']
+mod_table_rounded = mod_table.round(3).astype(str)
+
+# Format as text block
+coef_table_text = '\n'.join([
+    f"{idx}: coef = {row['coef']}, SE = {row['SE']}, t = {row['t']}, "
+    f"p = {row['p']}, CI = [{row['CI_lower']}, {row['CI_upper']}]"
+    for idx, row in mod_table_rounded.iterrows()
+])
+
+ax.text(-0.4, mod_coefficients.min() * 1.25, coef_table_text, fontsize=11, color='black',
+        bbox=dict(facecolor='whitesmoke', alpha=0.85, edgecolor='dimgray', boxstyle='round,pad=1'))
+
 plt.tight_layout()
+fig.savefig(f'{save_path}/Figure4_Handedness_moderation.svg', format='svg', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure4_Handedness_moderation.png', format='png', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure4_Handedness_moderation.tiff', format='tiff', dpi=800, bbox_inches='tight')
