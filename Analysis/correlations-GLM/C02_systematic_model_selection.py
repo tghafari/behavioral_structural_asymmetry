@@ -191,16 +191,11 @@ elif platform == 'mac':
 volume_sheet_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias')
 
 lat_index_csv = op.join(volume_sheet_dir, 'data/collated/FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers_eye-dominance.csv')
-models_fname = op.join(volume_sheet_dir, 'Results/model_results')
-pairplot_figname = op.join(models_fname, 'pair_plot')
-mediators_fname = op.join(models_fname, 'mediators')
-moderators_fname = op.join(models_fname, 'moderators')
+models_fname = op.join(volume_sheet_dir, 'Results/model-results')
 res_figname = op.join(models_fname, 'residuals')
 qqplot_figname = op.join(models_fname, 'qqplot')
 coefficient_figname = op.join(models_fname, 'beta_coefficients')
 regresplot_figname = op.join(models_fname, 'partial_regression')
-mediationplot_figname = op.join(models_fname, 'mediation')
-mod_coefficient_figname = op.join(models_fname, 'moderation')
 
 report_all_methods = False  # do you want to report best 5 models with all methods?
 plotting = True
@@ -212,8 +207,8 @@ print(data_full.head())
 # Step 2: Define dependent and independent variables
 dep_vars = {'Target': 'Threshold_Difference', 'Landmark': 'Landmark_PSE', 'Target_MS': 'Target_MS_Laterality', 'Landmark_MS': 'Landmark_MS'}
 independent_vars = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu']  
-# Define the mediator variable (microsaccade laterality)
-mediator =  {'Target': 'Target_MS_Laterality', 'Landmark': 'Handedness', 'Target_MS': 'Threshold_Difference', 'Landmark_MS': 'Landmark_PSE'}
+# Define the mediator variable (Landmark_MS/ Handedness/ Eye_Dominance)
+mediator =  {'Target': 'Target_MS_Laterality', 'Landmark': 'Eye_Dominance', 'Target_MS': 'Threshold_Difference', 'Landmark_MS': 'Landmark_PSE'}
 
 # Remove NaNs from dependent variable (but keep rows in the dataset)
 dependent_var = input(f'which dependent variable to do now? {dep_vars.keys()}\n (Do not add quotation marks!)\n')
@@ -246,7 +241,7 @@ for i, j in zip(*np.triu_indices_from(g.axes, k=1)):  # Loop over upper triangle
             ax.text(0.05, 0.95, f"ρ = {spearman_corr:.2f} \n{p_text}", 
                     transform=ax.transAxes, fontsize=10, 
                     verticalalignment='top', bbox=dict(boxstyle="round", fc="beige", alpha=0.8))
-plt.savefig(f'{pairplot_figname}_{dependent_var}.png')
+plt.savefig(f'{models_fname}/{dependent_var}_{mediator[dependent_var]}.png')
 plt.show()
 
 # Step 4: Check for multicollinearity using VIF
@@ -307,7 +302,7 @@ for i in range(1, len(all_terms) + 1):
 # Convert results to a DataFrame for analysis
 results_df = pd.DataFrame(results)
 results_df.sort_values(by='AIC', inplace=True)  # can change AIC to something else here
-results_df.to_csv(f'{models_fname}_{dependent_var}.csv')
+results_df.to_csv(f'{models_fname}/{dependent_var}_model_results.csv')
 
 # Step 7: Analyze the best model based on AIC
 best_model_row = results_df.iloc[0]
@@ -372,7 +367,7 @@ for regres in best_predictors:
 
 # Convert results to DataFrames for plotting
 med_df = pd.DataFrame(mediation_results[dependent_var])
-med_df.to_csv(f'{mediators_fname}_{dependent_var}.csv')
+med_df.to_csv(f'{models_fname}/{dependent_var}_mediator-{mediator[dependent_var]}.csv')
 
 # -----------------------
 # Moderation Analysis:
@@ -380,7 +375,7 @@ med_df.to_csv(f'{mediators_fname}_{dependent_var}.csv')
 moderation_results = {f'{dependent_var}': []}
 moderation_results[dependent_var] = moderation_analysis(data, dep_vars[dependent_var], best_predictors, mediator[dependent_var])
 moderation_df = pd.DataFrame(moderation_results[dependent_var])
-moderation_df.to_csv(f'{moderators_fname}_{dependent_var}.csv')
+moderation_df.to_csv(f'{models_fname}/{dependent_var}_moderator-{mediator[dependent_var]}.csv')
 
 if plotting: 
         
@@ -451,7 +446,7 @@ if plotting:
     for index, row in med_df.iterrows():
         plt.text(index, row['Indirect_Effect'], f"p = {row['p_value']:.3f}", ha='center', va='bottom', fontsize=12)
     plt.tight_layout()
-    plt.savefig(f'{mediationplot_figname}_{dependent_var}.png')
+    plt.savefig(f'{models_fname}/{dependent_var}_mediation_{mediator[dependent_var]}.png')
     plt.show()
 
 
@@ -475,12 +470,13 @@ if plotting:
             f"fp-value: {mod_fp_value:.3f}")
     plt.text(-1.5, mod_coefficients.min() * 0.8, text, fontsize=12, color='black', bbox=dict(facecolor='white', alpha=0.7))
     plt.tight_layout()
-    plt.savefig(f'{mod_coefficient_figname}_{dependent_var}.png')
+    plt.savefig(f'{models_fname}/{dependent_var}_moderation_{mediator[dependent_var]}.png')
 
 # --- Plot handedness and eye dominance correlations ---
 # === Define variables ===
 traits = {
     'Eye Dominance': 'Eye_Dominance',
+    'Microsaccade Laterality': 'Landmark_MS',
     'Handedness': 'Handedness'  # Adjust if needed
 }
 targets = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu', 'Landmark_PSE']
@@ -526,8 +522,4 @@ plt.xlabel("")
 plt.xticks(rotation=45, ha='right')
 plt.yticks(rotation=0)
 plt.tight_layout()
-
-# Save each figure
-fig.savefig(f'{save_path}/Figure1Supp_handedness_eyedominance_correlations.svg', format='svg', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure1Supp_handedness_eyedominance_correlations.png', format='png', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure1Supp_handedness_eyedominance_correlations.tiff', format='tiff', dpi=800, bbox_inches='tight')
+plt.show()
