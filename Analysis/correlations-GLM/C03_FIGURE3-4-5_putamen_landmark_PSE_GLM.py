@@ -1,6 +1,6 @@
 """
 ===============================================
-FIGURE345_putamen_landmark_PSE_GLM
+FIGURE34_putamen_landmark_PSE_GLM
 Figure three, four and five of paper
 
 Purpose:
@@ -48,19 +48,22 @@ elif platform == 'mac':
 # volume_sheet_dir = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/behaviour'
 volume_sheet_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-and-behavioral-bias')
 models_fname = op.join(volume_sheet_dir, 'Results/model-results/FINAL-model_results')
-# lat_index_csv = op.join(volume_sheet_dir, 'data/collated/FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers_eye-dominance.csv')
+lat_index_csv = op.join(volume_sheet_dir, 'data/collated/FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers_eye-dominance.csv')
 # Save figure in BEAR outage (that's where the latest version of the manuscript is)
 save_path = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/landmark-manus/Figures'
 
 # Define dependent, independent and mediator/moderator variables
+data_full = pd.read_csv(lat_index_csv)  # only use this for partial regression plots (not coefficients of the best model)
+
 dep_vars = {'Landmark': 'Landmark_PSE'}
 dependent_var = 'Landmark'
 independent_var = ['Puta']
-mediator =  'Handedness'  # or 'Landmark_MS' or 'Eye_Dominance'
+mediator =  'Eye_Dominance'  # or 'Landmark_MS' or 'Eye_Dominance'
 moderator = mediator
 
 # Read the models (landmark_pse ~ putamen)
 results_df = pd.read_csv(f'{models_fname}/{dependent_var}_model_results.csv')
+best_model_table = pd.read_csv(f"{models_fname}/{dependent_var}_best_model.csv")  # this is used for coefficients of the best model
 best_model_row = results_df.iloc[0]
 best_model = best_model_row['Model']
 best_predictors = best_model_row['Predictors']
@@ -72,83 +75,87 @@ moderation_df = pd.read_csv(f'{models_fname}/{dependent_var}_moderator-{mediator
 # Plotting Figure 3a and 3b:
 # -----------------------
 # --- Plot beta coefficients ---
-coefficients = best_model.params
-std_err = best_model.bse
-fvalue = best_model.fvalue
-fp_value = best_model.f_pvalue
+# Extract row-wise stats from flat table
+coefficients = best_model_table.set_index('Predictor')['coefficients']
+std_err = best_model_table.set_index('Predictor')['standard_error']
 
+# Model-level stats (same across all rows)
+fvalue = best_model_table['fvalue'].iloc[0]
+fp_value = best_model_table['f_pvalue'].iloc[0]
+adj_rsq = best_model_table['rsquared_adj'].iloc[0]
+aic = best_model_table['aic'].iloc[0]
+bic = best_model_table['bic'].iloc[0]
+
+# === Plot ===
 fig, ax = plt.subplots(figsize=(12, 8))
 
-# === Custom bar colors ===
+# Custom bar colors
 color_map = {
-    'Puta': '#191970',                         # Deep blue
-    'const': '#C0C0C0'                         # Silver
+    'Puta': '#191970',     # Deep blue
+    'const': '#C0C0C0'     # Silver
 }
-# bar_colors = [color_map.get(idx, '#999999') for idx in ['Puta', 'const']]
+bar_colors = [color_map.get(idx, '#999999') for idx in coefficients.index]
 
-coefficients.plot(kind='bar', yerr=std_err, 
-                  capsize=6, alpha=0.8, 
-                  color=color_map, edgecolor='black')
-plt.title(f'Beta Coefficients of the Best Model for {dependent_var}', fontsize=14, fontweight='bold')
-plt.ylabel('Coefficient Value', fontsize=12, fontweight='bold')
-plt.xlabel('Predictors', fontsize=12, fontweight='bold')
-plt.axhline(0, color='k', linestyle='--', linewidth=1)
+coefficients.plot(kind='bar', yerr=std_err, capsize=6, alpha=0.8,
+                  color=bar_colors, edgecolor='black', ax=ax)
 
-# Add text annotations with goodness-of-fit statistics
-text = (f"AIC: {best_model.aic:.2f}\n"
-        f"BIC: {best_model.bic:.2f}\n"
-        f"Adjusted R²: {best_model.rsquared_adj:.3f}\n"
-        f"fvalue: {fvalue:.3f}\n"
-        f"p-value: {fp_value:.3f}")
-plt.text(-0.3, coefficients.min() * 1.1, text, fontsize=12, color='black', 
-         bbox=dict(facecolor='oldlace', alpha=0.8, edgecolor='darkgoldenrod', boxstyle='round,pad=1'))
+ax.set_title(f'Beta Coefficients of the Best Model for {dependent_var}', fontsize=14, fontweight='bold')
+ax.set_ylabel('Coefficient Value', fontsize=12, fontweight='bold')
+ax.set_xlabel('Predictors', fontsize=12, fontweight='bold')
+ax.axhline(0, color='k', linestyle='--', linewidth=1)
 
-# Add coeficient table to this plot
-coef_table = best_model.summary2().tables[1]  # This gives the coefficient table
-coef_table_rounded = coef_table.round(3).astype(str)
+# === Fit statistics box ===
+text = (f"AIC: {aic:.2f}\n"
+        f"BIC: {bic:.2f}\n"
+        f"Adjusted R²: {adj_rsq:.3f}\n"
+        f"F = {fvalue:.3f}\n"
+        f"p-value = {fp_value:.3f}")
+ax.text(-0.3, coefficients.min() * 1.1, text, fontsize=12, color='black',
+        bbox=dict(facecolor='oldlace', alpha=0.8, edgecolor='darkgoldenrod', boxstyle='round,pad=1'))
 
-# Format each row into a string
+# === Coefficient table box ===
 coef_table_text = '\n'.join([
-    f"{idx}: coef = {row['Coef.']}, SE = {row['Std.Err.']}, t = {row['t']}, "
-    f"p = {row['P>|t|']}, CI = [{row['[0.025']}, {row['0.975]']}]"
-    for idx, row in coef_table_rounded.iterrows()
+    f"{row['Predictor']}: coef = {row['coefficients']:.3f}, SE = {row['standard_error']:.3f}, "
+    f"t = {row['t']:.3f}, p = {row['p_values']:.3f}, CI = [{row['CI_lower']:.3f}, {row['CI_upper']:.3f}]"
+    for _, row in best_model_table.iterrows()
 ])
+ax.text(-0.3, coefficients.min() * 1.3, coef_table_text, fontsize=11, color='black',
+        bbox=dict(facecolor='whitesmoke', alpha=0.85, edgecolor='dimgray', boxstyle='round,pad=1'))
 
-# Add coefficient table below the stats box
-plt.text(-0.3, coefficients.min() * 1.3, coef_table_text, fontsize=11, color='black',
-         bbox=dict(facecolor='whitesmoke', alpha=0.85, edgecolor='dimgray', boxstyle='round,pad=1'))
 plt.tight_layout()
 
+# === Save in multiple formats ===
 fig.savefig(f'{save_path}/Figure3a_Putamen_GLM.svg', format='svg', dpi=800, bbox_inches='tight')
 fig.savefig(f'{save_path}/Figure3a_Putamen_GLM.png', format='png', dpi=800, bbox_inches='tight')
 fig.savefig(f'{save_path}/Figure3a_Putamen_GLM.tiff', format='tiff', dpi=800, bbox_inches='tight')
 plt.show()
 
 # --- Partial regression plot ---
-# === Extract data used in model ===
-exog_names = best_model.model.exog_names
-endog_name = best_model.model.endog_names
+# === Reconstruct predictors and DV from saved model table ===
+predictors = best_model_table['Predictor'].tolist()
+predictors = [p for p in predictors if p != 'const']
+dv = dep_vars[dependent_var]  # 'Landmark_PSE'
 
-# Create DataFrame
-X = pd.DataFrame(best_model.model.exog, columns=exog_names)
-y = pd.Series(best_model.model.endog, name=endog_name)
-data = pd.concat([y, X], axis=1)
+# Drop NA rows used in model
+model_data = data_full.dropna(subset=predictors + [dv])
 
-# === Manually compute partial regression residuals ===
+# Define X and y
+X = model_data[predictors]
+y = model_data[dv]
 
+# === Partial out other predictors (excluding Putamen) ===
 # Residual of y ~ other predictors
-other_X = X.drop(columns=['const', 'Puta'])
-model_y = sm.OLS(y, sm.add_constant(other_X)).fit()
+other_predictors = [p for p in predictors if p != 'Puta']
+model_y = sm.OLS(y, sm.add_constant(model_data[other_predictors])).fit()
 y_resid = model_y.resid
 
 # Residual of Puta ~ other predictors
-model_x = sm.OLS(X['Puta'], sm.add_constant(other_X)).fit()
+model_x = sm.OLS(model_data['Puta'], sm.add_constant(model_data[other_predictors])).fit()
 x_resid = model_x.resid
 
 # === Plotting ===
 fig, ax = plt.subplots(figsize=(12, 8))
 
-# Scatter with custom style
 sns.regplot(
     x=x_resid, y=y_resid,
     scatter=True,
@@ -159,8 +166,8 @@ sns.regplot(
     line_kws={'color': 'black', 'lw': 1.5}
 )
 
-# === Annotate and format ===
-ax.set_xlabel(r'LV$_{\textbf{\textrm{Puta}}}$', fontsize=12, fontweight='bold')
+# === Format ===
+ax.set_xlabel(r'LV$_{\mathbf{Puta}}$', fontsize=12, fontweight='bold')
 ax.set_ylabel('Landmark PSE', fontsize=12, fontweight='bold')
 ax.set_title('Partial Regression Plot for Putamen', fontsize=14, fontweight='bold')
 
@@ -178,14 +185,45 @@ fig.savefig(f'{save_path}/Figure3b_Putamen_GLM_partregress.tiff', format='tiff',
 y_errors = med_df['SE'].values  # Ensure it's a 1D NumPy array
 
 # --- Mediation Analysis Results ---
-plt.figure(figsize=(10, 6))
-sns.barplot(data=med_df, x='Subcortical', y='Indirect_Effect', palette="viridis", errorbar=None)  # Disable automatic error bars
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Bar plot: single color, no auto error bars
+sns.barplot(
+    data=med_df,
+    x='Subcortical',
+    y='Indirect_Effect',
+    errorbar=None,
+    color='#4682B4',  # Steel blue
+    edgecolor='black'
+)  # Disable automatic error bars
+
 # Manually add error bars
-plt.errorbar(x=range(len(med_df)), y=med_df['Indirect_Effect'], yerr=y_errors, fmt='none', capsize=5, color='black')
-plt.title(f'Mediation Analysis: Indirect effects of {mediator} on {dependent_var}-{independent_var} relationship', fontsize=14, fontweight='bold')
-for index, row in med_df.iterrows():
-    plt.text(index, row['Indirect_Effect'], f"p = {row['p_value']:.3f}", ha='center', va='bottom', fontsize=12, fontweight='bold')
+plt.errorbar(
+    x=range(len(med_df)),
+    y=med_df['Indirect_Effect'],
+    yerr=y_errors,
+    fmt='none',
+    capsize=6,
+    color='black'
+)
+
+plt.title(f'Mediation Analysis: Indirect effects of of Eye Dominance on Putamen → Landmark PSE', fontsize=14, fontweight='bold')
+plt.xlabel('Subcortical Structure', fontsize=12, fontweight='bold')
+plt.ylabel('Indirect Effect', fontsize=12, fontweight='bold')
+
+txt_pval = f'p-value = {med_df['p_value'][0]:.3f}'
+box_props = dict(facecolor='oldlace', alpha=0.8, edgecolor='darkgoldenrod', boxstyle='round')
+plt.text(0.05, 0.95, 
+        txt_pval,
+        transform=plt.gca().transAxes,
+        fontsize=10, 
+        verticalalignment='top', 
+        bbox=box_props,
+        style='italic')
 plt.tight_layout()
+fig.savefig(f'{save_path}/Figure4_{mediator}_mediation.svg', format='svg', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure4_{mediator}_mediation.png', format='png', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure4_{mediator}_mediation.tiff', format='tiff', dpi=800, bbox_inches='tight')
 plt.show()
 
 # --- Plot moderation effects --
@@ -202,10 +240,10 @@ mod_rsquared_adj = moderation_df['rsquared_adj'].iloc[0]
 
 # === Custom bar colors ===
 color_map = {
-    'Puta': '#191970',                         # Deep blue
-    'Handedness': '#4682B4',                   # Steel blue
-    'Puta_x_Handedness': '#20B2AA',            # Light sea green
-    'const': '#C0C0C0'                         # Silver
+    'Puta': '#191970',                          # Deep blue
+    f'{mediator}': '#4682B4',                   # Steel blue
+    f'Puta_x_{mediator}': '#20B2AA',            # Light sea green
+    'const': '#C0C0C0'                          # Silver
 }
 bar_colors = [color_map.get(idx, '#999999') for idx in moderation_df.index]
 
@@ -223,7 +261,7 @@ mod_coefficients.plot(
 )
 
 ax.axhline(0, color='k', linestyle='--', linewidth=1)
-ax.set_title(f'Moderation Effect of Handedness on Putamen → Landmark PSE', fontsize=14, fontweight='bold')
+ax.set_title(f'Moderation Effect of Eye Dominance on Putamen → Landmark PSE', fontsize=14, fontweight='bold')
 ax.set_ylabel('Coefficient Value', fontsize=12, fontweight='bold')
 ax.set_xlabel('Predictors', fontsize=12, fontweight='bold')
 ax.tick_params(axis='x', labelrotation=0)
@@ -232,7 +270,7 @@ ax.tick_params(axis='x', labelrotation=0)
 fit_text = (f"Adjusted R²: {mod_rsquared_adj:.3f}\n"
             f"fvalue = {mod_fvalue:.3f}\n"
             f"p-value = {mod_fp_value:.3f}")
-ax.text(-0.4, mod_coefficients.min() * 1.0, fit_text, fontsize=12, color='black',
+ax.text(-0.4, -8, fit_text, fontsize=12, color='black',
         bbox=dict(facecolor='oldlace', alpha=0.8, edgecolor='darkgoldenrod', boxstyle='round,pad=1'))
 
 # === Coefficient table box ===
@@ -253,10 +291,11 @@ coef_table_text = '\n'.join([
     for idx, row in mod_table_rounded.iterrows()
 ])
 
-ax.text(-0.4, mod_coefficients.min() * 1.25, coef_table_text, fontsize=11, color='black',
+ax.text(-0.4, -16, coef_table_text, fontsize=11, color='black',
         bbox=dict(facecolor='whitesmoke', alpha=0.85, edgecolor='dimgray', boxstyle='round,pad=1'))
 
 plt.tight_layout()
-fig.savefig(f'{save_path}/Figure4_Handedness_moderation.svg', format='svg', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure4_Handedness_moderation.png', format='png', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure4_Handedness_moderation.tiff', format='tiff', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure4_{mediator}_moderation.svg', format='svg', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure4_{mediator}_moderation.png', format='png', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure4_{mediator}_moderation.tiff', format='tiff', dpi=800, bbox_inches='tight')
+plt.show()
