@@ -1,7 +1,7 @@
 """
 ===============================================
-FIGURE34_putamen_landmark_PSE_GLM
-Figure three, four and five of paper
+FIGURE4-5-supp_putamen_landmark_PSE_GLM
+Figure four, five and supplementary of paper
 
 Purpose:
     this script reads the model results as well as mediation and moderaion
@@ -58,7 +58,7 @@ data_full = pd.read_csv(lat_index_csv)  # only use this for partial regression p
 dep_vars = {'Landmark': 'Landmark_PSE'}
 dependent_var = 'Landmark'
 independent_var = ['Puta']
-mediator =  'Eye_Dominance'  # or 'Landmark_MS' or 'Eye_Dominance'
+mediator =  'Landmark_MS'  # 'Handedness' or 'Landmark_MS' or 'Eye_Dominance'
 moderator = mediator
 
 # Read the models (landmark_pse ~ putamen)
@@ -110,7 +110,7 @@ text = (f"AIC: {aic:.2f}\n"
         f"Adjusted R²: {adj_rsq:.3f}\n"
         f"F = {fvalue:.3f}\n"
         f"p-value = {fp_value:.3f}")
-ax.text(-0.3, coefficients.min() * 1.1, text, fontsize=12, color='black',
+ax.text(-0.3, 2, text, fontsize=12, color='black',
         bbox=dict(facecolor='oldlace', alpha=0.8, edgecolor='darkgoldenrod', boxstyle='round,pad=1'))
 
 # === Coefficient table box ===
@@ -119,15 +119,15 @@ coef_table_text = '\n'.join([
     f"t = {row['t']:.3f}, p = {row['p_values']:.3f}, CI = [{row['CI_lower']:.3f}, {row['CI_upper']:.3f}]"
     for _, row in best_model_table.iterrows()
 ])
-ax.text(-0.3, coefficients.min() * 1.3, coef_table_text, fontsize=11, color='black',
+ax.text(-0.3, 1, coef_table_text, fontsize=11, color='black',
         bbox=dict(facecolor='whitesmoke', alpha=0.85, edgecolor='dimgray', boxstyle='round,pad=1'))
 
 plt.tight_layout()
 
 # === Save in multiple formats ===
-fig.savefig(f'{save_path}/Figure3a_Putamen_GLM.svg', format='svg', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure3a_Putamen_GLM.png', format='png', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure3a_Putamen_GLM.tiff', format='tiff', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure4a_Putamen_GLM.svg', format='svg', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure4a_Putamen_GLM.png', format='png', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure4a_Putamen_GLM.tiff', format='tiff', dpi=800, bbox_inches='tight')
 plt.show()
 
 # --- Partial regression plot ---
@@ -173,9 +173,10 @@ ax.set_title('Partial Regression Plot for Putamen', fontsize=14, fontweight='bol
 
 sns.despine()
 plt.tight_layout()
-fig.savefig(f'{save_path}/Figure3b_Putamen_GLM_partregress.svg', format='svg', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure3b_Putamen_GLM_partregress.png', format='png', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure3b_Putamen_GLM_partregress.tiff', format='tiff', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure4b_Putamen_GLM_partregress.svg', format='svg', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure4b_Putamen_GLM_partregress.png', format='png', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure4b_Putamen_GLM_partregress.tiff', format='tiff', dpi=800, bbox_inches='tight')
+plt.show()
 
 # -----------------------
 # Plotting Figure 4 and 5:
@@ -207,13 +208,13 @@ plt.errorbar(
     color='black'
 )
 
-plt.title(f'Mediation Analysis: Indirect effects of of Eye Dominance on Putamen → Landmark PSE', fontsize=14, fontweight='bold')
+plt.title(f'Mediation Analysis: Indirect effects of of Microsaccade Laterality on Putamen → Landmark PSE', fontsize=14, fontweight='bold')
 plt.xlabel('Subcortical Structure', fontsize=12, fontweight='bold')
 plt.ylabel('Indirect Effect', fontsize=12, fontweight='bold')
 
 txt_pval = f'p-value = {med_df['p_value'][0]:.3f}'
 box_props = dict(facecolor='oldlace', alpha=0.8, edgecolor='darkgoldenrod', boxstyle='round')
-plt.text(0.05, 0.95, 
+plt.text(0.05, 0.05, 
         txt_pval,
         transform=plt.gca().transAxes,
         fontsize=10, 
@@ -221,9 +222,9 @@ plt.text(0.05, 0.95,
         bbox=box_props,
         style='italic')
 plt.tight_layout()
-fig.savefig(f'{save_path}/Figure4_{mediator}_mediation.svg', format='svg', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure4_{mediator}_mediation.png', format='png', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure4_{mediator}_mediation.tiff', format='tiff', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_mediation.svg', format='svg', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_mediation.png', format='png', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_mediation.tiff', format='tiff', dpi=800, bbox_inches='tight')
 plt.show()
 
 # --- Plot moderation effects --
@@ -261,7 +262,7 @@ mod_coefficients.plot(
 )
 
 ax.axhline(0, color='k', linestyle='--', linewidth=1)
-ax.set_title(f'Moderation Effect of Eye Dominance on Putamen → Landmark PSE', fontsize=14, fontweight='bold')
+ax.set_title(f'Moderation Effect of Microsaccade Laterality on Putamen → Landmark PSE', fontsize=14, fontweight='bold')
 ax.set_ylabel('Coefficient Value', fontsize=12, fontweight='bold')
 ax.set_xlabel('Predictors', fontsize=12, fontweight='bold')
 ax.tick_params(axis='x', labelrotation=0)
@@ -270,7 +271,7 @@ ax.tick_params(axis='x', labelrotation=0)
 fit_text = (f"Adjusted R²: {mod_rsquared_adj:.3f}\n"
             f"fvalue = {mod_fvalue:.3f}\n"
             f"p-value = {mod_fp_value:.3f}")
-ax.text(-0.4, -8, fit_text, fontsize=12, color='black',
+ax.text(-0.4, 8, fit_text, fontsize=12, color='black',
         bbox=dict(facecolor='oldlace', alpha=0.8, edgecolor='darkgoldenrod', boxstyle='round,pad=1'))
 
 # === Coefficient table box ===
@@ -291,11 +292,11 @@ coef_table_text = '\n'.join([
     for idx, row in mod_table_rounded.iterrows()
 ])
 
-ax.text(-0.4, -16, coef_table_text, fontsize=11, color='black',
-        bbox=dict(facecolor='whitesmoke', alpha=0.85, edgecolor='dimgray', boxstyle='round,pad=1'))
+# ax.text(-0.4, 16, coef_table_text, fontsize=11, color='black',
+#         bbox=dict(facecolor='whitesmoke', alpha=0.85, edgecolor='dimgray', boxstyle='round,pad=1'))
 
 plt.tight_layout()
-fig.savefig(f'{save_path}/Figure4_{mediator}_moderation.svg', format='svg', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure4_{mediator}_moderation.png', format='png', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure4_{mediator}_moderation.tiff', format='tiff', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_moderation.svg', format='svg', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_moderation.png', format='png', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_moderation.tiff', format='tiff', dpi=800, bbox_inches='tight')
 plt.show()

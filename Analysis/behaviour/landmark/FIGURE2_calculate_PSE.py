@@ -44,7 +44,7 @@ lat_index_csv = op.join(volume_sheet_dir, 'FINAL_unified_behavioral_structural_a
 # BEAR outage
 # '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/behaviour'
 # Save figure in BEAR outage (that's where the latest version of the manuscript is)
-save_path = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/landmark-manus/Figures/Figure1_Landmark_PSE'
+save_path = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/landmark-manus/Figures/Figure2_Landmark_PSE'
 
 # Read and flip the signs of Landmark_PSE values
 """the signs we calculated from the task should be flipped

@@ -208,7 +208,7 @@ print(data_full.head())
 dep_vars = {'Target': 'Threshold_Difference', 'Landmark': 'Landmark_PSE', 'Target_MS': 'Target_MS_Laterality', 'Landmark_MS': 'Landmark_MS'}
 independent_vars = ['Thal', 'Caud', 'Puta', 'Pall', 'Hipp', 'Amyg', 'Accu']  
 # Define the mediator variable (Landmark_MS/ Handedness/ Eye_Dominance)
-mediator =  {'Target': 'Target_MS_Laterality', 'Landmark': 'Eye_Dominance', 'Target_MS': 'Threshold_Difference', 'Landmark_MS': 'Landmark_PSE'}
+mediator =  {'Target': 'Target_MS_Laterality', 'Landmark': 'Handedness', 'Target_MS': 'Threshold_Difference', 'Landmark_MS': 'Landmark_PSE'}
 
 # Remove NaNs from dependent variable (but keep rows in the dataset)
 dependent_var = input(f'which dependent variable to do now? {dep_vars.keys()}\n (Do not add quotation marks!)\n')
@@ -332,7 +332,7 @@ best_model_table['aic'] = best_model.aic
 best_model_table['bic'] = best_model.bic
 
 # Save as CSV (flat table like moderation_df)
-best_model_table.to_csv(f"{models_fname}/{dependent_var}_best_model.csv", index=False)
+# best_model_table.to_csv(f"{models_fname}/{dependent_var}_best_model.csv", index=False)
 
 print("\nBest Model Predictors Based on AIC:", best_predictors)
 print("\nBest Model Summary Base on AIC:\n", best_model_summary)

@@ -38,7 +38,7 @@ volume_sheet_dir = op.join(jenseno_dir,'Projects/subcortical-structures/SubStr-a
 lat_index_csv = op.join(volume_sheet_dir, 'FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers_eye-dominance.csv')
 
 # Save figure in BEAR outage (that's where the latest version of the manuscript is)
-save_path = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/landmark-manus/Figures/Figure2_substr_hist'
+save_path = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-UniversityofBirmingham/Desktop/BEAR_outage/landmark-manus/Figures/Figure3_substr_hist'
 
 data_full = pd.read_csv(lat_index_csv)
 lateralisation_volume = data_full.iloc[:,3:10].to_numpy()
