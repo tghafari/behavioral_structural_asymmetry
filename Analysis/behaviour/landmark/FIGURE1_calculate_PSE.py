@@ -51,7 +51,11 @@ save_path = '/Users/t.ghafari@bham.ac.uk/Library/CloudStorage/OneDrive-Universit
  because we want negative pse to be on the left side of the histogram
  (more intuitive for leftward bias) and positive on the rightside."""
 data_full = pd.read_csv(lat_index_csv)
-flipped_pse = -data_full['Landmark_PSE'].dropna()
+flipped_data_full = data_full.copy()
+flipped_data_full['Landmark_PSE'] = -data_full['Landmark_PSE']
+flipped_data_full.to_csv(op.join(volume_sheet_dir, 'FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers_flipped.csv'))
+
+flipped_pse = flipped_data_full['Landmark_PSE'].dropna()
 
 # Compute statistics
 mean_val = flipped_pse.mean()
