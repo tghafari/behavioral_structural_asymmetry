@@ -86,6 +86,9 @@ def load_collated_dataframe(csv_path: str,
         Path to collated CSV.
     structures : list[str]
         Expected structure names (7).
+    throw_out_outliers:bool 
+        do you want to remove outliers? 
+        default is False
 
     Returns
     -------
@@ -126,7 +129,8 @@ def plot_lateralisation_volumes(df: pd.DataFrame,
                                 structures: list[str],
                                 colormap: list[str],
                                 bins: int = 10,
-                                title: str = 'Lateralisation Volume of Subcortical Structures (N=44)'):
+                                title: str = 'Lateralisation Volume of Subcortical Structures (N=44)',
+                                throw_out_outliers:bool = False):
     """
     Plot histograms for each subcortical structure, annotate with Wilcoxon p-value vs 0,
     and save at 800 dpi (Arial; title 16, labels 12 bold; y-label padding fixed).
@@ -147,7 +151,28 @@ def plot_lateralisation_volumes(df: pd.DataFrame,
 
     for idx, structure in enumerate(structures):
         ax = axs[idx]
-        lateralisation_volumes = pd.to_numeric(df[structure], errors='coerce').dropna().values
+        lateralisation_volumes = pd.to_numeric(df[structure], errors='coerce').values
+        
+        # --- optional outlier handling per structure ---
+        """we are not doing this for the paper."""
+        if throw_out_outliers:
+            med = np.nanmedian(lateralisation_volumes)
+            sd  = np.nanstd(lateralisation_volumes)
+            thr_neg = med - 2.5 * sd
+            thr_pos = med + 2.5 * sd
+
+            # build mask of outliers across all structure cells
+            mask_out = (lateralisation_volumes <= thr_neg) | (lateralisation_volumes >= thr_pos)
+            n_out = int(np.nansum(mask_out))
+
+            # set outlier cells to NaN in the DataFrame
+            lateralisation_volumes[mask_out] = np.nan
+            df[structure] = lateralisation_volumes  # write back
+
+            print(f"Outlier marking: median={med:.4f}, std={sd:.4f}, "
+                f"thresholds=({thr_neg:.4f}, {thr_pos:.4f}), "
+                f"cells set to NaN={n_out}")
+        
         if lateralisation_volumes.size == 0:
             ax.set_visible(False)
             continue
@@ -227,7 +252,8 @@ if __name__ == '__main__':
     # ax.set_title(structures[his], fontsize=14, fontname='Arial', fontweight='bold') 
     # ax.set_xlabel('Lateralisation Volume', fontsize=12, fontname='Arial', fontweight='bold') 
     # ax.set_ylabel('# Subjects', fontsize=12, fontname='Arial', fontweight='bold') ax.axvline(x=0, color='dimgray', linewidth=0.5, linestyle='-') 
-    # # Compute statistics median_val = lateralisation_volume[:,his].mean() #TODO:shouldn't this be median instead of mean? medians.append(median_val) 
+    # # Compute statistics 
+    # median_val = lateralisation_volume[:,his].mean() #TODO:shouldn't this be median instead of mean? medians.append(median_val) 
     # # Remove nans and plot normalized (z-scored) distributions 
     # valid_lateralisation_volume = lateralisation_volume[~np.isnan(lateralisation_volume[:, his]), his] 
     # lateralisation_volume_hist = np.histogram(valid_lateralisation_volume, bins=6, density=False) # Throw out the outliers 
@@ -246,6 +272,3 @@ if __name__ == '__main__':
     # # t_stats.append(t_statistic) 
     # # t_p_vals.append(t_p_value) 
     # # txt_t = r'$1samp\_p = {:.2f}$'.format(t_p_value) 
-    # # one sample wilcoxon signed rank (for non normal distributions) 
-    # _, wilcox_p = stats.wilcoxon(valid_lateralisation_volume - null_hypothesis_median, zero_method='wilcox', nan_policy='omit', correction=False) 
-    # wilcox_p_vals.append(wilcox_p)
