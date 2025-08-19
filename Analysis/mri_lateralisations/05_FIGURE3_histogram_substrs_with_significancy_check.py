@@ -220,3 +220,32 @@ if __name__ == '__main__':
     )
 
 
+# from this part keep the ranksum tests etc
+# for his in range(7): 
+    # Define plot settings 
+    # ax = axs[his // 4, his % 4] 
+    # ax.set_title(structures[his], fontsize=14, fontname='Arial', fontweight='bold') 
+    # ax.set_xlabel('Lateralisation Volume', fontsize=12, fontname='Arial', fontweight='bold') 
+    # ax.set_ylabel('# Subjects', fontsize=12, fontname='Arial', fontweight='bold') ax.axvline(x=0, color='dimgray', linewidth=0.5, linestyle='-') 
+    # # Compute statistics median_val = lateralisation_volume[:,his].mean() #TODO:shouldn't this be median instead of mean? medians.append(median_val) 
+    # # Remove nans and plot normalized (z-scored) distributions 
+    # valid_lateralisation_volume = lateralisation_volume[~np.isnan(lateralisation_volume[:, his]), his] 
+    # lateralisation_volume_hist = np.histogram(valid_lateralisation_volume, bins=6, density=False) # Throw out the outliers 
+    # mean_lateralisation_volume = np.nanmean(valid_lateralisation_volume) 
+    # std_lateralisation_volume = np.nanstd(valid_lateralisation_volume) 
+    # threshold = mean_lateralisation_volume - (2.5 * std_lateralisation_volume) 
+    # valid_lateralisation_volume[:][valid_lateralisation_volume[:] <= threshold] = np.nan 
+    # print(len(valid_lateralisation_volume)) 
+    # # Perform the ranksum test 
+    # k2, p = stats.normaltest(valid_lateralisation_volume, nan_policy='omit') 
+    # p_values.append(p) 
+    # stat, shapiro_p = shapiro(valid_lateralisation_volume) 
+    # p_values_shapiro.append(shapiro_p) # 1 sample t-test for left/right lateralisation 
+    # # t_statistic, t_p_value = stats.ttest_1samp(valid_lateralisation_volume, 
+    # # null_hypothesis_mean, # nan_policy='omit') 
+    # # t_stats.append(t_statistic) 
+    # # t_p_vals.append(t_p_value) 
+    # # txt_t = r'$1samp\_p = {:.2f}$'.format(t_p_value) 
+    # # one sample wilcoxon signed rank (for non normal distributions) 
+    # _, wilcox_p = stats.wilcoxon(valid_lateralisation_volume - null_hypothesis_median, zero_method='wilcox', nan_policy='omit', correction=False) 
+    # wilcox_p_vals.append(wilcox_p)
