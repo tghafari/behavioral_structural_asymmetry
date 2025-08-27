@@ -55,7 +55,7 @@ flipped_data_full = data_full.copy()
 flipped_data_full['Landmark_PSE'] = -data_full['Landmark_PSE']
 flipped_data_full.to_csv(op.join(volume_sheet_dir, 'FINAL_unified_behavioral_structural_asymmetry_lateralisation_indices_1_45-nooutliers_flipped.csv'))
 
-flipped_pse = flipped_data_full['Landmark_PSE'].dropna()
+flipped_pse = flipped_data_full['Landmark_PSE'].dropna()  # subject 29 is removed
 
 # Compute statistics
 mean_val = flipped_pse.mean()
