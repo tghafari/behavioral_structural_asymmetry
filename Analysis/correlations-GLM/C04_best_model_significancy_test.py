@@ -57,6 +57,9 @@ model = LinearRegression().fit(X_train, y_train)
 y_pred = model.predict(X_test)
 split_r2 = r2_score(y_test, y_pred)
 
+# Correlation-based R² (squared Pearson correlation)
+r_corr_split = np.corrcoef(y_test, y_pred)[0, 1]
+
 # ---------------------------
 # 2. Formula-based cross-validation (Pedhazur)
 # ---------------------------
@@ -83,10 +86,16 @@ kfold = KFold(n_splits=10, shuffle=True, random_state=42)
 yhat_kfold = cross_val_predict(LinearRegression(), X, y, cv=kfold)
 r2_kfold = r2_score(y, yhat_kfold)
 
+# Correlation-based R² (squared Pearson correlation)
+r_corr_kfold = np.corrcoef(y, yhat_kfold)[0, 1]
+
 # ----- LOOCV
 loo = LeaveOneOut()
 yhat_loo = cross_val_predict(LinearRegression(), X, y, cv=loo)
 r2_loo = r2_score(y, yhat_loo)
+
+# Correlation-based R² (squared Pearson correlation)
+r_corr_loo = np.corrcoef(y, yhat_loo)[0, 1]
 
 # ---------------------------
 # 4. Permutation test for CV R²
@@ -132,16 +141,19 @@ r2_loo_obs, pval_loo, null_loo = permutation_test_cv_r2(X, y, loo, n_permutation
 # Results summary
 # ---------------------------
 results = {
-    "Split-sample R² (50/50 split)": split_r2,
     "Observed R²": R2,
     "Adjusted R²": adj_R2,
     "Formula CV R² (Regression)": R2_cv_regression,
     "Formula CV R² (Correlation)": R2_cv_correlation,
+    "Split-sample R² (50/50 split)": split_r2,
+    "Pearson correlation (y_test vs y_pred)": r_corr_split,
     "10-fold CV R²": r2_kfold,
+    "10-fold Pearson correlation": r_corr_kfold,
     "10-fold CV p-value (perm)": pval_kfold,
     "LOOCV R²": r2_loo,
+    "LOOCV Pearson correlation": r_corr_loo,
     "LOOCV p-value (perm)": pval_loo
 }
 
 results_df = pd.DataFrame([results])
-print(results_df)
+print(results)
