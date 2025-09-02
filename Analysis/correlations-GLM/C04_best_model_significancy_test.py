@@ -53,7 +53,9 @@ X = df[['Puta']].values
 # 1. Split-sample cross-validation
 # ---------------------------
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=42)
-model = LinearRegression().fit(X_train, y_train)
+model = LinearRegression().fit(X_train, y_train)  # this is the same as doing:
+                                                  # X_train_const = sm.add_constant(X_train)
+                                                  # model = sm.OLS(y_train, X_train_const).fit()
 y_pred = model.predict(X_test)
 split_r2 = r2_score(y_test, y_pred)
 
