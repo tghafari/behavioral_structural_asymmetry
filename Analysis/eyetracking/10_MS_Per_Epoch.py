@@ -36,6 +36,8 @@ def analyze_microsaccades_per_trial():
                         # Only include valid epochs
                         data = data[data['Epoch_Exclusion'] == 0]
 
+                        data = data[data['Distance_To_Fixation'] > 0]
+
                         # Get unique epochs and their microsaccade counts
                         epoch_counts = data['Epoch'].value_counts()
 

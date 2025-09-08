@@ -5,6 +5,7 @@ This script analyzes landmark behavioral data using binned linear analysis
 with Weibull distribution fitting to determine Point of Subjective Equality (PSE).
 
 Author: Mohammad Ebrahim Katebi
+Date: 2025-09-08
 """
 
 import os
@@ -19,8 +20,8 @@ from scipy.optimize import curve_fit
 
 # Plot configuration
 rcParams.update({
-    'font.size': 10,
-    'font.family': 'Arial',
+    'font.size': 11,
+    'font.family': "Arial",
     'axes.linewidth': 1,
     'axes.spines.left': True,
     'axes.spines.bottom': True,
@@ -30,7 +31,7 @@ rcParams.update({
     'ytick.major.width': 1,
     'xtick.direction': 'in',
     'ytick.direction': 'in',
-    'legend.frameon': False,
+    'legend.frameon': True,
     'savefig.bbox': 'tight'
 })
 
@@ -47,38 +48,41 @@ os.makedirs(OUTPUT_FOLDER_PATH, exist_ok=True)
 
 
 def weibull_cdf_function(x, shape, location, scale, y_scale, y_bias):
-    """
-    Weibull cumulative distribution function with scaling and bias parameters.
-    """
-    y = weibull_min.cdf(x, WEIBULL_SHAPE_FIXED, location, scale)
+    """Weibull cumulative distribution function with scaling and bias parameters."""
+    y = weibull_min.cdf(-x, WEIBULL_SHAPE_FIXED, location, scale)
     return (y * Y_SCALE_GUESS) + Y_BIAS_GUESS
 
 
 def weibull_ppf_function(percentile, shape, location, scale, y_scale, y_bias):
-    """
-    Weibull percent point function (inverse CDF) with unscaling.
-    """
+    """Weibull percent point function (inverse CDF) with unscaling."""
     unscaled_percentile = (percentile - Y_BIAS_GUESS) / Y_SCALE_GUESS
-    return weibull_min.ppf(unscaled_percentile, WEIBULL_SHAPE_FIXED, location, scale)
+    return -weibull_min.ppf(unscaled_percentile, WEIBULL_SHAPE_FIXED, location, scale)
 
 
 def bin_data_linear(shift_values, bin_width=BIN_WIDTH):
+    """Bin data using linear binning.
     """
-    Bin data using linear binning approach.
-    """
-    return np.floor(shift_values / bin_width) * bin_width
+    shift_values = np.asarray(shift_values)
+
+    binned = np.where(
+        shift_values > 0,
+        np.ceil(shift_values / bin_width) * bin_width,
+        np.ceil(shift_values / bin_width) * bin_width
+    )
+    return binned
 
 
 def prepare_behavioral_data(data):
-    """
-    Prepare behavioral data for analysis using binned linear approach.
-    """
+    """Prepare behavioral data for analysis using binned linear approach."""
     # Create signed shift sizes
     data['shift_size_signed'] = np.where(
         data['Shift_Direction'] == 'Left',
         -data['Shift_Size'],
         data['Shift_Size']
     )
+
+    # Mirror the x-axis
+    data['shift_size_signed'] = -data['shift_size_signed']
 
     # Apply linear binning
     data['shift_bin'] = bin_data_linear(data['shift_size_signed'])
@@ -93,17 +97,16 @@ def prepare_behavioral_data(data):
     summary_table = data.groupby('shift_bin')['reported_bigger_right'].agg([
         'count', 'sum', 'mean']).reset_index()
 
-    # Rename columns
+    # Rename columns and convert proportion to percentage
     summary_table.columns = ['shift_bin', 'trial_count',
                              'right_responses', 'proportion_right']
+    summary_table['percent_right'] = summary_table['proportion_right'] * 100
 
     return summary_table, 'shift_bin'
 
 
 def fit_weibull_distribution(x_data, y_data):
-    """
-    Fit Weibull distribution to psychometric data.
-    """
+    """Fit Weibull distribution to psychometric data."""
     # Create fitting range
     x_fit = np.linspace(min(x_data), max(x_data), len(x_data) * 10)
 
@@ -111,43 +114,38 @@ def fit_weibull_distribution(x_data, y_data):
     shape_init, loc_init, scale_init = weibull_min.fit(x_fit)
 
     # Fit Weibull CDF to data
-    try:
-        optimal_params, _ = curve_fit(
-            weibull_cdf_function,
-            x_data,
-            y_data,
-            p0=[shape_init, loc_init, scale_init, Y_SCALE_GUESS, Y_BIAS_GUESS],
-            maxfev=100000,
-            check_finite=False
-        )
+    optimal_params, _ = curve_fit(
+        weibull_cdf_function,
+        x_data,
+        y_data,
+        p0=[shape_init, loc_init, scale_init, Y_SCALE_GUESS, Y_BIAS_GUESS],
+        maxfev=100000,
+        check_finite=False
+    )
 
-        # Generate fitted curve
-        y_fit = weibull_cdf_function(x_fit, *optimal_params)
+    # Generate fitted curve
+    y_fit = weibull_cdf_function(
+        x_fit, *optimal_params) * 100  # Convert to percentage
 
-        # Calculate Point of Subjective Equality (50% point)
-        pse = weibull_ppf_function(0.5, *optimal_params)
+    # Calculate Point of Subjective Equality (50% point)
+    pse = weibull_ppf_function(0.5, *optimal_params)
 
-        # Calculate R-squared
-        y_pred = weibull_cdf_function(x_data, *optimal_params)
-        r2 = r2_score(y_data, y_pred)
-
-    except Exception as e:
-        print(f"Warning: Fitting failed - {e}")
-        y_fit = np.full_like(x_fit, 0.5)
-        pse = 0.0
-        r2 = 0.0
+    # Calculate R-squared
+    y_pred = weibull_cdf_function(x_data, *optimal_params)
+    r2 = r2_score(y_data, y_pred)
 
     return x_fit, y_fit, pse, r2
 
 
 def create_figure(x_data, y_data, x_fit, y_fit, pse, r2, subject_name):
-    """
-    Create publication-ready psychometric function figure.
-    """
+    """Create publication-ready psychometric function figure."""
     fig, ax = plt.subplots(1, 1, figsize=(8, 8))
 
+    # Convert proportion to percentage for plotting
+    y_data_percent = y_data * 100
+
     # Plot data points
-    ax.scatter(x_data, y_data, s=60, c='black', marker='o',
+    ax.scatter(x_data, y_data_percent, s=60, c='black', marker='o',
                alpha=0.8, edgecolors='white', linewidth=1.5, zorder=5)
 
     # Plot fitted curve
@@ -157,30 +155,38 @@ def create_figure(x_data, y_data, x_fit, y_fit, pse, r2, subject_name):
     # Add reference lines
     ax.axvline(x=0, color='black', linestyle='--',
                linewidth=2, alpha=0.7, label='Midpoint')
-    ax.axvline(x=pse, color='blue', linestyle=':', linewidth=2, label=f'PSE')
-    ax.axhline(y=0.5, color='gray', linestyle=':', linewidth=2)
+    ax.axvline(x=pse, color='blue', linestyle=':', linewidth=1.5, label='PSE')
+    ax.axhline(y=50, color='gray', linestyle=':', linewidth=1.5)
 
     # Formatting
-    ax.set_xlabel('Horizontal Line Offset (Visual Degrees)',
-                  fontsize=14, fontweight='bold')
-    ax.set_ylabel('Proportion Answered Right', fontsize=14, fontweight='bold')
-    ax.set_title(f'{subject_name}', fontsize=14, fontweight='bold', pad=20)
+    ax.set_xlabel('Horizontal Line Offset (Deg. Vis. Ang.)',
+                  fontsize=11, fontweight='bold')
+    ax.set_ylabel('Percent Answered Right', fontsize=11, fontweight='bold')
+    ax.set_title('Psychometric Function for One Example Participant',
+                 fontsize=14, fontweight='bold', pad=20)
 
     # Set axis limits and ticks
     ax.set_xlim(-1.1, 1.1)
-    ax.set_ylim(-0.05, 1.05)
+    ax.set_ylim(-5, 105)
     ax.set_xticks(np.arange(-1.0, 1.1, 0.2))
-    ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+    ax.set_yticks([0, 25, 50, 75, 100])
+    ax.set_yticklabels(['0%', '25%', '50%', '75%', '100%'], fontsize=11)
+
+    # Remove top and right spines
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
 
     # Add PSE annotation
-    bias_direction = 'Leftward' if pse > 0 else 'Rightward' if pse < 0 else 'No'
-    ax.text(0.02, 0.98, f'Bias = {-1 * pse:.3f}°\n{bias_direction}',
+    bias_direction = 'Leftward' if pse < 0 else 'Rightward' if pse > 0 else 'No'
+    bias_text = f'Bias: {pse:.3f}° {bias_direction}'
+    ax.text(0.045, 1, bias_text,
             transform=ax.transAxes, verticalalignment='top',
-            bbox=dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.0),
-            fontsize=12)
+            bbox=dict(facecolor='oldlace', alpha=0.8,
+                      edgecolor='darkgoldenrod', boxstyle='round,pad=0.6'),
+            fontsize=11, style='italic')
 
-    # Legend and grid
-    ax.legend(loc='lower right', fontsize=12)
+    # Legend with matching style from reference
+    ax.legend(loc='upper right', fontsize=11)
     ax.grid(True, alpha=0.0, linestyle='-', linewidth=0.5)
 
     plt.tight_layout()
@@ -188,11 +194,10 @@ def create_figure(x_data, y_data, x_fit, y_fit, pse, r2, subject_name):
 
 
 def analyze_subject_data(file_path):
-    """
-    Analyze behavioral data for a single subject.
-    """
+    """Analyze behavioral data for a single subject."""
     # Load data
     data = pd.read_csv(file_path)
+
     subject_name = op.basename(file_path).replace('_logfile.csv', '')
     print(f"Analyzing subject: {subject_name}")
 
@@ -213,16 +218,14 @@ def analyze_subject_data(file_path):
     # Save figure
     figure_path = op.join(OUTPUT_FOLDER_PATH,
                           f"{subject_name}_Psychometric.png")
-    fig.savefig(figure_path, dpi=300, bbox_inches='tight')
+    fig.savefig(figure_path, dpi=1200, bbox_inches='tight')
     plt.close(fig)
 
     return pse
 
 
 def process_all_subjects():
-    """
-    Process all subject data files and compile results.
-    """
+    """Process all subject data files and compile results."""
     pse_values = []
     subject_ids = []
     print("Starting batch analysis...")
@@ -245,8 +248,7 @@ def process_all_subjects():
                                     pse = analyze_subject_data(file_path)
                                     pse_values.append(pse)
                                     subject_ids.append(
-                                        filename.replace('_logfile.csv', '')
-                                    )
+                                        filename.replace('_logfile.csv', ''))
                                 except Exception as e:
                                     print(f"Error processing {filename}: {e}")
 
