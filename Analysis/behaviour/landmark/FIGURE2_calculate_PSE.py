@@ -62,7 +62,6 @@ mean_val = flipped_pse.mean()
 median_val = flipped_pse.median()
 stat, p_value = wilcoxon(flipped_pse)
 
-
 # Define bins and compute histogram
 bins = np.linspace(-0.8, 0.8, 17)  # 0.2 width bins from -0.8 to 0.8
 bias_data = pd.cut(flipped_pse, bins=bins)
