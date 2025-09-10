@@ -200,7 +200,7 @@ def plot_lateralisation_volumes(df: pd.DataFrame,
                 style='italic')
 
         # Axis labels & title (Arial, bold)
-        ax.set_title(structure, fontsize=12, fontweight='bold')
+        ax.set_title(structure, fontsize=14, fontweight='bold')
         # Only bottom row gets x-labels in a 2x4 grid: indices 3,4,5,6 show x-label
         if idx in [3, 4, 5, 6]:
             ax.set_xlabel('Lateralisation Volume', fontsize=12, fontweight='bold')

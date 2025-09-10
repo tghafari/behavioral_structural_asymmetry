@@ -58,7 +58,7 @@ data_full = pd.read_csv(lat_index_csv)  # only use this for partial regression p
 dep_vars = {'Landmark': 'Landmark_PSE'}
 dependent_var = 'Landmark'
 independent_var = ['Puta']
-mediator =  'Landmark_MS'  # 'Handedness' or 'Landmark_MS' or 'Eye_Dominance'
+mediator =  'Eye_Dominance'  # 'Handedness' or 'Landmark_MS' or 'Eye_Dominance'
 moderator = mediator
 
 # Read the models (landmark_pse ~ putamen)
@@ -72,7 +72,7 @@ med_df = pd.read_csv(f'{models_fname}/{dependent_var}_mediator-{mediator}.csv')
 moderation_df = pd.read_csv(f'{models_fname}/{dependent_var}_moderator-{mediator}.csv')
 
 # -----------------------
-# Plotting Figure 3a and 3b:
+# Plotting Figure 4a and 4b:
 # -----------------------
 # --- Plot beta coefficients ---
 # Extract row-wise stats from flat table
@@ -103,6 +103,7 @@ ax.set_title(f'Beta Coefficients of the Best Model for {dependent_var}', fontsiz
 ax.set_ylabel('Coefficient Value', fontsize=12, fontweight='bold')
 ax.set_xlabel('Predictors', fontsize=12, fontweight='bold')
 ax.axhline(0, color='k', linestyle='--', linewidth=1)
+ax.tick_params(axis='x', labelrotation=0)
 
 # === Fit statistics box ===
 text = (f"AIC: {aic:.2f}\n"
@@ -111,16 +112,17 @@ text = (f"AIC: {aic:.2f}\n"
         # f"F = {fvalue:.3f}\n"
         # f"p-value = {fp_value:.3f}"
         )
-ax.text(-0.3, 2, text, fontsize=12, color='black',
+ax.text(-0.3, 2, text, fontsize=10, color='black',
         bbox=dict(facecolor='oldlace', alpha=0.8, edgecolor='darkgoldenrod', boxstyle='round,pad=1'))
 
 # === Coefficient table box ===
 coef_table_text = '\n'.join([
     f"{row['Predictor']}: coef = {row['coefficients']:.3f}, SE = {row['standard_error']:.3f}, "
-    f"t = {row['t']:.3f}, p = {row['p_values']:.3f}, CI = [{row['CI_lower']:.3f}, {row['CI_upper']:.3f}]"
+    f"CI = [{row['CI_lower']:.3f}, {row['CI_upper']:.3f}]"
+    # f"t = {row['t']:.3f}, p = {row['p_values']:.3f}"
     for _, row in best_model_table.iterrows()
 ])
-ax.text(-0.3, 1, coef_table_text, fontsize=11, color='black',
+ax.text(-0.3, 1, coef_table_text, fontsize=10, color='black',
         bbox=dict(facecolor='whitesmoke', alpha=0.85, edgecolor='dimgray', boxstyle='round,pad=1'))
 
 plt.tight_layout()
@@ -180,14 +182,14 @@ fig.savefig(f'{save_path}/Figure4b_Putamen_GLM_partregress.tiff', format='tiff',
 plt.show()
 
 # -----------------------
-# Plotting Figure 4 and 5:
+# Plotting Figure 5 and Supp:
 # -----------------------
 # Mediation & Moderation:
 # Convert SE column to NumPy array
 y_errors = med_df['SE'].values  # Ensure it's a 1D NumPy array
 
 # --- Mediation Analysis Results ---
-fig, ax = plt.subplots(figsize=(10, 6))
+fig, ax = plt.subplots(figsize=(12, 8))
 
 # Bar plot: single color, no auto error bars
 sns.barplot(
@@ -209,7 +211,7 @@ plt.errorbar(
     color='black'
 )
 
-plt.title(f'Mediation Analysis: Indirect effects of of Microsaccade Laterality on Putamen → Landmark PSE', fontsize=14, fontweight='bold')
+plt.title(f'Mediation Analysis: Indirect effects', fontsize=14, fontweight='bold')
 plt.xlabel('Subcortical Structure', fontsize=12, fontweight='bold')
 plt.ylabel('Indirect Effect', fontsize=12, fontweight='bold')
 
@@ -222,10 +224,11 @@ plt.text(0.05, 0.05,
         verticalalignment='top', 
         bbox=box_props,
         style='italic')
+
 plt.tight_layout()
-fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_mediation.svg', format='svg', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_mediation.png', format='png', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_mediation.tiff', format='tiff', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure1bSupp_{mediator}_mediation.svg', format='svg', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure1bSupp_{mediator}_mediation.png', format='png', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure1bSupp_{mediator}_mediation.tiff', format='tiff', dpi=800, bbox_inches='tight')
 plt.show()
 
 # --- Plot moderation effects --
@@ -263,7 +266,7 @@ mod_coefficients.plot(
 )
 
 ax.axhline(0, color='k', linestyle='--', linewidth=1)
-ax.set_title(f'Moderation Effect of Microsaccade Laterality on Putamen → Landmark PSE', fontsize=14, fontweight='bold')
+ax.set_title(f'Moderation Effect', fontsize=14, fontweight='bold')
 ax.set_ylabel('Coefficient Value', fontsize=12, fontweight='bold')
 ax.set_xlabel('Predictors', fontsize=12, fontweight='bold')
 ax.tick_params(axis='x', labelrotation=0)
@@ -272,7 +275,7 @@ ax.tick_params(axis='x', labelrotation=0)
 fit_text = (f"Adjusted R²: {mod_rsquared_adj:.3f}\n"
             f"fvalue = {mod_fvalue:.3f}\n"
             f"p-value = {mod_fp_value:.3f}")
-ax.text(-0.4, 8, fit_text, fontsize=12, color='black',
+ax.text(-0.4, 15, fit_text, fontsize=10, color='black',
         bbox=dict(facecolor='oldlace', alpha=0.8, edgecolor='darkgoldenrod', boxstyle='round,pad=1'))
 
 # === Coefficient table box ===
@@ -288,13 +291,14 @@ mod_table_rounded = mod_table.round(3).astype(str)
 
 # Format as text block
 coef_table_text = '\n'.join([
-    f"{idx}: coef = {row['coef']}, SE = {row['SE']}, t = {row['t']}, "
-    f"p = {row['p']}, CI = [{row['CI_lower']}, {row['CI_upper']}]"
+    f"{idx}: coef = {row['coef']}, SE = {row['SE']}, CI = [{row['CI_lower']}, {row['CI_upper']}], "
+    # f" t = {row['t']}, " 
+    f"p-value = {row['p']}"
     for idx, row in mod_table_rounded.iterrows()
 ])
 
-# ax.text(-0.4, 16, coef_table_text, fontsize=11, color='black',
-#         bbox=dict(facecolor='whitesmoke', alpha=0.85, edgecolor='dimgray', boxstyle='round,pad=1'))
+ax.text(-0.4, 9, coef_table_text, fontsize=10, color='black',
+        bbox=dict(facecolor='whitesmoke', alpha=0.85, edgecolor='dimgray', boxstyle='round,pad=1'))
 
 plt.tight_layout()
 fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_moderation.svg', format='svg', dpi=800, bbox_inches='tight')
