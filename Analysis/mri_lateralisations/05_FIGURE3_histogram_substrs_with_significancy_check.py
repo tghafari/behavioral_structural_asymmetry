@@ -137,7 +137,7 @@ def plot_lateralisation_volumes(df: pd.DataFrame,
     """
     Plot histograms for each subcortical structure, annotate with Wilcoxon p-value vs 0,
     and save at 800 dpi (Arial; title and labels 14; y-label padding fixed; tick params labelsize=8,
-    texts and legends fontsize=12).
+    texts and legends fontsize=10).
     """
     # Use Arial globally
     plt.rcParams['font.family'] = 'Arial'
@@ -145,7 +145,7 @@ def plot_lateralisation_volumes(df: pd.DataFrame,
     n_structures = len(structures)
     n_cols = 4
     n_rows = int(np.ceil(n_structures / n_cols))
-    fig, axs = plt.subplots(n_rows, n_cols, figsize=(4.0 * n_cols, 3.8 * n_rows))
+    fig, axs = plt.subplots(n_rows, n_cols, figsize=(6.3, 4))
     axs = axs.flatten()
 
     # Styled p-value box (your settings)
@@ -198,19 +198,19 @@ def plot_lateralisation_volumes(df: pd.DataFrame,
         ax.text(0.05, 0.95,
                 txt_wilx,
                 transform=ax.transAxes,
-                fontsize=12,
+                fontsize=8,
                 verticalalignment='top',
                 bbox=box_props,
                 style='italic')
 
         # Axis labels & title (Arial, 14)
-        ax.set_title(structure, fontsize=14)
+        ax.set_title(structure, fontsize=10)
         # Only bottom row gets x-labels in a 2x4 grid: indices 3,4,5,6 show x-label
         if idx in [3, 4, 5, 6]:
-            ax.set_xlabel('Lateralisation Volume', fontsize=14)
+            ax.set_xlabel('Lateralisation Volume', fontsize=10)
         # First column of each row gets y-label (indices 0 and 4)
         if idx in [0, 4]:
-            ax.set_ylabel('# Subjects', fontsize=14, labelpad=5)
+            ax.set_ylabel('# Subjects', fontsize=10, labelpad=5)
 
         # Ticks styling
         ax.tick_params(axis='both', which='both', length=0, labelsize=8)
@@ -227,9 +227,12 @@ def plot_lateralisation_volumes(df: pd.DataFrame,
     # Title + layout
     fig.suptitle(title, fontsize=14)
     fig.tight_layout(rect=[0, 0.02, 1, 0.98])
-
+    fig.subplots_adjust(
+    wspace=0.2,  # horizontal space (smaller = closer)
+    hspace=0.3
+)
     # Save
-    out_dir = op.join(fig_output_root, 'Figure3')
+    out_dir = op.join(fig_output_root)
     save_figure_all_formats(fig, out_dir, save_basename, dpi=800)
     plt.show()
     plt.close(fig)
