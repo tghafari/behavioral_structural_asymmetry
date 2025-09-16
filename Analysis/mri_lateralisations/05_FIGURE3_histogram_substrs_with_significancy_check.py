@@ -66,7 +66,10 @@ def save_figure_all_formats(fig: plt.Figure, out_dir: str, basename: str, dpi: i
     base = basename.replace(' ', '_')
     fig.savefig(op.join(out_dir, f"{base}.tiff"), dpi=dpi, format='tiff', bbox_inches='tight')
     fig.savefig(op.join(out_dir, f"{base}.png"),  dpi=dpi, format='png',  bbox_inches='tight')
-    fig.savefig(op.join(out_dir, f"{base}.svg"),              format='svg', bbox_inches='tight')
+    fig.savefig(op.join(out_dir, f"{base}.svg"), format='svg', bbox_inches='tight')
+    fig.savefig(op.join(out_dir, f"{base}.eps"), format='eps', bbox_inches='tight')
+    fig.savefig(op.join(out_dir, f"{base}.pdf"), format='pdf', bbox_inches='tight')
+
 
 
 # ----------------------- Loading ------------------------ #
@@ -133,7 +136,8 @@ def plot_lateralisation_volumes(df: pd.DataFrame,
                                 throw_out_outliers:bool = False):
     """
     Plot histograms for each subcortical structure, annotate with Wilcoxon p-value vs 0,
-    and save at 800 dpi (Arial; title 16, labels 12 bold; y-label padding fixed).
+    and save at 800 dpi (Arial; title and labels 14; y-label padding fixed; tick params labelsize=8,
+    texts and legends fontsize=12).
     """
     # Use Arial globally
     plt.rcParams['font.family'] = 'Arial'
@@ -194,24 +198,26 @@ def plot_lateralisation_volumes(df: pd.DataFrame,
         ax.text(0.05, 0.95,
                 txt_wilx,
                 transform=ax.transAxes,
-                fontsize=10,
+                fontsize=12,
                 verticalalignment='top',
                 bbox=box_props,
                 style='italic')
 
-        # Axis labels & title (Arial, bold)
-        ax.set_title(structure, fontsize=14, fontweight='bold')
+        # Axis labels & title (Arial, 14)
+        ax.set_title(structure, fontsize=14)
         # Only bottom row gets x-labels in a 2x4 grid: indices 3,4,5,6 show x-label
         if idx in [3, 4, 5, 6]:
-            ax.set_xlabel('Lateralisation Volume', fontsize=12, fontweight='bold')
+            ax.set_xlabel('Lateralisation Volume', fontsize=14)
         # First column of each row gets y-label (indices 0 and 4)
         if idx in [0, 4]:
-            ax.set_ylabel('# Subjects', fontsize=12, fontweight='bold', labelpad=5)
+            ax.set_ylabel('# Subjects', fontsize=14, labelpad=5)
 
         # Ticks styling
-        ax.tick_params(axis='both', which='both', length=0)
+        ax.tick_params(axis='both', which='both', length=0, labelsize=8)
         ax.set_axisbelow(True)
         ax.grid(True, axis='y', alpha=0.25)
+        x_symmetric = np.max([np.abs(np.min(lateralisation_volumes)), np.max(lateralisation_volumes)])
+        ax.set_xlim(-x_symmetric, x_symmetric)
 
     # Remove unused axes
     for ax in axs:
@@ -219,11 +225,11 @@ def plot_lateralisation_volumes(df: pd.DataFrame,
             fig.delaxes(ax)
 
     # Title + layout
-    fig.suptitle(title, fontsize=16, fontweight='bold')
+    fig.suptitle(title, fontsize=14)
     fig.tight_layout(rect=[0, 0.02, 1, 0.98])
 
     # Save
-    out_dir = op.join(fig_output_root, 'Figure3_substr_hist')
+    out_dir = op.join(fig_output_root, 'Figure3')
     save_figure_all_formats(fig, out_dir, save_basename, dpi=800)
     plt.show()
     plt.close(fig)
@@ -240,7 +246,7 @@ if __name__ == '__main__':
         df=df_struct,
         structures=structures,
         colormap=colormap,
-        bins=6,  
+        bins=8,  
         title='Lateralisation Volume of Subcortical Structures (N=44)'
     )
 
