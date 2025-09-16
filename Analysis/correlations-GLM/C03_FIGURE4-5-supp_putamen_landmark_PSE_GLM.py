@@ -58,7 +58,7 @@ data_full = pd.read_csv(lat_index_csv)  # only use this for partial regression p
 dep_vars = {'Landmark': 'Landmark_PSE'}
 dependent_var = 'Landmark'
 independent_var = ['Puta']
-mediator =  'Eye_Dominance'  # 'Handedness' or 'Landmark_MS' or 'Eye_Dominance'
+mediator =  'Handedness'  # 'Handedness' or 'Landmark_MS' or 'Eye_Dominance'
 moderator = mediator
 
 # Read the models (landmark_pse ~ putamen)
@@ -87,7 +87,7 @@ aic = best_model_table['aic'].iloc[0]
 bic = best_model_table['bic'].iloc[0]
 
 # === Plot ===
-fig, ax = plt.subplots(figsize=(12, 8))
+fig, ax = plt.subplots(figsize=(3.14, 3.14))
 
 # Custom bar colors
 color_map = {
@@ -99,12 +99,12 @@ bar_colors = [color_map.get(idx, '#999999') for idx in coefficients.index]
 coefficients.plot(kind='bar', yerr=std_err, capsize=6, alpha=0.8,
                   color=bar_colors, edgecolor='black', ax=ax)
 
-ax.set_title(f'Beta Coefficients of the Best Model for {dependent_var}', fontsize=20)
-ax.set_ylabel('Coefficient Value', fontsize=20)
-ax.set_xlabel('Predictors', fontsize=20)
+ax.set_title(f'Estimates of the Winning Model', fontsize=14)
+ax.set_ylabel('Coefficient Value', fontsize=14)
+ax.set_xlabel('Predictors', fontsize=14)
 ax.axhline(0, color='k', linestyle='--', linewidth=1)
 ax.tick_params(axis='x', labelrotation=0)
-ax.tick_params(axis='both', which='both', length=0, labelsize=14)
+ax.tick_params(axis='both', which='both', length=0, labelsize=8)
 
 # === Fit statistics box ===
 text = (f"AIC: {aic:.2f}\n"
@@ -160,7 +160,7 @@ model_x = sm.OLS(model_data['Puta'], sm.add_constant(model_data[other_predictors
 x_resid = model_x.resid
 
 # === Plotting ===
-fig, ax = plt.subplots(figsize=(12, 8))
+fig, ax = plt.subplots(figsize=(3.14, 3.14))
 
 sns.regplot(
     x=x_resid, y=y_resid,
@@ -173,11 +173,11 @@ sns.regplot(
 )
 
 # === Format ===
-ax.set_xlabel(r'LV$_{\text{Puta}}$', fontsize=20)
-ax.set_ylabel('Landmark PSE', fontsize=20)
-ax.set_title('Partial Regression Plot for Putamen', fontsize=20)
+ax.set_xlabel(r'LV$_{\text{Puta}}$', fontsize=14)
+ax.set_ylabel('Landmark PSE', fontsize=14)
+ax.set_title('Partial Regression Plot for Putamen', fontsize=14)
 ax.tick_params(axis='x', labelrotation=0)
-ax.tick_params(axis='both', which='both', length=0, labelsize=14)
+ax.tick_params(axis='both', which='both', length=0, labelsize=8)
 
 sns.despine()
 plt.tight_layout()
@@ -195,8 +195,10 @@ plt.show()
 # Convert SE column to NumPy array
 y_errors = med_df['SE'].values  # Ensure it's a 1D NumPy array
 
-# --- Mediation Analysis Results ---
-fig, ax = plt.subplots(figsize=(12, 8))
+# --- Mediation Analysis Results --- 
+"""It does not visualise any additional information,
+so no need to plot it"""
+fig, ax = plt.subplots(figsize=(3.14, 3.14))
 
 # Bar plot: single color, no auto error bars
 sns.barplot(
@@ -218,28 +220,28 @@ plt.errorbar(
     color='black'
 )
 
-plt.title(f'Mediation Analysis: Indirect effects', fontsize=20)
-plt.xlabel('Subcortical Structure', fontsize=20)
-plt.ylabel('Indirect Effect', fontsize=20)
+plt.title(f'Mediation Analysis: Indirect effects', fontsize=14)
+plt.xlabel('Subcortical Structure', fontsize=14)
+plt.ylabel('Indirect Effect', fontsize=14)
 plt.tick_params(axis='x', labelrotation=0)
-plt.tick_params(axis='both', which='both', length=0, labelsize=14)
+plt.tick_params(axis='both', which='both', length=0, labelsize=8)
 
 txt_pval = f'p-value = {med_df['p_value'][0]:.3f}'
 box_props = dict(facecolor='oldlace', alpha=0.8, edgecolor='darkgoldenrod', boxstyle='round')
-plt.text(0.05, 0.05, 
+plt.text(0.05, 0.15, 
         txt_pval,
         transform=plt.gca().transAxes,
-        fontsize=14, 
+        fontsize=10, 
         verticalalignment='top', 
         bbox=box_props,
         style='italic')
 
 plt.tight_layout()
-fig.savefig(f'{save_path}/Figure1bSupp_{mediator}_mediation.svg', format='svg', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure1bSupp_{mediator}_mediation.png', format='png', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure1bSupp_{mediator}_mediation.tiff', format='tiff', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure1bSupp_{mediator}_mediation.eps', format='eps', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure1bSupp_{mediator}_mediation.pdf', format='pdf', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure5b_{mediator}_mediation.svg', format='svg', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure5b_{mediator}_mediation.png', format='png', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure5b_{mediator}_mediation.tiff', format='tiff', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure5b_{mediator}_mediation.eps', format='eps', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure5b_{mediator}_mediation.pdf', format='pdf', dpi=800, bbox_inches='tight')
 plt.show()
 
 # --- Plot moderation effects --
@@ -264,7 +266,7 @@ color_map = {
 bar_colors = [color_map.get(idx, '#999999') for idx in moderation_df.index]
 
 # === Plot ===
-fig, ax = plt.subplots(figsize=(12, 8))
+fig, ax = plt.subplots(figsize=(3.14, 4.5))
 
 mod_coefficients.plot(
     kind='bar', 
@@ -277,17 +279,18 @@ mod_coefficients.plot(
 )
 
 ax.axhline(0, color='k', linestyle='--', linewidth=1)
-ax.set_title(f'Moderation Effect', fontsize=20)
-ax.set_ylabel('Coefficient Value', fontsize=20)
-ax.set_xlabel('Predictors', fontsize=20)
-ax.tick_params(axis='x', labelrotation=0)
-ax.tick_params(axis='both', which='both', length=0, labelsize=14)
+ax.set_title(f'Moderation Effect', fontsize=14)
+ax.set_ylabel('Coefficient Value', fontsize=14)
+ax.set_xlabel('Predictors', fontsize=14)
+ax.tick_params(axis='x', labelrotation=30)
+ax.tick_params(axis='both', which='both', length=0, labelsize=8)
+ax.set_xticklabels(['const','Puta','Handedness','Puta x Handedness'])
 
 # === Model fit text box ===
 fit_text = (f"Adjusted R²: {mod_rsquared_adj:.3f}\n"
             f"fvalue = {mod_fvalue:.3f}\n"
             f"p-value = {mod_fp_value:.3f}")
-ax.text(-0.4, 15, fit_text, fontsize=12, color='black',
+ax.text(0.01, -8.5, fit_text, fontsize=10, color='black',
         bbox=dict(facecolor='oldlace', alpha=0.8, edgecolor='darkgoldenrod', boxstyle='round,pad=1'))
 
 # === Coefficient table box ===
@@ -309,13 +312,13 @@ coef_table_text = '\n'.join([
     for idx, row in mod_table_rounded.iterrows()
 ])
 
-# ax.text(-0.4, 9, coef_table_text, fontsize=12, color='black',
+# ax.text(-0.4, 9, coef_table_text, fontsize=10, color='black',
 #         bbox=dict(facecolor='whitesmoke', alpha=0.85, edgecolor='dimgray', boxstyle='round,pad=1'))
 
 plt.tight_layout()
-fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_moderation.svg', format='svg', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_moderation.png', format='png', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_moderation.tiff', format='tiff', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_moderation.eps', format='eps', dpi=800, bbox_inches='tight')
-fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_moderation.pdf', format='pdf', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure5a_{mediator}_moderation.svg', format='svg', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure5a_{mediator}_moderation.png', format='png', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure5a_{mediator}_moderation.tiff', format='tiff', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure5a_{mediator}_moderation.eps', format='eps', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure5a_{mediator}_moderation.pdf', format='pdf', dpi=800, bbox_inches='tight')
 plt.show()
