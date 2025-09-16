@@ -80,7 +80,7 @@ bias_table = bias_data.value_counts().sort_index()
 bin_midpoints = (bins[:-1] + bins[1:]) / 2
 
 # Create figure
-fig, ax = plt.subplots(figsize=(8, 6))
+fig, ax = plt.subplots(figsize=(4.4, 4.4))
 ax.bar(bin_midpoints, bias_table.values, width=0.08,
        color='#a6c6de', edgecolor='#2F4F4F') 
 
@@ -103,13 +103,13 @@ ax.axvline(x=median_val, color='darkorange', linestyle='--', linewidth=2, label=
 p_text = f"Wilcoxon p = {p_value:.4f}" if p_value >= 0.001 else "Wilcoxon p < 0.001"
 ax.text(-0.88, ax.get_ylim()[1]*0.90, p_text,
         bbox=dict(facecolor='oldlace', alpha=0.8, edgecolor='darkgoldenrod', boxstyle='round,pad=1'),
-        fontsize=12, style='italic')
+        fontsize=10, style='italic')
 
 # Aesthetic adjustments
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 ax.set_title('Distribution of PSEs', fontsize=14)
-ax.legend(loc='upper right', fontsize=12)
+ax.legend(loc='upper right', fontsize=10)
 
 plt.tight_layout()
 plt.show()
