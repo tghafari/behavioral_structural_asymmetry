@@ -99,11 +99,12 @@ bar_colors = [color_map.get(idx, '#999999') for idx in coefficients.index]
 coefficients.plot(kind='bar', yerr=std_err, capsize=6, alpha=0.8,
                   color=bar_colors, edgecolor='black', ax=ax)
 
-ax.set_title(f'Beta Coefficients of the Best Model for {dependent_var}', fontsize=14, fontweight='bold')
-ax.set_ylabel('Coefficient Value', fontsize=12, fontweight='bold')
-ax.set_xlabel('Predictors', fontsize=12, fontweight='bold')
+ax.set_title(f'Beta Coefficients of the Best Model for {dependent_var}', fontsize=20)
+ax.set_ylabel('Coefficient Value', fontsize=20)
+ax.set_xlabel('Predictors', fontsize=20)
 ax.axhline(0, color='k', linestyle='--', linewidth=1)
 ax.tick_params(axis='x', labelrotation=0)
+ax.tick_params(axis='both', which='both', length=0, labelsize=14)
 
 # === Fit statistics box ===
 text = (f"AIC: {aic:.2f}\n"
@@ -112,8 +113,8 @@ text = (f"AIC: {aic:.2f}\n"
         # f"F = {fvalue:.3f}\n"
         # f"p-value = {fp_value:.3f}"
         )
-ax.text(-0.3, 2, text, fontsize=10, color='black',
-        bbox=dict(facecolor='oldlace', alpha=0.8, edgecolor='darkgoldenrod', boxstyle='round,pad=1'))
+# ax.text(-0.3, 2, text, fontsize=12, color='black',
+#         bbox=dict(facecolor='oldlace', alpha=0.8, edgecolor='darkgoldenrod', boxstyle='round,pad=1'))
 
 # === Coefficient table box ===
 coef_table_text = '\n'.join([
@@ -122,8 +123,8 @@ coef_table_text = '\n'.join([
     # f"t = {row['t']:.3f}, p = {row['p_values']:.3f}"
     for _, row in best_model_table.iterrows()
 ])
-ax.text(-0.3, 1, coef_table_text, fontsize=10, color='black',
-        bbox=dict(facecolor='whitesmoke', alpha=0.85, edgecolor='dimgray', boxstyle='round,pad=1'))
+# ax.text(-0.3, 1, coef_table_text, fontsize=12, color='black',
+#         bbox=dict(facecolor='whitesmoke', alpha=0.85, edgecolor='dimgray', boxstyle='round,pad=1'))
 
 plt.tight_layout()
 
@@ -131,6 +132,8 @@ plt.tight_layout()
 fig.savefig(f'{save_path}/Figure4a_Putamen_GLM.svg', format='svg', dpi=800, bbox_inches='tight')
 fig.savefig(f'{save_path}/Figure4a_Putamen_GLM.png', format='png', dpi=800, bbox_inches='tight')
 fig.savefig(f'{save_path}/Figure4a_Putamen_GLM.tiff', format='tiff', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure4a_Putamen_GLM.eps', format='eps', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure4a_Putamen_GLM.pdf', format='pdf', dpi=800, bbox_inches='tight')
 plt.show()
 
 # --- Partial regression plot ---
@@ -170,15 +173,19 @@ sns.regplot(
 )
 
 # === Format ===
-ax.set_xlabel(r'LV$_{\mathbf{Puta}}$', fontsize=12, fontweight='bold')
-ax.set_ylabel('Landmark PSE', fontsize=12, fontweight='bold')
-ax.set_title('Partial Regression Plot for Putamen', fontsize=14, fontweight='bold')
+ax.set_xlabel(r'LV$_{\text{Puta}}$', fontsize=20)
+ax.set_ylabel('Landmark PSE', fontsize=20)
+ax.set_title('Partial Regression Plot for Putamen', fontsize=20)
+ax.tick_params(axis='x', labelrotation=0)
+ax.tick_params(axis='both', which='both', length=0, labelsize=14)
 
 sns.despine()
 plt.tight_layout()
 fig.savefig(f'{save_path}/Figure4b_Putamen_GLM_partregress.svg', format='svg', dpi=800, bbox_inches='tight')
 fig.savefig(f'{save_path}/Figure4b_Putamen_GLM_partregress.png', format='png', dpi=800, bbox_inches='tight')
 fig.savefig(f'{save_path}/Figure4b_Putamen_GLM_partregress.tiff', format='tiff', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure4b_Putamen_GLM_partregress.eps', format='eps', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure4b_Putamen_GLM_partregress.pdf', format='pdf', dpi=800, bbox_inches='tight')
 plt.show()
 
 # -----------------------
@@ -211,16 +218,18 @@ plt.errorbar(
     color='black'
 )
 
-plt.title(f'Mediation Analysis: Indirect effects', fontsize=14, fontweight='bold')
-plt.xlabel('Subcortical Structure', fontsize=12, fontweight='bold')
-plt.ylabel('Indirect Effect', fontsize=12, fontweight='bold')
+plt.title(f'Mediation Analysis: Indirect effects', fontsize=20)
+plt.xlabel('Subcortical Structure', fontsize=20)
+plt.ylabel('Indirect Effect', fontsize=20)
+plt.tick_params(axis='x', labelrotation=0)
+plt.tick_params(axis='both', which='both', length=0, labelsize=14)
 
 txt_pval = f'p-value = {med_df['p_value'][0]:.3f}'
 box_props = dict(facecolor='oldlace', alpha=0.8, edgecolor='darkgoldenrod', boxstyle='round')
 plt.text(0.05, 0.05, 
         txt_pval,
         transform=plt.gca().transAxes,
-        fontsize=10, 
+        fontsize=14, 
         verticalalignment='top', 
         bbox=box_props,
         style='italic')
@@ -229,6 +238,8 @@ plt.tight_layout()
 fig.savefig(f'{save_path}/Figure1bSupp_{mediator}_mediation.svg', format='svg', dpi=800, bbox_inches='tight')
 fig.savefig(f'{save_path}/Figure1bSupp_{mediator}_mediation.png', format='png', dpi=800, bbox_inches='tight')
 fig.savefig(f'{save_path}/Figure1bSupp_{mediator}_mediation.tiff', format='tiff', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure1bSupp_{mediator}_mediation.eps', format='eps', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure1bSupp_{mediator}_mediation.pdf', format='pdf', dpi=800, bbox_inches='tight')
 plt.show()
 
 # --- Plot moderation effects --
@@ -266,16 +277,17 @@ mod_coefficients.plot(
 )
 
 ax.axhline(0, color='k', linestyle='--', linewidth=1)
-ax.set_title(f'Moderation Effect', fontsize=14, fontweight='bold')
-ax.set_ylabel('Coefficient Value', fontsize=12, fontweight='bold')
-ax.set_xlabel('Predictors', fontsize=12, fontweight='bold')
+ax.set_title(f'Moderation Effect', fontsize=20)
+ax.set_ylabel('Coefficient Value', fontsize=20)
+ax.set_xlabel('Predictors', fontsize=20)
 ax.tick_params(axis='x', labelrotation=0)
+ax.tick_params(axis='both', which='both', length=0, labelsize=14)
 
 # === Model fit text box ===
 fit_text = (f"Adjusted R²: {mod_rsquared_adj:.3f}\n"
             f"fvalue = {mod_fvalue:.3f}\n"
             f"p-value = {mod_fp_value:.3f}")
-ax.text(-0.4, 15, fit_text, fontsize=10, color='black',
+ax.text(-0.4, 15, fit_text, fontsize=12, color='black',
         bbox=dict(facecolor='oldlace', alpha=0.8, edgecolor='darkgoldenrod', boxstyle='round,pad=1'))
 
 # === Coefficient table box ===
@@ -297,11 +309,13 @@ coef_table_text = '\n'.join([
     for idx, row in mod_table_rounded.iterrows()
 ])
 
-ax.text(-0.4, 9, coef_table_text, fontsize=10, color='black',
-        bbox=dict(facecolor='whitesmoke', alpha=0.85, edgecolor='dimgray', boxstyle='round,pad=1'))
+# ax.text(-0.4, 9, coef_table_text, fontsize=12, color='black',
+#         bbox=dict(facecolor='whitesmoke', alpha=0.85, edgecolor='dimgray', boxstyle='round,pad=1'))
 
 plt.tight_layout()
 fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_moderation.svg', format='svg', dpi=800, bbox_inches='tight')
 fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_moderation.png', format='png', dpi=800, bbox_inches='tight')
 fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_moderation.tiff', format='tiff', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_moderation.eps', format='eps', dpi=800, bbox_inches='tight')
+fig.savefig(f'{save_path}/Figure1aSupp_{mediator}_moderation.pdf', format='pdf', dpi=800, bbox_inches='tight')
 plt.show()
