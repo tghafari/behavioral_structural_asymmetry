@@ -11,18 +11,16 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Set up directories
-DATA_DIR = "E:/Landmark_Data"
+DATA_DIR = r"../../Landmark_Data"
 EYETRACKING_DIR = r"../../Results/EyeTracking/Landmark"
 OUTPUT_DIR = r"../../Results/EyeTracking/Landmark/Laterality_Correlations"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
 def calculate_laterality_index(data):
-    """Calculate laterality index from directional data."""
-    R = data[(data['Direction'] >= 315) | (
-        data['Direction'] <= 45)]['Total_Amplitude'].sum()
-    L = data[(data['Direction'] >= 135) & (
-        data['Direction'] <= 225)]['Total_Amplitude'].sum()
+    """Calculate laterality index from directional data using counts."""
+    R = data[(data['Direction'] >= 315) | (data['Direction'] <= 45)].shape[0]
+    L = data[(data['Direction'] >= 135) & (data['Direction'] <= 225)].shape[0]
     return (R - L) / (R + L) if (R + L) != 0 else 0
 
 
@@ -30,8 +28,12 @@ def process_subject_data(file_path):
     """Process individual subject's microsaccade data."""
     data = pd.read_csv(file_path)
     data = data[data['Epoch_Exclusion'] == 0]
-    mask = data['Distance_To_Fixation'] < 0
-    data.loc[mask, 'Direction'] = (data.loc[mask, 'Direction'] + 180) % 360
+    
+    # mask = data['Distance_To_Fixation'] < 0
+    # data.loc[mask, 'Direction'] = (data.loc[mask, 'Direction'] + 180) % 360
+
+    data = data[data['Distance_To_Fixation'] > 0]
+
     laterality_index = calculate_laterality_index(data)
     subject_id = os.path.basename(file_path).split(
         '_')[0].lower().replace('e01s', '').replace('.asc', '')
