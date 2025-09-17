@@ -8,4 +8,4 @@ Scientific questions:
 
 Please use this DOI to cite this repository:
 [![DOI](https://zenodo.org/badge/630070184.svg)](https://doi.org/10.5281/zenodo.14735458)
-(first Release- task scripts)
+(Latest release for manuscript "Hemispheric laterality of the putamen predict pseudoneglect")
