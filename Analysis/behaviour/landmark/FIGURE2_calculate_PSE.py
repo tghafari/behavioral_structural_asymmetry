@@ -80,7 +80,7 @@ bias_table = bias_data.value_counts().sort_index()
 bin_midpoints = (bins[:-1] + bins[1:]) / 2
 
 # Create figure
-fig, ax = plt.subplots(figsize=(4.4, 4.4))
+fig, ax = plt.subplots(figsize=(4.3, 4.3))
 ax.bar(bin_midpoints, bias_table.values, width=0.08,
        color='#a6c6de', edgecolor='#2F4F4F') 
 
