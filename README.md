@@ -8,5 +8,4 @@ Scientific questions:
 
 Please use this DOI to cite this repository:
 [![DOI](https://zenodo.org/badge/630070184.svg)](https://doi.org/10.5281/zenodo.14735458)
-(Latest release for manuscript "Subcortical asymmetry contributes to lateralised attention in the healthy brain<img width="468" height="26" alt="image" src="https://github.com/user-attachments/assets/b8463edf-2f74-4ad9-8f63-e984eb988cd7" />
-")
+(Latest release for manuscript "Subcortical asymmetry contributes to lateralised attention in the healthy brain")
